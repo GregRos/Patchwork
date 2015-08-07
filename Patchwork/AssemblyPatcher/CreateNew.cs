@@ -143,6 +143,7 @@ namespace Patchwork
 					SemanticsAttributes = yourMethod.SemanticsAttributes,
 					CallingConvention = yourMethod.CallingConvention,
 					//all the Attributes and Conventions take care of most of the IsX/HasY properties, except for a few.
+					//this can be seen by looking at the Cecil code, where you can see which fields MethodDefinition has.
 					HasThis = yourMethod.HasThis,
 					ExplicitThis = yourMethod.ExplicitThis,
 					NoInlining = yourMethod.NoInlining,
@@ -154,10 +155,20 @@ namespace Patchwork
 
 			targetDeclaringType.Methods.Add(targetMethod);
 
-			//however, for FixType calls to work, the signature has to be correct... 
+			//First we add the parameters to the method so its signature is correct.
+			//Note that we do not fix the types at this stage. 
+			//This is because FixType calls can end up looking for the method we're adding right now
+			//if any of the parameter types are MVars. The signature has to be similar to yourMethod's signature 
+			//if FixType is to find this definition.
+			//this may seem needlessly complicated and rather risky, and I thought so too, but there really isn't any way around it
+			//or at least, I'm not clever enough to come up with one that doesn't introduce more problems 
+			//(believe me, I've tried all sorts of things)
 			foreach (var yourParam in yourMethod.Parameters) {
 				targetMethod.Parameters.Add(new ParameterDefinition(yourParam.ParameterType));
 			}
+			
+			//Note we're not adding any constraints yet because doing that involves FixType calls
+			//also, the T : S constraint involves 2 MVars, so unless we add all the MVars first, FixType calls could never be resolved.
 
 			var genList = new List<GenericParameter>();
 			foreach (var yourTypeParam in yourMethod.GenericParameters) {
@@ -166,22 +177,18 @@ namespace Patchwork
 				};
 				genList.Add(targetTypeParam);
 			}
-			//clearing params can change the method signature, which can make FixType calls fail 
-			//so we try to do things like that as atomically as possible.
 
 			targetMethod.GenericParameters.AddRange(genList);
-			//the T : S constraint means that we have to first declare all type parameters, and only then
-			//fix their constraints... otherwise FixType will find the method we just modified above 
-			//but may not find the type parameter.
-
-
-
+			//NOW we're adding constraints, when the signature is stable and when all MVars have been declared.
 			for (int i = 0; i < targetMethod.GenericParameters.Count; i++) {
 				foreach (var constraint in yourMethod.GenericParameters[i].Constraints) {
 					targetMethod.GenericParameters[i].Constraints.Add(FixTypeReference(constraint));
 				}
 			}
 
+			// note that we don't add the parameters to the method directly, at least not at first.
+			//this is because we're making FixType calls, and again, they can end up looking up targetMethod
+			//changing the signature will just end up with FixType not finding it.
 			var parList = new List<ParameterDefinition>();
 			foreach (var yourParam in yourMethod.Parameters) {
 				var targetParamType = FixTypeReference(yourParam.ParameterType);
@@ -190,15 +197,15 @@ namespace Patchwork
 				};
 				parList.Add(targetParam);
 			}
-			//AFTER fixing the type params because it might reference one
+			//we reset the parameters after we're done with that in as near an atomic operation as possible, and without any FixType calls.
 			targetMethod.Parameters.Clear();
 			targetMethod.Parameters.AddRange(parList);
+
+			//we also fix this guy:
 			targetMethod.ReturnType = FixTypeReference(yourMethod.ReturnType);
 
 			//note that YOU DO NOT do targetMethod.Parameters.AddRangE(yourMethod.Parameters)
-			//ParameterDefinitions are mutable! 
-			//What's worse, adding a parameter to a member modifies that parameter!
-
+			//ParameterDefinitions are mutable!  and doing this can mutate them...
 			return NewMemberStatus.Continue;
 		}
 
