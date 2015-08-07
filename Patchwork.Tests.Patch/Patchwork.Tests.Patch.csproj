@@ -5,16 +5,16 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{9A1E9961-28B5-40B1-A04F-D46756746C88}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Patchwork.Tests.Patch</RootNamespace>
     <AssemblyName>Patchwork.Tests.Patch</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,7 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -38,24 +38,43 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Serilog">
+      <HintPath>..\..\Patchwork\packages\Serilog.1.5.9\lib\net45\Serilog.dll</HintPath>
+    </Reference>
+    <Reference Include="Serilog.FullNetFx">
+      <HintPath>..\..\Patchwork\packages\Serilog.1.5.9\lib\net45\Serilog.FullNetFx.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <Reference Include="System.IO" />
+    <Reference Include="System.Runtime" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Asserts.cs" />
+    <Compile Include="PatchCode.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Patchwork.Attributes\Patchwork.Attributes.csproj">
+    <ProjectReference Include="..\..\Patchwork\cecil-0.9.6\Mono.Cecil.csproj">
+      <Project>{d68133bd-1e63-496e-9ede-4fbdbf77b486}</Project>
+      <Name>Mono.Cecil</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Patchwork\cecil-0.9.6\rocks\Mono.Cecil.Rocks.csproj">
+      <Project>{fbc6dd59-d09d-499c-b03c-99c1c78ff2ac}</Project>
+      <Name>Mono.Cecil.Rocks</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Patchwork\Patchwork.Attributes\Patchwork.Attributes.csproj">
       <Project>{47dcbaf7-f2e6-486c-8887-fa41c271b74e}</Project>
       <Name>Patchwork.Attributes</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Patchwork\Patchwork\Patchwork.csproj">
+      <Project>{565c269a-f5eb-4bbe-86e5-75c8d4e1cdf7}</Project>
+      <Name>Patchwork</Name>
     </ProjectReference>
     <ProjectReference Include="..\Patchwork.Tests.Target\Patchwork.Tests.Target.csproj">
       <Project>{551DCD0A-63F9-49BB-943C-EE470FA38AFD}</Project>

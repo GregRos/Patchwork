@@ -11,9 +11,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil.Rocks", "cecil-0
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork", "Patchwork\Patchwork.csproj", "{565C269A-F5EB-4BBE-86E5-75C8D4E1CDF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Tests.Patch", "..\IEMod.pw\Patchwork.Tests.Patch\Patchwork.Tests.Patch.csproj", "{9A1E9961-28B5-40B1-A04F-D46756746C88}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Tests.Patch", "Patchwork.Tests.Patch\Patchwork.Tests.Patch.csproj", "{9A1E9961-28B5-40B1-A04F-D46756746C88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Tests.Target", "..\IEMod.pw\Patchwork.Tests.Target\Patchwork.Tests.Target.csproj", "{551DCD0A-63F9-49BB-943C-EE470FA38AFD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Tests.Target", "Patchwork.Tests.Target\Patchwork.Tests.Target.csproj", "{551DCD0A-63F9-49BB-943C-EE470FA38AFD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -418,7 +418,6 @@ Global
 		{9A1E9961-28B5-40B1-A04F-D46756746C88}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{9A1E9961-28B5-40B1-A04F-D46756746C88}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
 		{9A1E9961-28B5-40B1-A04F-D46756746C88}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{9A1E9961-28B5-40B1-A04F-D46756746C88}.Debug|x86.Build.0 = Debug|Any CPU
 		{9A1E9961-28B5-40B1-A04F-D46756746C88}.FIRSTRUN|Any CPU.ActiveCfg = Release|Any CPU
 		{9A1E9961-28B5-40B1-A04F-D46756746C88}.FIRSTRUN|Any CPU.Build.0 = Release|Any CPU
 		{9A1E9961-28B5-40B1-A04F-D46756746C88}.FIRSTRUN|Mixed Platforms.ActiveCfg = Release|Any CPU
@@ -504,7 +503,6 @@ Global
 		{551DCD0A-63F9-49BB-943C-EE470FA38AFD}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{551DCD0A-63F9-49BB-943C-EE470FA38AFD}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
 		{551DCD0A-63F9-49BB-943C-EE470FA38AFD}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{551DCD0A-63F9-49BB-943C-EE470FA38AFD}.Debug|x86.Build.0 = Debug|Any CPU
 		{551DCD0A-63F9-49BB-943C-EE470FA38AFD}.FIRSTRUN|Any CPU.ActiveCfg = Release|Any CPU
 		{551DCD0A-63F9-49BB-943C-EE470FA38AFD}.FIRSTRUN|Any CPU.Build.0 = Release|Any CPU
 		{551DCD0A-63F9-49BB-943C-EE470FA38AFD}.FIRSTRUN|Mixed Platforms.ActiveCfg = Release|Any CPU
