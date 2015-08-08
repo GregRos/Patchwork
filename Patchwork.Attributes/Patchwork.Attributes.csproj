@@ -42,8 +42,12 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\PatchworkVersion.cs">
+      <Link>Properties\PatchworkVersion.cs</Link>
+    </Compile>
     <Compile Include="PatchingAttributes\DisablePatchingAttribute.cs" />
     <Compile Include="PatchingAttributes\DuplicatesBodyAttribute.cs" />
+    <Compile Include="PatchingAttributes\EncodeAsLiteralAttribute.cs" />
     <Compile Include="PatchingAttributes\ImportCustomAttributesAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberActionAttribute.cs" />
     <Compile Include="PatchingAttributes\ModificationScope.cs" />
@@ -58,6 +62,9 @@
     <Compile Include="PatchingAttributes\RemoveThisMemberAttribute.cs" />
     <Compile Include="PatchingAttributes\ReplaceTypeAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Shared\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

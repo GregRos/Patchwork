@@ -64,6 +64,9 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\PatchworkVersion.cs">
+      <Link>Properties\PatchworkVersion.cs</Link>
+    </Compile>
     <Compile Include="AssemblyPatcher\CreateNew.cs" />
     <Compile Include="AssemblyPatcher\DebugFlags.cs" />
     <Compile Include="AssemblyPatcher\FixReferences.cs" />

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using Mono.Cecil;
 using Patchwork.Attributes;
+using Patchwork.Shared;
 using Patchwork.Utility;
 using Serilog;
 
@@ -26,6 +27,8 @@ namespace Patchwork {
 			Log = log ?? Serilog.Log.Logger;
 			Log.Information("Created patcher for assembly: {0:l}", targetAssembly.Name);
 			Filter = x => true;
+			var assemblyLocation = typeof (VersionInfo).Assembly.Location;
+			PatchAssembly(assemblyLocation); //we add the Shared members of the Patchwork.Attributes assembly
 		}
 
 		public AssemblyPatcher(string targetAssemblyPath,

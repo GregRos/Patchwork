@@ -51,21 +51,11 @@ namespace Patchwork.Utility {
 			return mRef == null ? null : mRef.Resolve();
 		}
 
-		private static ConstructorInfo _instructionConstructorInfo;
 
 		public static Instruction CreateInstruction(OpCode opCode, object operand) {
-			//This is a workaround, as Instruction tries to be """"helpful"""" by not allowing you to just instantiate
-			//an instruction with an OpCode and 
-			if (_instructionConstructorInfo == null) {
-				_instructionConstructorInfo = typeof (Instruction).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance,
-					null, new[] {
-						typeof (OpCode), typeof (object)
-					}, null);
-			}
-			var instr = _instructionConstructorInfo.Invoke(new[] {
-				opCode, operand
-			});
-			return (Instruction) instr;
+			//Note that normally, this constructor is internal for some strange reason. I've modified the source so it's public,
+			//but it no longer matches the original Cecil.
+			return new Instruction(opCode, operand);
 		}
 
 		/// <summary>
