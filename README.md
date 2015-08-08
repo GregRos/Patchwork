@@ -99,7 +99,7 @@ Note that the `Cecil.AssemblyDefinition` of the assembly you're modifying is exp
 In some cases, one of the operations can throw an exception. In that case, that `AssemblyPatcher` instance has been corrupted and shouldn't be used.
 
 ### Example
-A very extensive example of modifying an assembly (and modding a game) is found in the `IEMod.pw` project (link pending), which is a mod for Pillars of Eternity. 
+A very extensive example of modifying an assembly using Patchwork (and modding a game) is found in the [IEMod.pw](https://github.com/GregRos/IEMod.pw) project (link pending), which is a mod for Pillars of Eternity. 
 
 ### Logging 
 `AssemblyPatcher` accepts a `Serilog.ILogger` argument. This is a log (from the open source library [Serilog](https://github.com/serilog/serilog)) to which the patcher will print important information, so you should have it visible while the patching takes place. For example, the log can tell you that patching a member has failed because a duplicate exists.
