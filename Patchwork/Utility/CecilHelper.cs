@@ -52,7 +52,10 @@ namespace Patchwork.Utility {
 		}
 
 		private static ConstructorInfo _instructionConstructorInfo;
+
 		public static Instruction CreateInstruction(OpCode opCode, object operand) {
+			//This is a workaround, as Instruction tries to be """"helpful"""" by not allowing you to just instantiate
+			//an instruction with an OpCode and 
 			if (_instructionConstructorInfo == null) {
 				_instructionConstructorInfo = typeof (Instruction).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance,
 					null, new[] {

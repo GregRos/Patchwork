@@ -21,9 +21,6 @@ namespace Patchwork
 		/// <exception cref="PatchDeclerationException">Thrown if this member collides with another member, and the error cannot be resolved.</exception>
 		private NewMemberStatus CreateNewProperty(TypeDefinition targetType, PropertyDefinition yourProperty,
 			NewMemberAttribute newPropAttr) {
-			if (yourProperty.Name.Contains("GetEnumerator")) {
-				int sadfsg = 5;
-			}
 			if (newPropAttr.IsImplicit) {
 				Log_implicitly_creating_member("property", yourProperty);
 
@@ -264,7 +261,7 @@ namespace Patchwork
 		}
 
 		private void Log_duplicate_member(string kind, MemberReference newMember, MemberReference oldMember) {
-			Log.Error("Conflict between {0:l}s: {1:l}, and {2:l}. This can screw things up, so make sure this member isn't important.", kind, newMember.UserFriendlyName(), oldMember.UserFriendlyName());
+			Log.Error("Conflict between {0:l}s: {1:l}, and {2:l}.", kind, newMember.UserFriendlyName(), oldMember.UserFriendlyName());
 		}
 	}
 }

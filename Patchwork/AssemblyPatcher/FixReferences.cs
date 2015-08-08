@@ -39,7 +39,6 @@ namespace Patchwork
 			object targetOperand;
 			if (yourOperand is MethodReference) {
 				var yourMethodRef = (MethodReference) yourOperand;
-				//yourMethodRef.Name.Equals("OfType").BreakOn();
 				targetOperand = FixMethodReference(yourMethodRef);
 			} else if (yourOperand is TypeReference) {
 				//includes references to type parameters
@@ -140,12 +139,15 @@ namespace Patchwork
 			switch (yourTypeRef.MetadataType) {
 				case MetadataType.Array:
 					//array of the type, e.g. int[]
+					//kind of amusing arrays aren't generic instantiations of Array<T>, but rather
+					//a special form of T itself (though this is implified by the syntax T[]).
 					var yourArrayType = (ArrayType) yourTypeRef;
 					targetInnerTypeRef = FixTypeReference(yourArrayType.ElementType);
 					targetTypeRef = targetInnerTypeRef.MakeArrayType(yourArrayType.Rank);
 					break;
 				case MetadataType.ByReference:
-					//ByRef type, e.g. int&
+					//ByRef type, e.g. int& or in C# "ref int". 
+					//Note that IL allows for variables and fields to have a reference type (C# does not)
 					var yourByRefType = (ByReferenceType) yourTypeRef;
 					targetInnerTypeRef = FixTypeReference(yourByRefType.ElementType);
 					targetTypeRef = targetInnerTypeRef.MakeByReferenceType();
@@ -161,6 +163,8 @@ namespace Patchwork
 					//method's generic type parameter. We find the DeclaringMethod, and find its version in the target assembly.
 					var asGenParam = (GenericParameter) yourTypeRef;
 					//the following is dangeorus because it brings about mutual recursion FixMethod ⇔ FixType... 
+					//the 'false' argument makes sure the recursion doesn't become infinite, as it allows for FixMethod
+					//not to fix all the types in the signature. After all, we just need the generic parameters.
 					var targetDeclaringMethod = FixMethodReference(asGenParam.DeclaringMethod, false); 
 					targetTypeRef = targetDeclaringMethod.GenericParameters.Single(x => x.Name == asGenParam.Name);
 					break;
@@ -171,12 +175,12 @@ namespace Patchwork
 					var targetDeclaringType = FixTypeReference(declaringType);
 					targetTypeRef = targetDeclaringType.GenericParameters[index];
 					break;
-				case MetadataType.Sentinel:  //interop: related to the varargs calling convention
+				case MetadataType.Sentinel:  //interop: related to the varargs calling convention, "__arglist" in C#.
 				case MetadataType.RequiredModifier: //interop: related to marshaling
 				case MetadataType.OptionalModifier: //interop: related to marshaling	
 				case MetadataType.Pinned: //interop: created using the 'fixed' keyword
-				case MetadataType.FunctionPointer: //naked function pointer: haven't seen code using this. interop?
-				case MetadataType.TypedByReference: //no idea
+				case MetadataType.FunctionPointer: //interop: naked function pointer
+				case MetadataType.TypedByReference: //interop: related to the varargs calling convention, __typeref
 				case MetadataType.Pointer: //interop: pointer
 					throw Errors.Feature_not_supported("MetadataType not supported: {0}", yourTypeRef.MetadataType);
 				default:
@@ -208,10 +212,11 @@ namespace Patchwork
 		/// <param name="yourMethodRef">A reference to your method.</param>
 		/// <returns></returns>
 		private MethodReference ManualImportMethod(MethodReference yourMethodRef) {
+			//the following is required due to a workaround. 
 			var newRef = yourMethodRef.IsGenericInstance ? yourMethodRef : yourMethodRef.MakeReference();
 			
 			foreach (var param in newRef.Parameters) {
-				if (param.ParameterType.IsVarOrMVar()) continue;
+				if (param.ParameterType.IsVarOrMVar()) continue; //also workaround, though I'm not sure if we need this anymore.
 				param.ParameterType = FixTypeReference(param.ParameterType);
 			}
 			if (!newRef.ReturnType.IsVarOrMVar()) {
@@ -225,10 +230,10 @@ namespace Patchwork
 		///     Fixes the method reference.
 		/// </summary>
 		/// <param name="yourMethodRef">The method reference.</param>
-		/// <param name="importEverything">This parameter is sort of a hack that lets FixType call FixMethod to fix MVars, without infinite recursion. If set to false, it avoids fixing some types.</param>
+		/// <param name="isFixTypeCalling">This parameter is sort of a hack that lets FixType call FixMethod to fix MVars, without infinite recursion. If set to false, it avoids fixing some types.</param>
 		/// <returns></returns>
 		/// <exception cref="Exception">Method isn't part of a patching type in this assembly...</exception>
-		private MethodReference FixMethodReference(MethodReference yourMethodRef, bool importEverything = true) {
+		private MethodReference FixMethodReference(MethodReference yourMethodRef, bool isFixTypeCalling = true) {
 			//Fixes reference like YourAssembly::PatchingClass::Method to TargetAssembly::PatchedClass::Method
 			if (yourMethodRef == null) {
 				Log_called_to_fix_null("method");
@@ -281,7 +286,7 @@ namespace Patchwork
 				targetMethodRef = newMethodRef;
 			}
 			
-			if (importEverything) {
+			if (isFixTypeCalling) {
 				targetMethodRef = ManualImportMethod(targetMethodRef);
 			} 
 			targetMethodRef = TargetAssembly.MainModule.Import(targetMethodRef); //for good measure...

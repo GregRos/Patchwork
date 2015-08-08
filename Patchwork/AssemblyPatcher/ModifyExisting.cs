@@ -187,14 +187,12 @@ namespace Patchwork
 			ModifyMethod(targetMethod, bodySource, ModificationScope.Body & scope, false);
 		}
 
-
-		
 		/// <summary>
-		///     Patches the target method by overrwiting all of its contents, declerations and attributes with your method.
+		///     Patches the target method by overwriting some aspects with your method, such as: its body and accessibility. Also allows adding custom attributes.
 		/// </summary>
 		/// <param name="targetMethod">The target method.</param>
 		/// <param name="yourMethod">Your method.</param>
-		/// <param name="scope">The extent to which to modify the method. Only Body and Accessibility have any meaning.</param>
+		/// <param name="scope">The extent to which to modify the method..</param>
 		
 		private void ModifyMethod(MethodDefinition targetMethod, MethodDefinition yourMethod, ModificationScope scope, bool isNew) {
 			if ((scope & ModificationScope.Accessibility) != 0) {

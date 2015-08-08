@@ -475,9 +475,6 @@ namespace Patchwork {
 
 		private MemberActionAttribute GetMemberActionAttribute(IMemberDefinition provider,
 			TypeActionAttribute typeAttr) {
-			if (provider is PropertyDefinition) {
-				int sdfg = 5;
-			}
 			var attr = provider.GetCustomAttribute<MemberActionAttribute>();
 			if (attr != null) {
 				if (attr is ModifiesMemberAttribute && !(typeAttr is ModifiesTypeAttribute)) {
