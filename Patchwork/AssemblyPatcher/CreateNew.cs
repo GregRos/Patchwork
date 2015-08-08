@@ -252,16 +252,10 @@ namespace Patchwork
 					throw Errors.Invalid_member("field", yourField, yourField.FullName,
 						"A non-static field cannot be encoded as a literal.");
 				}
-				targetField.Attributes |= FieldAttributes.Literal;
+				targetField.Attributes |= FieldAttributes.Literal | FieldAttributes.HasDefault;
+				targetField.Attributes &= ~FieldAttributes.InitOnly;
 				var loadedField = yourField.LoadField();
-				if (loadedField.FieldType == typeof (string)) {
-					var str = (string) loadedField.GetValue(null);
-					var bytes = new byte[str.Length * sizeof (char)];
-					Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
-					targetField.InitialValue = bytes;
-				} else {
-					targetField.Constant = loadedField.GetValue(null);
-				}				
+				targetField.Constant = loadedField.GetValue(null);			
 			}
 			
 			return NewMemberStatus.Continue;
