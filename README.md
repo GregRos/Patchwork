@@ -1,5 +1,6 @@
 # Patchwork
 **License:** [MIT License](http://opensource.org/licenses/MIT)
+
 **Latest Version:** 0.5
 
 **Patchwork** is a library for integrating your own code into existing .NET assemblies ("patching" them). It allows you to edit, create, or replace things such as types, properties, and methods in a simple, straight-forward, and declarative way, using attributes.
@@ -98,7 +99,7 @@ Note that the `Cecil.AssemblyDefinition` of the assembly you're modifying is exp
 In some cases, one of the operations can throw an exception. In that case, that `AssemblyPatcher` instance has been corrupted and shouldn't be used.
 
 ### Example
-A very extensive example of modifying an assembly (and modding a game) is found in the `IEMod.pw` project (link pending), which is a mod for Pillars of Eternity. 
+A very extensive example of modifying an assembly using Patchwork (and modding a game) is found in the [IEMod.pw](https://github.com/GregRos/IEMod.pw) project (link pending), which is a mod for Pillars of Eternity. 
 
 ### Logging 
 `AssemblyPatcher` accepts a `Serilog.ILogger` argument. This is a log (from the open source library [Serilog](https://github.com/serilog/serilog)) to which the patcher will print important information, so you should have it visible while the patching takes place. For example, the log can tell you that patching a member has failed because a duplicate exists.
