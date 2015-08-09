@@ -27,7 +27,8 @@ namespace Patchwork {
 			Log = log ?? Serilog.Log.Logger;
 			Log.Information("Created patcher for assembly: {0:l}", targetAssembly.Name);
 			Filter = x => true;
-			var assemblyLocation = typeof (VersionInfo).Assembly.Location;
+			var assemblyLocation = typeof (PwVersion).Assembly.Location;
+			Log.Information("Patching the assembly using Patchwork.Attributes to embed some common information.");
 			PatchAssembly(assemblyLocation); //we add the Shared members of the Patchwork.Attributes assembly
 		}
 
@@ -98,6 +99,10 @@ namespace Patchwork {
 		public void PatchAssembly(string path) {
 			PatchAssembly(
 				AssemblyDefinition.ReadAssembly(path, new ReaderParameters()));
+		}
+
+		private void LogFailedToRemove(string memberType, MemberReference memberRef) {
+			Log.Warning("Tried to remove a {type:l} for {fullName:l}, but couldn't find it. This can be expected if you're both removing and adding the member at the same time.", memberType, memberRef.UserFriendlyName());
 		}
 
 		/// <summary>
@@ -295,13 +300,9 @@ namespace Patchwork {
 				//remove all the methods
 				Log.Header("Removing methods");
 				foreach (var actionParams in methodActions[typeof (RemoveThisMemberAttribute)]) {
-					var result =
-						actionParams.targetType.Methods.RemoveWhere(
-							method => method.Name == actionParams.yourMethod.Name);
+					var result = actionParams.targetType.GetMethodsLike(actionParams.yourMethod).ToList().Any(x => actionParams.targetType.Methods.Remove(x));
 					if (!result) {
-						throw Errors.Missing_member("method",
-							actionParams.yourMethod,
-							actionParams.yourMethod.FullName);
+						LogFailedToRemove("method", actionParams.yourMethod);
 					}
 				}
 
@@ -317,6 +318,8 @@ namespace Patchwork {
 						methodActions.Remove(actionParams);
 					}
 				}
+
+
 
 				//++ 4. Adding custom attributes to module/assembly.
 				if (yourAssembly.HasCustomAttribute<ImportCustomAttributesAttribute>()) {
@@ -349,7 +352,7 @@ namespace Patchwork {
 					var removed =
 						fieldAction.targetType.Fields.RemoveWhere(x => x.Name == fieldAction.yourField.Name);
 					if (!removed) {
-						throw Errors.Missing_member("field", fieldAction.yourField, fieldAction.yourField.Name);
+						LogFailedToRemove("field", fieldAction.yourField);
 					}
 				}
 
@@ -381,7 +384,7 @@ namespace Patchwork {
 					var removed =
 						propAction.targetType.Properties.RemoveWhere(x => x.Name == propAction.yourProp.Name);
 					if (!removed) {
-						throw Errors.Missing_member("property", propAction.yourProp, propAction.yourProp.Name);
+						LogFailedToRemove("field", propAction.yourProp);
 					}
 				}
 

@@ -213,12 +213,13 @@ In this section I'll list the limitations of the library, in terms of the code t
 ### Assemblies
 1. Referencing external assemblies that aren't referenced by the target assembly may or may not work. Things in the GAC are usually safe though.
 2. Multi-module assemblies won't work properly (either as patches or patch targets). Note that few IDEs (if any) can naturally produce such assemblies, though they can be the result of tools such as ILMerge.
-3. Inter-dependencies between multiple patch assemblies probably won't work.
+3. Inter-dependencies between multiple patch assemblies will most likely work, but they haven't been sufficiently tested.
 
 ### Members
 1. The library is completely blind to events at this stage.
 2. You can't add new constructors or finalizers to existing types.
 3. Existing declarations can only be modified in limited ways. For example, you can't un-seal a sealed class, change type parameters and their constraints, etc. New members can still be sealed or unsealed, etc, as you prefer.
+4. You can't add new members with the same name as existing members. This can sometimes be an issue for compiler-generated members that are implicitly created, the names of which are generated automatically and cannot be changed. 
 
 ### Language Features
 1. `unsafe` context features, like pointers and pinned variables, probably won't work.

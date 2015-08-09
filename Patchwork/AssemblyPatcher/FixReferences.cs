@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using Patchwork.Attributes;
 using Patchwork.Utility;
 
 namespace Patchwork
@@ -30,7 +31,7 @@ namespace Patchwork
 		/// </summary>
 		/// <param name="targetMethod">The target method.</param>
 		/// <param name="yourInstruction">Your instruction.</param>
-		/// <returns></returns>
+		/// <returns>The return type is a sequence because instructions can sometimes be fixed to multiple instructions.</returns>
 		private Instruction FixCilInstruction(MethodDefinition targetMethod, Instruction yourInstruction) {
 			
 			var yourOperand = yourInstruction.Operand;
@@ -68,10 +69,6 @@ namespace Patchwork
 			var targetInstruction = CecilHelper.CreateInstruction(yourInstruction.OpCode, targetOperand);
 			targetInstruction.OpCode = yourInstruction.OpCode;
 			targetInstruction.Operand = targetOperand;
-			targetInstruction.Offset = yourInstruction.Offset;
-			targetInstruction.SequencePoint = yourInstruction.SequencePoint;
-			ILProcessor s;
-			
 			
 			//this is supposed to return targetInstruction, but it causes a bugg that I don't understnad (an InvalidProgramException... )
 			//so far now I'm going to keep it like this...

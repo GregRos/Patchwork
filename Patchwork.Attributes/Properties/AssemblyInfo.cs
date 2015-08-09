@@ -19,12 +19,7 @@ namespace Patchwork.Shared {
 	[EditorBrowsable(EditorBrowsableState.Advanced)]
 	
 	[NewType(true)] //although this is an explicit member, we want to make it behave like an explicit one.
-	public static class VersionInfo {
-
-		[EncodeAsLiteral]
-		public const string Here = "sadfasga";
-
-		[EncodeAsLiteral]
-		public static readonly string Version = Assembly.GetCallingAssembly().GetName().Version.ToString();
+	public static class PwVersion {
+		public const string Version = "0.5.0.0";
 	}
 }

@@ -4,12 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Patchwork.Attributes;
 using Patchwork.Utility;
 
 namespace Patchwork
 {
+	unsafe struct Example {
+		public fixed char str [20];
+	}
 	public partial class AssemblyPatcher
 	{
 		/// <summary>
@@ -247,17 +251,6 @@ namespace Patchwork
 					Constant = yourField.Constant
 				};
 			targetDeclaringType.Fields.Add(targetField);
-			if (yourField.HasCustomAttribute<EncodeAsLiteralAttribute>()) {
-				if (!yourField.IsStatic) {
-					throw Errors.Invalid_member("field", yourField, yourField.FullName,
-						"A non-static field cannot be encoded as a literal.");
-				}
-				targetField.Attributes |= FieldAttributes.Literal | FieldAttributes.HasDefault;
-				targetField.Attributes &= ~FieldAttributes.InitOnly;
-				var loadedField = yourField.LoadField();
-				targetField.Constant = loadedField.GetValue(null);			
-			}
-			
 			return NewMemberStatus.Continue;
 		}
 

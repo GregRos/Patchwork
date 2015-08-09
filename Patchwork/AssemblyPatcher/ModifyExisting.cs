@@ -246,8 +246,8 @@ namespace Patchwork
 
 				targetMethod.Body.Instructions.Clear();
 				foreach (var yourInstruction in yourMethod.Body.Instructions) {
-					var targetInstruction = FixCilInstruction(targetMethod, yourInstruction);
-					targetMethod.Body.Instructions.Add(targetInstruction);
+					var targetInstructions = FixCilInstruction(targetMethod, yourInstruction);
+					targetMethod.Body.Instructions.Add(targetInstructions);
 				}
 
 			} else {

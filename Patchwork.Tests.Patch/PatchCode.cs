@@ -183,6 +183,7 @@ namespace Patchwork.Tests.Patch
 			newObject.ExistingGenericInstanceMethod<int, long>(100).AssertEqual(0);
 			o.ExistingGenericInstanceMethod<Type, int>(typeof(int)).AssertEqual(0);
 			asModified.NewGenericInstanceMethod<int, long>(0).AssertEqual(0);
+			
 			return "Success";
 		}
 	}

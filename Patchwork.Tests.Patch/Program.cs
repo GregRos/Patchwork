@@ -57,7 +57,7 @@ namespace Patchwork.Tests.Patch
 			var module = loaded.GetModules()[0];
 			var types = module.FindTypes((typ, o) => typ.Name.Contains("EntryPoint"), null);
 			var foundType = types.Single();
-			var method = foundType.GetMethod("OtherTests");
+			var method = foundType.GetMethod("StandardTests");
 			try
 			{
 				var ret = method.Invoke(null, null);

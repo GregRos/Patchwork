@@ -35,6 +35,10 @@ namespace Patchwork.Utility {
 			return selector;
 		}
 
+		public static bool EqualsAny<T>(this T what, params T[] args) {
+			return args.Any(arg => what.Equals(arg));
+		}
+
 		public static void AddRange<T>(this ICollection<T> col, IEnumerable<T> seq) {
 			seq.ForEach(col.Add);
 		}
