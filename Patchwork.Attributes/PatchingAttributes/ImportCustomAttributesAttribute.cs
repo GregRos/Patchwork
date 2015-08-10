@@ -9,8 +9,18 @@ namespace Patchwork.Attributes {
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Module | AttributeTargets.Assembly)]
 	public class ImportCustomAttributesAttribute : PatchingAttribute {
-		public ImportCustomAttributesAttribute() {
-			
+		public IEnumerable<object> AttributeTypes {
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="attributeTypes">The types of the attributes to import.</param>
+		public ImportCustomAttributesAttribute(params object[] attributeTypes) {
+			AttributeTypes = attributeTypes;
+
 		}
 	}
 }

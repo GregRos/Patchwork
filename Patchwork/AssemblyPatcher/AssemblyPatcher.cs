@@ -98,7 +98,7 @@ namespace Patchwork {
 
 		public void PatchAssembly(string path) {
 			PatchAssembly(
-				AssemblyDefinition.ReadAssembly(path, new ReaderParameters()));
+				AssemblyDefinition.ReadAssembly(path, new ReaderParameters() {ReadSymbols = true}));
 		}
 
 		private void LogFailedToRemove(string memberType, MemberReference memberRef) {
@@ -322,12 +322,10 @@ namespace Patchwork {
 
 
 				//++ 4. Adding custom attributes to module/assembly.
-				if (yourAssembly.HasCustomAttribute<ImportCustomAttributesAttribute>()) {
-					CopyCustomAttributes(TargetAssembly, yourAssembly);	
-				}
-				if (yourAssembly.MainModule.HasCustomAttribute<ImportCustomAttributesAttribute>()) {
-					CopyCustomAttributes(TargetAssembly.MainModule, yourAssembly.MainModule);
-				}
+				var assemblyImportAttribute = yourAssembly.GetCustomAttribute<ImportCustomAttributesAttribute>();
+				var moduleImportAttribute = yourAssembly.MainModule.GetCustomAttribute<ImportCustomAttributesAttribute>();
+				CopyCustomAttributesByImportAttribute(TargetAssembly, yourAssembly, assemblyImportAttribute);
+				CopyCustomAttributesByImportAttribute(TargetAssembly.MainModule, yourAssembly.MainModule, moduleImportAttribute);
 				
 				
 
@@ -426,11 +424,13 @@ namespace Patchwork {
 		}
 
 		public void WriteTo(string path) {
+			
 			Log.Information("Writing assembly {@OrigName:l} [{@OrigPath:l}] to location {@DestPath:l}",
 				TargetAssembly.Name.Name,
 				PathHelper.GetUserFriendlyPath(TargetAssembly.MainModule.FullyQualifiedName),
 				PathHelper.GetUserFriendlyPath(path));
-			TargetAssembly.Write(path);
+			TargetAssembly.Write(path, new WriterParameters() {
+			});
 			Log.Information("Write completed successfuly.");
 		}
 

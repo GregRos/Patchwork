@@ -54,15 +54,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Serilog">
-      <HintPath>..\..\packages\Serilog.1.5.9\lib\net45\Serilog.dll</HintPath>
+    <Reference Include="Serilog, Version=0.6.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Serilog.0.6.1\lib\net45\Serilog.dll</HintPath>
     </Reference>
-    <Reference Include="Serilog.FullNetFx">
-      <HintPath>..\..\packages\Serilog.1.5.9\lib\net45\Serilog.FullNetFx.dll</HintPath>
+    <Reference Include="Serilog.FullNetFx, Version=0.6.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Serilog.0.6.1\lib\net45\Serilog.FullNetFx.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Runtime" />
-    <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\PatchworkVersion.cs">
@@ -85,6 +86,7 @@
     <Compile Include="AssemblyPatcher\AssemblyPatcher.cs" />
     <Compile Include="Utility\Asserts.cs" />
     <Compile Include="Utility\CommonBindingFlags.cs" />
+    <Compile Include="Utility\ExprHelper.cs" />
     <Compile Include="Utility\LogHelper.cs" />
     <Compile Include="Utility\PathHelper.cs" />
     <Compile Include="Utility\CecilHelper.cs" />
@@ -101,6 +103,14 @@
     <ProjectReference Include="..\cecil-0.9.6\rocks\Mono.Cecil.Rocks.csproj">
       <Project>{fbc6dd59-d09d-499c-b03c-99c1c78ff2ac}</Project>
       <Name>Mono.Cecil.Rocks</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil-0.9.6\symbols\mdb\Mono.Cecil.Mdb.csproj">
+      <Project>{8559dd7f-a16f-46d0-a05a-9139faeba8fd}</Project>
+      <Name>Mono.Cecil.Mdb</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil-0.9.6\symbols\pdb\Mono.Cecil.Pdb.csproj">
+      <Project>{63e6915c-7ea4-4d76-ab28-0d7191eea626}</Project>
+      <Name>Mono.Cecil.Pdb</Name>
     </ProjectReference>
     <ProjectReference Include="..\Patchwork.Attributes\Patchwork.Attributes.csproj">
       <Project>{47dcbaf7-f2e6-486c-8887-fa41c271b74e}</Project>

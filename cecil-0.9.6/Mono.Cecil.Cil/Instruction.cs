@@ -60,7 +60,7 @@ namespace Mono.Cecil.Cil {
 			this.opcode = opCode;
 		}
 
-		public Instruction (OpCode opcode, object operand)
+		internal Instruction (OpCode opcode, object operand)
 		{
 			this.opcode = opcode;
 			this.operand = operand;

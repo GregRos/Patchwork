@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Patchwork.Collections;
 
 namespace Patchwork.Utility {
@@ -18,6 +19,11 @@ namespace Patchwork.Utility {
 			foreach (var item in seq) { act(item); }
 		}
 
+		public static Func<int> Indexer() {
+			var i = 0;
+			return () => i++;
+		} 
+
 		public static int IndexOf<T>(this IEnumerable<T> seq, Func<T, bool> pred) {
 			int i = 0;
 			foreach (var x in seq) {
@@ -28,6 +34,8 @@ namespace Patchwork.Utility {
 			}
 			return -1;
 		}
+		
+		 
 
 		
 
@@ -37,6 +45,10 @@ namespace Patchwork.Utility {
 
 		public static bool EqualsAny<T>(this T what, params T[] args) {
 			return args.Any(arg => what.Equals(arg));
+		}
+
+		public static bool NotEqualsAll<T>(this T what, params T [] args) {
+			return !args.Any(arg => what.Equals(arg));
 		}
 
 		public static void AddRange<T>(this ICollection<T> col, IEnumerable<T> seq) {

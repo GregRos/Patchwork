@@ -4,7 +4,7 @@ namespace Patchwork.Attributes {
 	/// <summary>
 	///     Marks this member as being a modification of a member in the game assembly.
 	/// </summary>
-	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Method | AttributeTargets.Property)]
+	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Constructor)]
 	public class ModifiesMemberAttribute : MemberActionAttribute {
 		/// <summary>
 		///     Initializes a new instance of the <see cref="ModifiesMemberAttribute" /> class.

@@ -49,7 +49,9 @@
     <Compile Include="PatchingAttributes\DuplicatesBodyAttribute.cs" />
     <Compile Include="PatchingAttributes\EncodeAsLiteralAttribute.cs" />
     <Compile Include="PatchingAttributes\ImportCustomAttributesAttribute.cs" />
+    <Compile Include="PatchingAttributes\PatchworkDebugRegisterAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberActionAttribute.cs" />
+    <Compile Include="PatchingAttributes\MemberAliasAttribute.cs" />
     <Compile Include="PatchingAttributes\ModificationScope.cs" />
     <Compile Include="PatchingAttributes\ModifiesAccessibilityAttribute.cs" />
     <Compile Include="PatchingAttributes\ModifiesMemberAttribute.cs" />

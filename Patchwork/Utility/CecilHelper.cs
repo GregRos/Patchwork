@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Mono.Cecil;
@@ -43,19 +44,29 @@ namespace Patchwork.Utility {
 			}
 		}
 
-		public static void MakeOpenAssembly(string source, string target, bool modifyEvents) {
-			
-		}
-
 		public static MethodDefinition MaybeResolve(this MethodReference mRef) {
 			return mRef == null ? null : mRef.Resolve();
 		}
 
+		private static ConstructorInfo _instructionConstructorInfo;
 
 		public static Instruction CreateInstruction(OpCode opCode, object operand) {
-			//Note that normally, this constructor is internal for some strange reason. I've modified the source so it's public,
-			//but it no longer matches the original Cecil.
-			return new Instruction(opCode, operand);
+			//I have to do this because the constructor is internal for some strange reason. Other ways of creating instructions
+			//involve strongly-typed signatures which will require switch statements to get around.
+			//While it's true I could modify the source and make it public, this isn't a good idea.
+			if (_instructionConstructorInfo == null) {
+				_instructionConstructorInfo = typeof (Instruction).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance,
+					null, new[] {
+						typeof (OpCode), typeof (object)
+					}, null);
+				if (_instructionConstructorInfo == null) {
+					throw new MissingMemberException("Could not find the Instruction constructor");
+				}
+			}
+			var instr = _instructionConstructorInfo.Invoke(new[] {
+				opCode, operand
+			});
+			return (Instruction) instr;
 		}
 
 		/// <summary>
@@ -446,6 +457,14 @@ namespace Patchwork.Utility {
 						&& attrProvider.DeclaringType.HasCustomAttribute<CompilerGeneratedAttribute>());
 		}
 
+		public static MethodReference GetMethod<T>(this ModuleDefinition module, Expression<Func<T>> expr) {
+			return module.Import(ExprHelper.GetMethod(expr));
+		}
+
+		public static MethodReference GetMethod(this ModuleDefinition module, Expression<Action> expr) {
+			return module.Import(ExprHelper.GetMethod(expr));
+		}
+
 		/// <summary>
 		///     Returns a user-friendly name for the reference.
 		///     It's not as short as Name, but not as long as FullName.
@@ -666,6 +685,18 @@ namespace Patchwork.Utility {
 			}
 		}
 
+		private static object UnpackArgument(CustomAttributeArgument arg) {
+			if (arg.Value is CustomAttributeArgument) {
+				return UnpackArgument((CustomAttributeArgument) arg.Value);
+			}
+			else if (arg.Value is CustomAttributeArgument[]) {
+				var asArray = (CustomAttributeArgument[]) arg.Value;
+				var unpacked = asArray.Select(UnpackArgument).ToArray();
+				return unpacked;
+			}
+			return arg.Value;
+		}
+
 		
 		/// <summary>
 		///     Constructs an attribute instance from its metadata.
@@ -675,14 +706,7 @@ namespace Patchwork.Utility {
 		/// <returns></returns>
 		private static object TryConstructAttribute(this CustomAttribute customAttrData) {
 			var constructor = (ConstructorInfo) customAttrData.Constructor.Resolve().LoadMethod();
-			var args = customAttrData.ConstructorArguments.Select(
-				arg => {
-					//certain kinds of signatures involve an argument inside an argument... don't know why.
-					if (arg.Value is CustomAttributeArgument) {
-						return ((CustomAttributeArgument) arg.Value).Value;
-					}
-					return arg.Value;
-				}).ToArray();
+			var args = customAttrData.ConstructorArguments.Select(UnpackArgument).ToArray();
 			if (constructor.GetParameters().Any(p => p.ParameterType == typeof (Type))) {
 				//we cannot invoke this constructor.
 				return null;

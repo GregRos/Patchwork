@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Patchwork.Attributes;
 using Patchwork.Utility;
 
@@ -18,19 +18,29 @@ namespace Patchwork
 			return new CustomAttributeArgument(FixTypeReference(yourArgument.Type), yourArgument.Value);
 		}
 
+		private void CopyCustomAttributesByImportAttribute(ICustomAttributeProvider targetMember,
+			ICustomAttributeProvider yourMember, ImportCustomAttributesAttribute importAttribute) {
+			if (importAttribute == null) return;
+			var legalAttributes = importAttribute.AttributeTypes.Cast<TypeReference>().Select(x => x.Name);
+			Func<CustomAttribute, bool> importOnly = attr => legalAttributes.Contains(attr.AttributeType.Name);
+			CopyCustomAttributes(targetMember, yourMember, importOnly);	
+		}
+
 		/// <summary>
 		/// Copies the custom attributes, excluding any attributes from a patching assembly that haven't been declared
 		/// and Patchwork attributes. Note that this can only be used after all types and methods have been declared.
 		/// </summary>
 		/// <param name="targetMember">The target member.</param>
 		/// <param name="yourMember">Your member, the source of the attributes.</param>
-		private void CopyCustomAttributes(ICustomAttributeProvider targetMember, ICustomAttributeProvider yourMember) {
+		private void CopyCustomAttributes(ICustomAttributeProvider targetMember, ICustomAttributeProvider yourMember, Func<CustomAttribute, bool> filter = null) {
+			filter = filter ?? (x => true);
 			var filteredAttrs =
 				from attr in yourMember.CustomAttributes
 				let attrType = attr.AttributeType.Resolve()
 				let attrAssembly = attrType.Module.Assembly
 				where !attrAssembly.Name.Name.Contains("Patchwork")
 				&& (!attrAssembly.IsPatchingAssembly() || attrType.Resolve().HasCustomAttribute<NewTypeAttribute>())
+				&& filter(attr)
 				select attr;
 
 			foreach (var yourAttr in filteredAttrs) {
@@ -177,13 +187,7 @@ namespace Patchwork
 					"You cannot modify the body of an abstract method.");
 			}
 
-			// in general, this hsould be scope & ~ModificationScope.Body,
-			// but I've found that overwriting it twice like this lets you catch errors that would otherwise be hidden...
-			// once there is a more reliable method of checking that the IL is valid, it should be corrected, as it can also be a source for errors.
-			
-			//note that after these calls, yourMethod's Instructions will have mutated somewhat, so it will no longer work if written to disk as-is,
-			//but the mutation doesn't affect using it for patching.
-			ModifyMethod(targetMethod, yourMethod, scope, newMemberAttr != null); 
+			ModifyMethod(targetMethod, yourMethod, scope & ~ModificationScope.Body, newMemberAttr != null); 
 			ModifyMethod(targetMethod, bodySource, ModificationScope.Body & scope, false);
 		}
 
@@ -224,31 +228,12 @@ namespace Patchwork
 			}
 
 			if (yourMethod.Body != null) {
-				targetMethod.Body.ExceptionHandlers.Clear();
 
-				if (yourMethod.Body.HasExceptionHandlers) {
-					foreach (var exhandlr in yourMethod.Body.ExceptionHandlers) {
-						targetMethod.Body.ExceptionHandlers.Add(exhandlr);
-					}
 
-					foreach (var exhandlr in targetMethod.Body.ExceptionHandlers) {
-						if (exhandlr.CatchType != null) {
-							exhandlr.CatchType = FixTypeReference(exhandlr.CatchType);
-						}
-					}
-				}
-				targetMethod.Body.Variables.Clear();
+				TransferMethodBody(targetMethod, yourMethod);
 				
-				foreach (var def in yourMethod.Body.Variables) {
-					def.VariableType = FixTypeReference(def.VariableType);
-					targetMethod.Body.Variables.Add(def);
-				}
 
-				targetMethod.Body.Instructions.Clear();
-				foreach (var yourInstruction in yourMethod.Body.Instructions) {
-					var targetInstructions = FixCilInstruction(targetMethod, yourInstruction);
-					targetMethod.Body.Instructions.Add(targetInstructions);
-				}
+				
 
 			} else {
 				//this happens in abstract methods and some others.

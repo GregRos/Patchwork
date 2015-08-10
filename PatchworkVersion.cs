@@ -4,7 +4,6 @@ using Patchwork.Shared;
 
 [assembly: AssemblyProduct("Patchwork")]
 [assembly: AssemblyCopyright("Copyright Greg Ros ©  2015")]
-
 [assembly: AssemblyVersion(PwVersion.Version)]
 [assembly: AssemblyFileVersion(PwVersion.Version)]
 // The following attributes are used to specify the signing key for the assembly,

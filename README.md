@@ -225,7 +225,6 @@ In this section I'll list the limitations of the library, in terms of the code t
 1. `unsafe` context features, like pointers and pinned variables, probably won't work.
 2. Various exotic and undocumented (in C#) constructs cannot be used, such as `__arglist`.
 
-
 ### Other .NET Languages
 This library is for transforming IL, not transforming source code, so it doesn't actually care what language you write in. As long as you put attributes on things that are recognizable in the IL as properties, methods, and classes, it will work correctly.
 
