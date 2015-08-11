@@ -9,15 +9,14 @@
     <licenseUrl>https://github.com/GregRos/Patchwork/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/GregRos/Patchwork</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-	<summary>A library that allows you to patch compiled assemblies with your own code, using attributes.</summary>
-    <description>Patchwork is a library that allows you to patch other compiled assemblies with your own code. It lets you modify existing methods, create new types, and so on. You write patch assemblies using C# or another language. You never need to mess around with IL yourself. It supports generics, iterators, lambdas, pretty much anything you like. Patching is controlled through attributes.</description>
+	<summary>Patching attributes for Patchwork.</summary>
+    <description>This library contains patching attributes to be used with Patchwork. It is packaged separately for compatibility reasons, so you can reference it from a patch assembly compiled for a low framework version.</description>
     <releaseNotes>First release</releaseNotes>
     <copyright>Copyright 2015</copyright>
     <tags>CIL IL injection post-build cecil assembly patch modification</tags>
 	<dependencies>
 		<dependency id="Serilog" version="1.5.9"/>
 		<dependency id="Mono.Cecil" version="0.9.6.1"/>
-		<dependency id="Patchwork.Attributes" version="$version$"/>
 	</dependencies>
   </metadata>
 </package>
