@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Patchwork.Attributes;
@@ -97,8 +98,9 @@ namespace Patchwork {
 		}
 
 		public void PatchAssembly(string path) {
+			bool readSymbols = File.Exists(Path.ChangeExtension(path, "pdb")) || File.Exists(path + ".mdb");
 			PatchAssembly(
-				AssemblyDefinition.ReadAssembly(path, new ReaderParameters() {ReadSymbols = true}));
+				AssemblyDefinition.ReadAssembly(path, new ReaderParameters() {ReadSymbols = readSymbols}));
 		}
 
 		private void LogFailedToRemove(string memberType, MemberReference memberRef) {
