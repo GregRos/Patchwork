@@ -163,6 +163,21 @@ Disables the patching of this element and all child elements, including nested t
 
 Modifications will not be performed, and new types will not be created.
 
+### MemberAlias(memberName, declaringType)
+This attribute lets you create an alias for another member. When Patchwork encounters a reference to the alias member in your code, it will replace that reference with the aliased member.
+
+It is useful for making explicit calls to things such as base class constructors. In the future, it will allow you to make explicit calls to overridden members.
+
+### PatchworkDebugRegister(memberName, declaringType)
+This is a special attribute for debugging purposes.  You can specify a static string member that will be used as a debug register for the current method. It will be updated with information about which line number is going to be executed next. It lets you find the line number at which an exception was thrown (or something else happened), when the exception does not contain this information. 
+
+For example, the register can contain the following after an exception is thrown and is caught in the same method:
+
+	10 ⇒ 11 ⇒ 45 ⇒ 46 ⇒ 47 ⇒ 251 ⇒ 252
+
+If the catch clause was at line 251, then line 47 is the one that threw the exception.
+
+
 ## Modifying Specific Elements
 
 ### About Overloading
@@ -184,11 +199,25 @@ Pretty much *the only* time you'd want to use `ModifiesMember` attribute on a pr
 If you're creating a new property, you have to put `NewMember` on the property, *AND* on its accessors. 
 
 ### Modifying Constructors
-You can't create constructors yet (unless it's for a new type), but you can modify existing ones. Constructors are just methods called `.ctor`. You just need to duplicate their signature in a normal method, and change the modified member name in the attribute. Every object has a default `.ctor`.
+You can't create constructors for existing types, but you can modify existing ones. Constructors are just methods called `.ctor`. You just need to duplicate their signature in a normal method, and change the modified member name in the attribute. Every object has a default `.ctor`.
 
-Note that instance constructs also contain the type's initializers, so you may need to copy those or the class might not work correctly. Initializers are code that appears before the call to `base::.ctor`.
+Static constructors are called `.cctor`. Not all types have a static constructor. 
 
-Static constructors are called `.cctor`. Not all types have a static constructor. Types without a static constructor can still have initializers, though.
+Note that constructors also contain the type's initializers, so you may need to copy those or the class might not work correctly. 
+
+Constructors normally contain explicit calls to a base class constructor (e.g. `base::.ctor()`). It is best practice to add this call. This can be achieved by using the `MemberAlias` attribute. For example:
+
+	[MemberAlias(".ctor", typeof(object))]
+	private void object_ctor() {
+		//this is an alias for object::.ctor()
+	}
+	
+	[ModifiesMember(".ctor")]
+	public void CtorNew() {
+		object_ctor();
+		IEModOptions.LoadFromPrefs();
+	}
+
 
 ### Nested Types
 
@@ -220,6 +249,8 @@ In this section I'll list the limitations of the library, in terms of the code t
 2. You can't add new constructors or finalizers to existing types.
 3. Existing declarations can only be modified in limited ways. For example, you can't un-seal a sealed class, change type parameters and their constraints, etc. New members can still be sealed or unsealed, etc, as you prefer.
 4. You can't add new members with the same name as existing members. This can sometimes be an issue for compiler-generated members that are implicitly created, the names of which are generated automatically and cannot be changed. 
+5. Calling overridden members from overriding members you modify is tricky. You generally have to inherit from the modified type's base class, and create a method consisting of a call to `base.OverriddenMethod()`, and use the `DuplicatesBody` attribute to copy the body of that method into an instance method on the modifying type. There will be a much more convenient way of doing this soon.
+
 
 ### Language Features
 1. `unsafe` context features, like pointers and pinned variables, probably won't work.
