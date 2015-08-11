@@ -31,46 +31,32 @@ namespace Patchwork
 			switch (toSimplify.Code) {
 				case Code.Br_S:
 					return OpCodes.Br;
-					break;
 				case Code.Brfalse_S:
 					return OpCodes.Brfalse;
-					break;
 				case Code.Brtrue_S:
 					return OpCodes.Brtrue;
-					break;
 				case Code.Beq_S:
 					return OpCodes.Beq;
-					break;
 				case Code.Bge_S:
 					return OpCodes.Bge;
-					break;
 				case Code.Bgt_S:
 					return OpCodes.Bgt;
-					break;
 				case Code.Ble_S:
 					return OpCodes.Ble;
-					break;
 				case Code.Blt_S:
 					return OpCodes.Blt;
-					break;
 				case Code.Bne_Un_S:
 					return OpCodes.Bne_Un;
-					break;
 				case Code.Bge_Un_S:
 					return OpCodes.Bge_Un;
-					break;
 				case Code.Bgt_Un_S:
 					return OpCodes.Bgt_Un;
-					break;
 				case Code.Ble_Un_S:
 					return OpCodes.Ble_Un;
-					break;
 				case Code.Blt_Un_S:
 					return OpCodes.Blt_Un;
-					break;
 				case Code.Leave_S:
 					return OpCodes.Leave;
-					break;
 			}
 			return toSimplify;
 		}

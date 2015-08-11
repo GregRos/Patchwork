@@ -81,8 +81,9 @@
       <Name>Patchwork</Name>
     </ProjectReference>
     <ProjectReference Include="..\Patchwork.Tests.Target\Patchwork.Tests.Target.csproj">
-      <Project>{551DCD0A-63F9-49BB-943C-EE470FA38AFD}</Project>
+      <Project>{551dcd0a-63f9-49bb-943c-ee470fa38afd}</Project>
       <Name>Patchwork.Tests.Target</Name>
+      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

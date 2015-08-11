@@ -19,7 +19,7 @@ namespace Patchwork.Tests.Patch
 			{
 				Console.WriteLine("Passed: {0}", id);
 				return;
-			};
+			}
 			path = Path.GetFileName(path);
 			throw new Exception(string.Format("Failed assertion: {0}, {1}", caller, id));
 		}
@@ -31,13 +31,13 @@ namespace Patchwork.Tests.Patch
 
 		public static void AssertEqual<T>(this T a, T b, [CallerMemberName] string callerName = null, [CallerLineNumber] int lineNumber = -1, [CallerFilePath] string path = null)
 		{
-			Equals(a, b).AssertTrue(callerName, lineNumber, path);
+			EqualityComparer<T>.Default.Equals(a, b).AssertTrue(callerName, lineNumber, path);
 		}
 
 		public static void AssertUnequal<T>(this T a, T b, [CallerMemberName] string callerName = null,
 			[CallerLineNumber] int lineNumber = -1, [CallerFilePath] string path = null)
 		{
-			Equals(a, b).AssertFalse(callerName, lineNumber, path);
+			EqualityComparer<T>.Default.Equals(a, b).AssertFalse(callerName, lineNumber, path);
 		}
 	}
 }

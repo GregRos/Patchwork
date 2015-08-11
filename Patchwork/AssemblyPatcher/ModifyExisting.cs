@@ -228,13 +228,7 @@ namespace Patchwork
 			}
 
 			if (yourMethod.Body != null) {
-
-
 				TransferMethodBody(targetMethod, yourMethod);
-				
-
-				
-
 			} else {
 				//this happens in abstract methods and some others.
 				targetMethod.Body = null;

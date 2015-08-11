@@ -431,8 +431,7 @@ namespace Patchwork {
 				TargetAssembly.Name.Name,
 				PathHelper.GetUserFriendlyPath(TargetAssembly.MainModule.FullyQualifiedName),
 				PathHelper.GetUserFriendlyPath(path));
-			TargetAssembly.Write(path, new WriterParameters() {
-			});
+			TargetAssembly.Write(path);
 			Log.Information("Write completed successfuly.");
 		}
 

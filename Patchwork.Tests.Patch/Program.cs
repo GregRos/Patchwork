@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Patchwork.Tests.Target;
+using Patchwork.Utility;
 using Serilog;
 using Serilog.Events;
 
@@ -27,8 +29,8 @@ namespace Patchwork.Tests.Patch
 
 			var log =
 				new LoggerConfiguration()
-				.MinimumLevel.Information()
-				.WriteTo.ColoredConsole(LogEventLevel.Information)
+				.MinimumLevel.Verbose()
+				.WriteTo.ColoredConsole(LogEventLevel.Debug)
 				.WriteTo.TextWriter(LogFile).CreateLogger();
 
 			//note: if you're going to be looking at this a lot, better set your console font to something snazzy
@@ -38,18 +40,20 @@ namespace Patchwork.Tests.Patch
 
 		private static void PatchTest()
 		{
-			byte[] original;
-			var targetPath = typeof (Patchwork.Tests.Target.EntryPoint).Assembly.Location;
 
-			var patcher = new AssemblyPatcher(targetPath, log: Log);
-			var patchPath = typeof(Patchwork.Tests.Patch.TestClass).Assembly.Location;
-			patcher.DebugOptions = DebugFlags.CreationOverwrites;
-			patcher.PatchAssembly(patchPath);
+			var targetPath = @"..\..\..\Patchwork.Tests.Target\bin\debug\Patchwork.Tests.Target.dll";;
+			
 			var dir = Path.GetDirectoryName(targetPath);
 			var fn = Path.GetFileNameWithoutExtension(targetPath);
 			var ext = Path.GetExtension(targetPath);
 			var newFileName = string.Format("{0}.patched{1}", fn, ext);
 			var newTarget = Path.Combine(dir, newFileName);
+			File.Copy(targetPath, newTarget, true);
+			var patcher = new AssemblyPatcher(newTarget, log: Log);
+			var patchPath = typeof(Patchwork.Tests.Patch.TestClass).Assembly.Location;
+			patcher.DebugOptions = DebugFlags.CreationOverwrites;
+			patcher.PatchAssembly(patchPath);
+
 			patcher.WriteTo(newTarget);
 			Log.Information("Loading assembly into memory...");
 			var loaded = Assembly.LoadFrom(newTarget);
@@ -58,6 +62,7 @@ namespace Patchwork.Tests.Patch
 			var types = module.FindTypes((typ, o) => typ.Name.Contains("EntryPoint"), null);
 			var foundType = types.Single();
 			var method = foundType.GetMethod("StandardTests");
+			Process.Start(@"C:\Users\lifeg_000\AppData\Local\Microsoft\VisualStudio\12.0\Extensions\bicaz2ty.1dn\ILSpy.exe", string.Format("\"{0}\"", newTarget));
 			try
 			{
 				var ret = method.Invoke(null, null);
