@@ -4,5 +4,5 @@
 // Change them to the values specific to your project.
 
 [assembly: AssemblyTitle("Patchwork")]
-[assembly: AssemblyCompany("Greg Ros")]
+
 [assembly: AssemblyDescription("A library for modifying assemblies. This assembly performs the modifications.")]

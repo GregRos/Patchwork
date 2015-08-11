@@ -97,6 +97,10 @@ namespace Patchwork {
 			private set;
 		}
 
+		/// <summary>
+		/// Patches the current assembly with the assembly in the specified path.
+		/// </summary>
+		/// <param name="path"></param>
 		public void PatchAssembly(string path) {
 			bool readSymbols = File.Exists(Path.ChangeExtension(path, "pdb")) || File.Exists(path + ".mdb");
 			PatchAssembly(

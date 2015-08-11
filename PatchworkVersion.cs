@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 using Patchwork.Shared;
-
+[assembly: AssemblyCompany("Greg Ros")]
 [assembly: AssemblyProduct("Patchwork")]
 [assembly: AssemblyCopyright("Copyright Greg Ros ©  2015")]
 [assembly: AssemblyVersion(PwVersion.Version)]

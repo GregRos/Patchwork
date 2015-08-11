@@ -10,7 +10,8 @@ using Patchwork.Attributes;
 
 [assembly: Guid("03f1fae8-17bb-4c76-9665-cad79916a0ad")]
 [assembly: PatchAssembly]
-
+[assembly: AssemblyTitle("Patchwork.Attributes")]
+[assembly: AssemblyDescription("")]
 [assembly: InternalsVisibleTo("Patchwork")]
 namespace Patchwork.Shared {
 	/// <summary>
@@ -20,6 +21,6 @@ namespace Patchwork.Shared {
 	
 	[NewType(true)] //although this is an explicit member, we want to make it behave like an explicit one.
 	public static class PwVersion {
-		public const string Version = "0.5.0.0";
+		public const string Version = "0.5.0.2";
 	}
 }

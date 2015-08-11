@@ -24,6 +24,7 @@
     <Externalconsole>true</Externalconsole>
     <Prefer32Bit>true</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>bin\Debug\Patchwork.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'FIRSTRUN|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -103,6 +104,14 @@
     <ProjectReference Include="..\cecil-0.9.6\rocks\Mono.Cecil.Rocks.csproj">
       <Project>{fbc6dd59-d09d-499c-b03c-99c1c78ff2ac}</Project>
       <Name>Mono.Cecil.Rocks</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil-0.9.6\symbols\mdb\Mono.Cecil.Mdb.csproj">
+      <Project>{8559dd7f-a16f-46d0-a05a-9139faeba8fd}</Project>
+      <Name>Mono.Cecil.Mdb</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil-0.9.6\symbols\pdb\Mono.Cecil.Pdb.csproj">
+      <Project>{63e6915c-7ea4-4d76-ab28-0d7191eea626}</Project>
+      <Name>Mono.Cecil.Pdb</Name>
     </ProjectReference>
     <ProjectReference Include="..\Patchwork.Attributes\Patchwork.Attributes.csproj">
       <Project>{47dcbaf7-f2e6-486c-8887-fa41c271b74e}</Project>
