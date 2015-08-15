@@ -19,6 +19,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Attributes", "..\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork", "..\..\Patchwork\Patchwork\Patchwork.csproj", "{565C269A-F5EB-4BBE-86E5-75C8D4E1CDF7}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{940DBF76-F2FA-4DEC-9A9F-00C7C21A543B}"
+	ProjectSection(SolutionItems) = preProject
+		Patchwork.SharedAttributes.cs = Patchwork.SharedAttributes.cs
+		Patchwork.Attributes\Properties\Patchwork.Version.cs = Patchwork.Attributes\Properties\Patchwork.Version.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

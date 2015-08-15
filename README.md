@@ -246,7 +246,6 @@ In this section I'll list the limitations of the library, in terms of the code t
 3. Inter-dependencies between multiple patch assemblies will most likely work, but they haven't been sufficiently tested.
 
 ### Members
-1. The library doesn't allow you to create or modify events at this stage.
 2. You can't add new constructors or finalizers to existing types.
 3. Existing declarations can only be modified in limited ways. For example, you can't un-seal a sealed class, change type parameters and their constraints, etc. New members can still be sealed or unsealed, etc, as you prefer.
 4. You can't add new members with the same name as existing members. This can sometimes be an issue for compiler-generated members that are implicitly created, the names of which are generated automatically and cannot be changed. However, it doesn't come up very often at all. 
