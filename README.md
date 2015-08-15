@@ -1,7 +1,7 @@
 # Patchwork<a href="https://gitter.im/GregRos/Patchwork"><img style="float: right" src="https://badges.gitter.im/Join%20Chat.svg"/></a>
 **License:** [MIT License](http://opensource.org/licenses/MIT) 
 
-**Latest Version:** 0.55
+**Latest Version:** 0.5.5
 
 **Patchwork** is a library for integrating your own code into existing .NET assemblies ("patching" them). It allows you to edit, create, or replace things such as types, properties, and methods in a simple, straight-forward, and declarative way, using attributes.
 
