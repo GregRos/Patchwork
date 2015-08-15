@@ -1,5 +1,12 @@
-﻿namespace Patchwork.Tests.Target
+﻿using System;
+
+namespace Patchwork.Tests.Target
 {
+
+	public interface IInterfaceWithEvent {
+		event Action<int> IntEvent;
+	}
+
 	public class ExistingTestObject {
 		public ExistingTestObject ExistingInstanceField;
 		public static ExistingTestObject ExistingStaticField;

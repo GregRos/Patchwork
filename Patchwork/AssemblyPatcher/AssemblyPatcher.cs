@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Patchwork.Attributes;
-using Patchwork.Shared;
+using Patchwork.Collections;
 using Patchwork.Utility;
 using Serilog;
 
@@ -28,7 +28,7 @@ namespace Patchwork {
 			Log = log ?? Serilog.Log.Logger;
 			Log.Information("Created patcher for assembly: {0:l}", targetAssembly.Name);
 			Filter = x => true;
-			var assemblyLocation = typeof (PwVersion).Assembly.Location;
+			var assemblyLocation = typeof (PatchworkVersion).Assembly.Location;
 			Log.Information("Patching the assembly using Patchwork.Attributes to embed some common information.");
 			PatchAssembly(assemblyLocation); //we add the Shared members of the Patchwork.Attributes assembly
 		}
@@ -112,6 +112,97 @@ namespace Patchwork {
 		}
 
 		/// <summary>
+		/// This used to be an anonymous type, but later I realized I use it often enough that it needs a name.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		private class MemberAction<T>
+			where T : IMemberDefinition {
+
+			public TypeDefinition targetType {
+				get;
+				set;
+			}
+
+			public TypeDefinition yourType {
+				get;
+				set;
+			}
+
+			public T yourMember {
+				get;
+				set;
+			}
+
+			public MemberActionAttribute memberActionAttr {
+				get;
+				set;
+			}
+		}
+
+		public class TypeAction {
+			public TypeDefinition yourType {
+				get;
+				set;
+			}
+
+			public TypeActionAttribute typeActionAttr {
+				get;
+				set;
+			}
+
+			public TypeDefinition targetType {
+				get;
+				set;
+			}
+		}
+
+		private SimpleTypeLookup<MemberAction<T>> OrganizeMembers<T>(SimpleTypeLookup<TypeAction> organizedTypes,
+			Func<TypeDefinition, IEnumerable<T>> getMembers) where T : IMemberDefinition {
+
+			var memberSeq =
+					from pair in organizedTypes.SelectMany(x => x)
+					from yourMember in getMembers(pair.yourType)
+					where !yourMember.HasCustomAttribute<DisablePatchingAttribute>()
+					let actionAttr = GetMemberActionAttribute(yourMember, pair.typeActionAttr)
+					where actionAttr != null
+					group new MemberAction<T>() {
+						targetType = pair.targetType,
+						yourType = pair.yourType,
+						yourMember = yourMember,
+						memberActionAttr = actionAttr
+					} by actionAttr.GetType();
+
+			return memberSeq.ToSimpleTypeLookup();
+		}
+
+		private void ImplicitlyAddNewMethods<T>(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions, MemberAction<T> rootMemberAction,
+			Func<T, IEnumerable<MethodDefinition>> getMethods) where T : IMemberDefinition {
+			var newMethods = getMethods(rootMemberAction.yourMember);
+			var allMethods = new HashSet<MethodDefinition>(methodActions.SelectMany(x => x).Select(x => x.yourMember));
+			foreach (var method in newMethods) {
+				if (allMethods.Contains(method)) continue;
+				methodActions.GetGroup(typeof (NewMemberAttribute)).Values.Add(new MemberAction<MethodDefinition>() {
+					yourMember = method,
+					memberActionAttr = new NewMemberAttribute(true),
+					targetType = rootMemberAction.targetType,
+					yourType = rootMemberAction.yourType
+				});
+			}
+
+		}
+
+		private void LogTasks<T>(SimpleTypeLookup<T> memberActions, string format) {
+			Log.Information(format + " {@Tasks}",
+				new {
+					ByTask = new {
+						CreateAndModify = memberActions[typeof (NewMemberAttribute)].Count(),
+						Remove = memberActions[typeof (RemoveThisMemberAttribute)].Count(),
+						Modify = memberActions[typeof (ModifiesMemberAttribute)].Count()
+					},
+					Total = memberActions.Count
+				});
+		}
+		/// <summary>
 		///     Patches the current assembly with your patching assembly.
 		/// </summary>
 		/// <param name="yourAssembly">Your patching assembly.</param>
@@ -174,15 +265,7 @@ namespace Patchwork {
 
 				var typesByAction = typesByActionSeq.ToSimpleTypeLookup();
 
-				Log.Information("Type Tasks: {@Tasks}",
-					new {
-						ByTask = new {
-							Replace = typesByAction[typeof (ReplaceTypeAttribute)].Count(),
-							Modify = typesByAction[typeof (ModifiesTypeAttribute)].Count(),
-							Create = typesByAction[typeof (NewTypeAttribute)].Count()
-						},
-						Total = typesByAction.Count
-					});
+				LogTasks(typesByAction, "Type Tasks");
 
 				//++ 1. Creating new types
 				Log.Information("Creating new types");
@@ -201,9 +284,9 @@ namespace Patchwork {
 				var typePairingsSeq =
 					from typeGroup in typesByAction
 					from typeAction in typeGroup
-					group new {
-						typeAction.yourType,
-						typeAction.typeActionAttr,
+					group new TypeAction {
+						yourType = typeAction.yourType, 
+						typeActionAttr = typeAction.typeActionAttr, 
 						targetType = GetPatchedTypeByName(typeAction.yourType)
 					} by typeAction.typeActionAttr.GetType();
 
@@ -223,92 +306,51 @@ namespace Patchwork {
 				}
 				//+ Organizing methods
 				Log.Information("Organizing methods.");
-				var methodActionsSeq =
-					from pair in typePairings.SelectMany(x => x)
-					from yourMethod in pair.yourType.Methods
-					where !yourMethod.HasCustomAttribute<DisablePatchingAttribute>()
-					let actionAttr = GetMemberActionAttribute(yourMethod, pair.typeActionAttr)
-					where actionAttr != null
-					group new {
-						pair.targetType,
-						pair.yourType,
-						yourMethod,
-						methodActionAttr = actionAttr
-					} by actionAttr.GetType();
 
-				var methodActions = methodActionsSeq.ToSimpleTypeLookup();
+				
 
-				Log.Information("Method Tasks: {@Tasks}",
-					new {
-						ByTask = new {
-							CreateAndModify = methodActions[typeof (NewMemberAttribute)].Count(),
-							Remove = methodActions[typeof (RemoveThisMemberAttribute)].Count(),
-							Modify = methodActions[typeof (ModifiesMemberAttribute)].Count()
-						},
-						Total = methodActions.Count
-					});
+				var methodActions = OrganizeMembers(typePairings, x => x.Methods);
+
+				LogTasks(methodActions, "Method Tasks");
 
 				//+ Organizing fields
-				var fieldActionsSeq =
-					//we create a list of all fields, as well as the action to perform with each field
-					from typeAction in typePairings.SelectMany(x => x)
-					from yourField in typeAction.yourType.Fields
-					where !yourField.HasCustomAttribute<DisablePatchingAttribute>()
-					let fieldActionAttr = GetMemberActionAttribute(yourField, typeAction.typeActionAttr)
-					where fieldActionAttr != null
-					group //grouping the fields is mostly for debugging purposes
-						new {
-							typeAction.yourType,
-							typeAction.targetType,
-							fieldActionAttr,
-							yourField
-						} by fieldActionAttr.GetType();
-
-				var fieldActions = fieldActionsSeq.ToSimpleTypeLookup();
-				Log.Information("Field Tasks: {@Tasks}",
-					new {
-						ByTask = new {
-							CreateAndModify = fieldActions[typeof (NewMemberAttribute)].Count(),
-							Remove = fieldActions[typeof (RemoveThisMemberAttribute)].Count(),
-							Modify = fieldActions[typeof (ModifiesMemberAttribute)].Count()
-						},
-						Total = fieldActions.Count
-					});
+				var fieldActions = OrganizeMembers(typePairings, x => x.Fields);
+				LogTasks(fieldActions, "Field Tasks");
 				
 				//+ Organizing properties
-				var propActionsSeq =
-					from pair in typePairings.SelectMany(x => x)
-					from yourProp in pair.yourType.Properties
-					where !yourProp.HasCustomAttribute<DisablePatchingAttribute>()
-					let propActionAttr = GetMemberActionAttribute(yourProp, pair.typeActionAttr)
-					where propActionAttr != null
-					group new {
-						pair.targetType,
-						pair.yourType,
-						yourProp,
-						pair.typeActionAttr,
-						propActionAttr
-					} by propActionAttr.GetType();
 
-				var propActions = propActionsSeq.ToSimpleTypeLookup();
+				var propActions = OrganizeMembers(typePairings, x => x.Properties);
 
-				Log.Information("Property Tasks: {@Tasks}",
-					new {
-						ByTask = new {
-							CreateAndModify = propActions[typeof (NewMemberAttribute)].Count(),
-							Remove = propActions[typeof (RemoveThisMemberAttribute)].Count(),
-							Modify = propActions[typeof (ModifiesTypeAttribute)].Count()
-						},
-						Total = propActions.Count
+				LogTasks(propActions, "Property Tasks");
+				var eventActions = OrganizeMembers(typePairings, x => x.Events);
+
+				LogTasks(eventActions, "Event Tasks");
+				foreach (var eventAction in eventActions[typeof(NewMemberAttribute)]) {
+					ImplicitlyAddNewMethods(methodActions, eventAction, vent => {
+						return new[] {
+							vent.AddMethod,
+							vent.RemoveMethod,
+							vent.InvokeMethod,
+						}.Concat(vent.OtherMethods).Where(method => method != null);
 					});
+				}
+
+				foreach (var propAction in propActions[typeof (NewMemberAttribute)]) {
+					ImplicitlyAddNewMethods(methodActions, propAction, prop => {
+						return new[] {
+							prop.GetMethod,
+							prop.SetMethod,
+						}.Concat(prop.OtherMethods).Where(method => method != null);
+					});
+				}
 
 				//++ 2. Removing methods
 				//remove all the methods
 				Log.Header("Removing methods");
 				foreach (var actionParams in methodActions[typeof (RemoveThisMemberAttribute)]) {
-					var result = actionParams.targetType.GetMethodsLike(actionParams.yourMethod).ToList().Any(x => actionParams.targetType.Methods.Remove(x));
+					var result = actionParams.targetType.GetMethodsLike(actionParams.yourMember).ToList().Any(x => actionParams.targetType.Methods.Remove(x));
 					if (!result) {
-						LogFailedToRemove("method", actionParams.yourMethod);
+						LogFailedToRemove("method", actionParams.yourMember);
 					}
 				}
 
@@ -317,24 +359,19 @@ namespace Patchwork {
 				//create all the new methods
 				foreach (var actionParams in methodActions[typeof (NewMemberAttribute)]) {
 					var status = CreateNewMethod(actionParams.targetType,
-						actionParams.yourMethod,
-						(NewMemberAttribute) actionParams.methodActionAttr);
+						actionParams.yourMember,
+						(NewMemberAttribute) actionParams.memberActionAttr);
 					if (status == NewMemberStatus.InvalidItem) {
 						Log_failed_to_create();
 						methodActions.Remove(actionParams);
 					}
 				}
-
-
-
 				//++ 4. Adding custom attributes to module/assembly.
 				var assemblyImportAttribute = yourAssembly.GetCustomAttribute<ImportCustomAttributesAttribute>();
 				var moduleImportAttribute = yourAssembly.MainModule.GetCustomAttribute<ImportCustomAttributesAttribute>();
 				CopyCustomAttributesByImportAttribute(TargetAssembly, yourAssembly, assemblyImportAttribute);
 				CopyCustomAttributesByImportAttribute(TargetAssembly.MainModule, yourAssembly.MainModule, moduleImportAttribute);
 				
-				
-
 				//++ 5. Modifying type declerations
 				Log.Information("Updating Type Ceclerations");
 				foreach (var modType in typesByAction[typeof (NewTypeAttribute)]) {
@@ -354,9 +391,9 @@ namespace Patchwork {
 				Log.Header("Removing fields");
 				foreach (var fieldAction in fieldActions[typeof (RemoveThisMemberAttribute)]) {
 					var removed =
-						fieldAction.targetType.Fields.RemoveWhere(x => x.Name == fieldAction.yourField.Name);
+						fieldAction.targetType.Fields.RemoveWhere(x => x.Name == fieldAction.yourMember.Name);
 					if (!removed) {
-						LogFailedToRemove("field", fieldAction.yourField);
+						LogFailedToRemove("field", fieldAction.yourMember);
 					}
 				}
 
@@ -364,8 +401,8 @@ namespace Patchwork {
 				Log.Header("Creating new fields");
 				foreach (var fieldAction in fieldActions[typeof (NewMemberAttribute)]) {
 					var status = CreateNewField(fieldAction.targetType,
-						fieldAction.yourField,
-						(NewMemberAttribute) fieldAction.fieldActionAttr);
+						fieldAction.yourMember,
+						(NewMemberAttribute) fieldAction.memberActionAttr);
 					if (status == NewMemberStatus.InvalidItem) {
 						Log_failed_to_create();
 						fieldActions.Remove(fieldAction);
@@ -377,7 +414,7 @@ namespace Patchwork {
 				Log.Header("Modifying fields");
 				foreach (
 					var fieldAction in fieldActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-					AutoModifyField(fieldAction.targetType, fieldAction.fieldActionAttr, fieldAction.yourField);
+					AutoModifyField(fieldAction.targetType, fieldAction.memberActionAttr, fieldAction.yourMember);
 				}
 
 
@@ -386,9 +423,9 @@ namespace Patchwork {
 				//+ Removing properties
 				foreach (var propAction in propActions[typeof (RemoveThisMemberAttribute)]) {
 					var removed =
-						propAction.targetType.Properties.RemoveWhere(x => x.Name == propAction.yourProp.Name);
+						propAction.targetType.Properties.RemoveWhere(x => x.Name == propAction.yourMember.Name);
 					if (!removed) {
-						LogFailedToRemove("field", propAction.yourProp);
+						LogFailedToRemove("field", propAction.yourMember);
 					}
 				}
 
@@ -396,8 +433,8 @@ namespace Patchwork {
 				//+ Creating properties
 				foreach (var propAction in propActions[typeof (NewMemberAttribute)]) {
 					var status = CreateNewProperty(propAction.targetType,
-						propAction.yourProp,
-						(NewMemberAttribute) propAction.propActionAttr);
+						propAction.yourMember,
+						(NewMemberAttribute) propAction.memberActionAttr);
 					if (status == NewMemberStatus.InvalidItem) {
 						Log_failed_to_create();
 						propActions.Remove(propAction);
@@ -408,14 +445,14 @@ namespace Patchwork {
 				//+ Modifying properties
 				foreach (
 					var propAction in propActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-					AutoModifyProperty(propAction.targetType, propAction.propActionAttr, propAction.yourProp);
+					AutoModifyProperty(propAction.targetType, propAction.memberActionAttr, propAction.yourMember);
 				}
 				//++ 8. Finalizing methods, generating method bodies.
 				Log.Header("Modifying/generating method bodies");
 				foreach (var methodAction in methodActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
 					AutoModifyMethod(methodAction.targetType,
-						methodAction.yourMethod,
-						methodAction.methodActionAttr);
+						methodAction.yourMember,
+						methodAction.memberActionAttr);
 				}
 
 				Log.Information("Patching {@PatchName:l} => {@OrigName:l} completed",

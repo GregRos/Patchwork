@@ -29,6 +29,11 @@ namespace Patchwork.Collections {
 			}
 		}
 
+		public SimpleTypeGroup<T> GetGroup<TKey>() {
+			return GetGroup(typeof (TKey));
+		}
+
+
 		public IEnumerable<T> this[params Type[] types] {
 			get { return IsAny(types); }
 		} 

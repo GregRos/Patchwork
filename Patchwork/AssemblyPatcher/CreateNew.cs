@@ -60,6 +60,34 @@ namespace Patchwork
 			return NewMemberStatus.Continue;
 		}
 
+		private NewMemberStatus CreateNewEvent(TypeDefinition targetType, EventDefinition yourEvent, NewMemberAttribute newEventAttr) {
+			if (newEventAttr.IsImplicit) {
+				Log_implicitly_creating_member("property", yourEvent);
+
+			} else {
+				Log_creating_member("property", yourEvent);
+			}
+			var maybeDuplicate = targetType.GetEvent(yourEvent.Name);
+			if (maybeDuplicate != null) {
+				Log_duplicate_member("property", yourEvent, maybeDuplicate);
+				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
+					Log_overwriting();
+					return NewMemberStatus.Continue;
+				}
+				if (newEventAttr.IsImplicit) {
+					return NewMemberStatus.InvalidItem;
+				}
+				throw Errors.Duplicate_member("property", yourEvent.FullName, maybeDuplicate.FullName);
+			}
+			var targetEventType = FixTypeReference(yourEvent.EventType);
+			var targetEvent = new EventDefinition(yourEvent.Name,
+				yourEvent.Attributes,
+				targetEventType);
+
+			targetType.Events.Add(targetEvent);
+			return NewMemberStatus.Continue;
+		}
+
 		/// <summary>
 		/// Creates a new type in the target assembly, based on yourType.
 		/// </summary>

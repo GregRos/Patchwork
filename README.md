@@ -1,7 +1,7 @@
 # Patchwork<a href="https://gitter.im/GregRos/Patchwork"><img style="float: right" src="https://badges.gitter.im/Join%20Chat.svg"/></a>
 **License:** [MIT License](http://opensource.org/licenses/MIT) 
 
-**Latest Version:** 0.5
+**Latest Version:** 0.55
 
 **Patchwork** is a library for integrating your own code into existing .NET assemblies ("patching" them). It allows you to edit, create, or replace things such as types, properties, and methods in a simple, straight-forward, and declarative way, using attributes.
 
@@ -14,7 +14,7 @@ The library was written with game modding in mind, specifically, for [Pillars of
 The library is mostly documented, including the non-public members. I'd welcome any help you could give in improving it, as there is a lot that could be done.
 
 ## Moddable Games
-Like I said above, the library was written with game modding. In general, you can mod two kinds of games with it:
+Like I said above, the library was written with game modding in mind. In general, you can mod two kinds of games with it: i
 ### .NET/XNA
 Games that run on .NET/XNA. You can mod pretty much anything in this case. However, there aren't many popular XNA titles.
 
@@ -164,10 +164,10 @@ Disables the patching of this element and all child elements, including nested t
 
 Modifications will not be performed, and new types will not be created.
 
-### MemberAlias(memberName, declaringType)
-This attribute lets you create an alias for another member. When Patchwork encounters a reference decomto the alias member in your code, it will replace that reference with the aliased member.
+### MemberAlias(memberName, declaringType, aliasCallMode)
+This attribute lets you create an alias for another member. When Patchwork encounters a reference to the alias member in your code, it will replace that reference with the aliased member.
 
-It is useful for making explicit calls to things such as base class constructors. In the future, it will allow you to make explicit calls to overridden members.
+It is useful for making explicit calls to things such as base class constructors. If `aliasCallMode == AliasCallMode.NonVirtual`, a call to the member is translated to a non-virtual call, bypassing any overrides. This will allow you to inject `base.OverriddenMethod()` sorts of calls into the methods you modify.
 
 ### PatchworkDebugRegister(memberName, declaringType)
 This is a special attribute for debugging purposes.  You can specify a static string member that will be used as a debug register for the current method. It will be updated with information about which line number is going to be executed next. It lets you find the line number at which an exception was thrown (or something else happened), when the exception does not contain this information. 
@@ -249,8 +249,7 @@ In this section I'll list the limitations of the library, in terms of the code t
 1. The library doesn't allow you to create or modify events at this stage.
 2. You can't add new constructors or finalizers to existing types.
 3. Existing declarations can only be modified in limited ways. For example, you can't un-seal a sealed class, change type parameters and their constraints, etc. New members can still be sealed or unsealed, etc, as you prefer.
-4. You can't add new members with the same name as existing members. This can sometimes be an issue for compiler-generated members that are implicitly created, the names of which are generated automatically and cannot be changed. 
-5. Calling overridden members from overriding members you modify is tricky. You generally have to inherit from the modified type's base class, and create a method consisting of a call to `base.OverriddenMethod()`, and use the `DuplicatesBody` attribute to copy the body of that method into an instance method on the modifying type. There will be a much more convenient way of doing this soon.
+4. You can't add new members with the same name as existing members. This can sometimes be an issue for compiler-generated members that are implicitly created, the names of which are generated automatically and cannot be changed. However, it doesn't come up very often at all. 
 3. Field initializers don't work in modifying types, except for const fields. This is unlikely to be fixed anytime soon, as it requires pretty tricky IL injection.
 
 ### Language Features

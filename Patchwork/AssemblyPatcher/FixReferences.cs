@@ -104,9 +104,21 @@ namespace Patchwork
 				//Note that properties or events are pure non-functional metadata, kind of like attributes.
 				//They will never be directly referenced in a CIL instruction, though reflection is a different story of course.
 				object targetOperand;
-
+				OpCode targetOpcode = yourInstruction.OpCode;
 				if (yourOperand is MethodReference) {
 					var yourMethodOperand = (MethodReference) yourOperand;
+					var memberAliasAttr = yourMethodOperand.Resolve().GetCustomAttribute<MemberAliasAttribute>();
+					if (memberAliasAttr != null && targetOpcode.EqualsAny(OpCodes.Call, OpCodes.Callvirt)) {
+						switch (memberAliasAttr.CallMode) {
+							case AliasCallMode.NonVirtual:
+								targetOpcode = OpCodes.Call;
+								break;
+							case AliasCallMode.Virtual:
+								targetOpcode = OpCodes.Callvirt;
+								break;
+						}
+					}
+					//FixMethodReference also resolves the aliased method, so processing MemberAliasAttribute isn't done yet.
 					var targetMethodRef = FixMethodReference(yourMethodOperand);
 					targetOperand = targetMethodRef;
 				} else if (yourOperand is TypeReference) {

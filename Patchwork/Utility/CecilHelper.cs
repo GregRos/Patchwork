@@ -146,7 +146,18 @@ namespace Patchwork.Utility {
 		/// <param name="name">The name.</param>
 		/// <returns></returns>
 		public static FieldDefinition GetField(this TypeDefinition typeDef, string name) {
-			return typeDef.Fields.FirstOrDefault(x => x.Name == name);
+			return typeDef.Fields.SingleOrDefault(x => x.Name == name);
+		}
+
+		/// <summary>
+		/// Returns the event with the specified name, or null.
+		/// </summary>
+		/// <param name="typeDef"></param>
+		/// <param name="name"></param>
+		/// <returns></returns>
+		public static EventDefinition GetEvent(this TypeDefinition typeDef, string name) {
+			var vent = typeDef.Events.SingleOrDefault(e => e.Name == name);
+			return vent;
 		}
 
 		/// <summary>
@@ -154,6 +165,7 @@ namespace Patchwork.Utility {
 		/// </summary>
 		/// <param name="typeDef">The type definition.</param>
 		/// <param name="name">The name.</param>
+		/// <param name="types"></param>
 		/// <returns></returns>
 		public static IEnumerable<PropertyDefinition> GetProperties(this TypeDefinition typeDef, string name, IEnumerable<TypeReference> types) {
 			var typesList = types.ToList();

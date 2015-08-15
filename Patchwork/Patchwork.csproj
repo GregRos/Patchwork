@@ -67,8 +67,8 @@
     <Reference Include="System.Runtime" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\PatchworkVersion.cs">
-      <Link>Properties\PatchworkVersion.cs</Link>
+    <Compile Include="..\Patchwork.SharedAttributes.cs">
+      <Link>Properties\Patchwork.SharedAttributes.cs</Link>
     </Compile>
     <Compile Include="AssemblyPatcher\CreateNew.cs" />
     <Compile Include="AssemblyPatcher\DebugFlags.cs" />

@@ -104,6 +104,45 @@ namespace Patchwork
 			}
 		}
 
+		private void AutoModifyEvent(TypeDefinition targetType, MemberActionAttribute eventActionAttr,
+			EventDefinition yourEvent) {
+			Log_modifying_member("property", yourEvent);
+			var modifiesMemberAttr = eventActionAttr as ModifiesMemberAttribute;
+			var newMemberAttr = eventActionAttr as NewMemberAttribute;
+			string targetEventName;
+			ModificationScope scope;
+
+			if (modifiesMemberAttr != null) {
+				targetEventName = modifiesMemberAttr.MemberName ?? yourEvent.Name;
+				scope = modifiesMemberAttr.Scope;
+			} else if (newMemberAttr != null) {
+				targetEventName = yourEvent.Name;
+				scope = ModificationScope.All;
+			} else {
+				throw Errors.Unknown_action_attribute(eventActionAttr);
+			}
+			var targetEvent = targetType.GetEvent(targetEventName);
+			if (targetEvent == null) {
+				throw Errors.Missing_member_in_attribute("property", yourEvent, targetEventName);
+			}
+			
+			if ((scope & ModificationScope.CustomAttributes) != 0) {
+				CopyCustomAttributes(targetEvent, yourEvent);
+			}
+			if ((scope & ModificationScope.Body) != 0) {
+				targetEvent.AddMethod = yourEvent.AddMethod != null ? FixMethodReference(yourEvent.AddMethod).Resolve() : null;
+				targetEvent.RemoveMethod = yourEvent.RemoveMethod != null ? FixMethodReference(yourEvent.RemoveMethod).Resolve() : null;
+				targetEvent.InvokeMethod = yourEvent.InvokeMethod != null ? FixMethodReference(yourEvent.InvokeMethod).Resolve() : null;
+				targetEvent.OtherMethods.Clear();
+				if (yourEvent.HasOtherMethods) {
+					//I have absolutely NO idea what this is used for
+					foreach (var otherMethod in yourEvent.OtherMethods) {
+						targetEvent.OtherMethods.Add(FixMethodReference(otherMethod).Resolve());
+					}
+				}
+			}
+		}
+
 		private void AutoModifyField(TypeDefinition targetType, MemberActionAttribute fieldActionAttr,
 			FieldDefinition yourField) {
 			Log_modifying_member("field", yourField);

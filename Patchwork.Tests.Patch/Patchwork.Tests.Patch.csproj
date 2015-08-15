@@ -80,6 +80,14 @@
       <Project>{565c269a-f5eb-4bbe-86e5-75c8d4e1cdf7}</Project>
       <Name>Patchwork</Name>
     </ProjectReference>
+    <ProjectReference Include="..\cecil-0.9.6\symbols\mdb\Mono.Cecil.Mdb.csproj">
+      <Project>{8559dd7f-a16f-46d0-a05a-9139faeba8fd}</Project>
+      <Name>Mono.Cecil.Mdb</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil-0.9.6\symbols\pdb\Mono.Cecil.Pdb.csproj">
+      <Project>{63e6915c-7ea4-4d76-ab28-0d7191eea626}</Project>
+      <Name>Mono.Cecil.Pdb</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Patchwork.Tests.Target\Patchwork.Tests.Target.csproj">
       <Project>{551dcd0a-63f9-49bb-943c-ee470fa38afd}</Project>
       <Name>Patchwork.Tests.Target</Name>

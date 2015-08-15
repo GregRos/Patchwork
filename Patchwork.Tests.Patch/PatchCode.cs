@@ -8,6 +8,14 @@ using Patchwork.Tests.Target;
 
 namespace Patchwork.Tests.Patch
 {
+	[NewType]
+	public class EventClass : IInterfaceWithEvent {
+		public event Action<int> IntEvent;
+
+		public void RaiseEvent(int arg) {
+			if (IntEvent != null) { IntEvent(arg); }
+		}
+	}
 
 	[NewType]
 	public class New_NewTestObject : ExistingTestObject
@@ -179,6 +187,11 @@ namespace Patchwork.Tests.Patch
 			New_NewTestObject.StaticField = new New_NewTestObject();
 			New_NewTestObject.StaticField.AssertUnequal(null);
 
+			var eventClass = new EventClass();
+			eventClass.IntEvent += n => {
+				n.AssertEqual(5);
+			};
+			eventClass.RaiseEvent(5);
 			newObject.InstanceMethod2().AssertUnequal(null);
 			newObject.ExistingGenericInstanceMethod<int, long>(100).AssertEqual(0);
 			o.ExistingGenericInstanceMethod<Type, int>(typeof(int)).AssertEqual(0);
