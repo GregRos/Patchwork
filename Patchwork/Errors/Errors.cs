@@ -29,7 +29,7 @@ namespace Patchwork {
 				));
 		}
 
-		public static PatchDeclerationException Missing_member(string kind, MemberReference memberRef, string identifier) {
+		public static PatchDeclerationException Missing_member_in_attribute(string kind, MemberReference memberRef, string identifier) {
 			return new PatchDeclerationException(
 				string.Format(
 				"The attribute on '{1}' refers to '{2}', but that member doesn't exist.", 

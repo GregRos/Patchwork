@@ -90,12 +90,14 @@ namespace Patchwork
 				var debugDeclType = (TypeReference)injectManual.DeclaringType ?? targetMethod.DeclaringType;
 				var debugMember = injectManual.DebugFieldName;
 				debugFieldRef = debugDeclType.Resolve().GetField(debugMember);
+				if (debugFieldRef == null) {
+					throw Errors.Missing_member_in_attribute("field", yourMethod, debugMember);
+				}
 				ilProcesser.Emit(OpCodes.Ldstr, "");
 				ilProcesser.Emit(OpCodes.Stsfld, debugFieldRef);
 			}
 			//branch instructions reference other instructions in the method body as branch targets.
 			//in order to fix them, I will first have to reconstruct the other instructions in the body
-			//and then find the correct instruction by index. Any changes to the IL will require a different way of 
 			for (int i = 0; i < yourMethod.Body.Instructions.Count; i++) {
 				var yourInstruction = yourMethod.Body.Instructions[i];
 				var yourOperand = yourInstruction.Operand;
@@ -329,10 +331,10 @@ namespace Patchwork
 		///     Fixes the method reference.
 		/// </summary>
 		/// <param name="yourMethodRef">The method reference.</param>
-		/// <param name="isFixTypeCalling">This parameter is sort of a hack that lets FixType call FixMethod to fix MVars, without infinite recursion. If set to false, it avoids fixing some types.</param>
+		/// <param name="isntFixTypeCall">This parameter is sort of a hack that lets FixType call FixMethod to fix MVars, without infinite recursion. If set to false, it avoids fixing some types.</param>
 		/// <returns></returns>
 		/// <exception cref="Exception">Method isn't part of a patching type in this assembly...</exception>
-		private MethodReference FixMethodReference(MethodReference yourMethodRef, bool isFixTypeCalling = true) {
+		private MethodReference FixMethodReference(MethodReference yourMethodRef, bool isntFixTypeCall = true) {
 			//Fixes reference like YourAssembly::PatchingClass::Method to TargetAssembly::PatchedClass::Method
 			if (yourMethodRef == null) {
 				Log_called_to_fix_null("method");
@@ -392,7 +394,7 @@ namespace Patchwork
 				targetMethodRef = newMethodRef;
 			}
 			
-			if (isFixTypeCalling) {
+			if (isntFixTypeCall) {
 				targetMethodRef = ManualImportMethod(targetMethodRef);
 			} 
 			targetMethodRef = TargetAssembly.MainModule.Import(targetMethodRef); //for good measure...

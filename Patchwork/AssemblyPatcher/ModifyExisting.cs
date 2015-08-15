@@ -82,7 +82,7 @@ namespace Patchwork
 			var targetProp = targetType.GetProperty(targetPropName,
 				yourProp.Parameters.Select(x => x.ParameterType));
 			if (targetProp == null) {
-				throw Errors.Missing_member("property", yourProp, targetPropName);
+				throw Errors.Missing_member_in_attribute("property", yourProp, targetPropName);
 			}
 			
 			if ((scope & ModificationScope.CustomAttributes) != 0) {
@@ -122,7 +122,7 @@ namespace Patchwork
 			}
 			var targetField = targetType.GetField(targetFieldName);
 			if (targetField == null) {
-				throw Errors.Missing_member("field", yourField, targetFieldName);
+				throw Errors.Missing_member_in_attribute("field", yourField, targetFieldName);
 			}
 			if ((scope & ModificationScope.Accessibility) != 0) {
 				targetField.SetAccessibility(yourField.GetAccessbility());
@@ -156,7 +156,7 @@ namespace Patchwork
 					importSourceType.Resolve().Methods.Where(x => x.Name == insertAttribute.MethodName).ToArray();
 
 				if (importMethod == null) {
-					throw Errors.Missing_member("method", yourMethod, insertAttribute.MethodName);
+					throw Errors.Missing_member_in_attribute("method", yourMethod, insertAttribute.MethodName);
 				}
 
 				bodySource = importMethod;
@@ -180,7 +180,7 @@ namespace Patchwork
 				targetType.GetMethods(targetMethodName, yourMethod.Parameters.Select(x => x.ParameterType)).FirstOrDefault();
 
 			if (targetMethod == null) {
-				throw Errors.Missing_member("method", yourMethod, targetMethodName);
+				throw Errors.Missing_member_in_attribute("method", yourMethod, targetMethodName);
 			}
 			if (modifiesMemberAttr != null && targetMethod.IsAbstract && (scope & ModificationScope.Body) != 0) {
 				throw Errors.Invalid_member("method", yourMethod, targetMethod.FullName,

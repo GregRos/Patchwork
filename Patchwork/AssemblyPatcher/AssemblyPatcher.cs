@@ -210,7 +210,7 @@ namespace Patchwork {
 				var typePairings = typePairingsSeq.ToSimpleTypeLookup(); //cache them
 				foreach (var pairing in typePairings.SelectMany(x => x)) {
 					if (pairing.targetType == null) {
-						throw Errors.Missing_member("type",
+						throw Errors.Missing_member_in_attribute("type",
 							pairing.yourType,
 							pairing.yourType.GetPatchedTypeFullName());
 					}

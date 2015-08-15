@@ -1,5 +1,5 @@
-# Patchwork
-**License:** [MIT License](http://opensource.org/licenses/MIT)
+# Patchwork<a href="https://gitter.im/GregRos/Patchwork"><img style="float: right" src="https://badges.gitter.im/Join%20Chat.svg"/></a>
+**License:** [MIT License](http://opensource.org/licenses/MIT) 
 
 **Latest Version:** 0.5
 
@@ -37,7 +37,8 @@ The `Patchwork.Attributes` assembly is meant to be referenced by your patch asse
 The `Patchwork` assembly is the one that actually does the patching. 
 
 ### Finding what to Patch
-Before you start patching, you need to find what you want to patch first. This involves decompiling the target assembly using tools such as [dotPeek](https://www.jetbrains.com/decompiler/), and [ILSpy](http://ilspy.net/).
+Before you start patching, you need to find what you want to patch first. This involves decompiling the target assembly. See *Recommended Decompilers* below for more information. 
+
 
 Also, take note of the target framework version of the assembly, as for the most reliable results you'd want your patch to be built against the same framework version.
 
@@ -164,7 +165,7 @@ Disables the patching of this element and all child elements, including nested t
 Modifications will not be performed, and new types will not be created.
 
 ### MemberAlias(memberName, declaringType)
-This attribute lets you create an alias for another member. When Patchwork encounters a reference to the alias member in your code, it will replace that reference with the aliased member.
+This attribute lets you create an alias for another member. When Patchwork encounters a reference decomto the alias member in your code, it will replace that reference with the aliased member.
 
 It is useful for making explicit calls to things such as base class constructors. In the future, it will allow you to make explicit calls to overridden members.
 
@@ -245,16 +246,17 @@ In this section I'll list the limitations of the library, in terms of the code t
 3. Inter-dependencies between multiple patch assemblies will most likely work, but they haven't been sufficiently tested.
 
 ### Members
-1. The library is completely blind to events at this stage.
+1. The library doesn't allow you to create or modify events at this stage.
 2. You can't add new constructors or finalizers to existing types.
 3. Existing declarations can only be modified in limited ways. For example, you can't un-seal a sealed class, change type parameters and their constraints, etc. New members can still be sealed or unsealed, etc, as you prefer.
 4. You can't add new members with the same name as existing members. This can sometimes be an issue for compiler-generated members that are implicitly created, the names of which are generated automatically and cannot be changed. 
 5. Calling overridden members from overriding members you modify is tricky. You generally have to inherit from the modified type's base class, and create a method consisting of a call to `base.OverriddenMethod()`, and use the `DuplicatesBody` attribute to copy the body of that method into an instance method on the modifying type. There will be a much more convenient way of doing this soon.
-
+3. Field initializers don't work in modifying types, except for const fields. This is unlikely to be fixed anytime soon, as it requires pretty tricky IL injection.
 
 ### Language Features
 1. `unsafe` context features, like pointers and pinned variables, probably won't work.
 2. Various exotic and undocumented (in C#) constructs cannot be used, such as `__arglist`.
+
 
 ### Other .NET Languages
 This library is for transforming IL, not transforming source code, so it doesn't actually care what language you write in. As long as you put attributes on things that are recognizable in the IL as properties, methods, and classes, it will work correctly.
@@ -262,6 +264,13 @@ This library is for transforming IL, not transforming source code, so it doesn't
 That said, you could experience more problems if you write in languages other than C#, simply because they can be compiled to very different IL, and the different input could reveal flaws I never encountered during testing. 
 
 However, don't take this as me discouraging you from using other languages. 
+
+## Recommended Decompilers
+I've tried a number of decompilers. 
+
+1. **[Telerik JustDecompile](http://www.telerik.com/download/justdecompile)**: Probably the best overall decompiler I've tested. It has great search functions, can produce IL as well as C#, good decompilation ability, and has a great interface. Decompilation isn't perfect, as it can't decompile such things as iterators. Tends to handle errors fairly decently.
+2. [**ILSpy:**](http://ilspy.net/) This one generates the best source code *by far* from the decompilers I've tested. It can decompile iterators, lambdas, you name it. Unfortunately, it has no search function that deserves the name and handles errors very badly, even when set to IL. The interface is also inconvenient.
+3. [**dotPeek**](https://www.jetbrains.com/decompiler): It has a good interface and decent search, with the very helpful ability of finding related (e.g. derived) types, but isn't very good at decompiling compiler-generated code. It can't even handle things like auto-properties.
 
 ## Dependencies
 
