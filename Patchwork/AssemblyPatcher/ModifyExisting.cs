@@ -189,7 +189,7 @@ namespace Patchwork
 					: yourMethod.Module.Import(targetType);
 
 				var importMethod = importSourceType.Resolve().GetMethods(insertAttribute.MethodName,
-					yourMethod.Parameters.Select(x => x.ParameterType)).SingleOrDefault();
+					yourMethod.Parameters.Select(x => x.ParameterType), yourMethod.ReturnType).SingleOrDefault();
 
 				var others =
 					importSourceType.Resolve().Methods.Where(x => x.Name == insertAttribute.MethodName).ToArray();
@@ -216,7 +216,7 @@ namespace Patchwork
 				throw Errors.Unknown_action_attribute(memberAction);
 			}
 			var targetMethod =
-				targetType.GetMethods(targetMethodName, yourMethod.Parameters.Select(x => x.ParameterType)).FirstOrDefault();
+				targetType.GetMethods(targetMethodName, yourMethod.Parameters.Select(x => x.ParameterType), yourMethod.ReturnType).FirstOrDefault();
 
 			if (targetMethod == null) {
 				throw Errors.Missing_member_in_attribute("method", yourMethod, targetMethodName);
@@ -287,9 +287,139 @@ namespace Patchwork
 
 			CopyCustomAttributes(targetType, yourType);
 			for (int i = 0; i < yourType.GenericParameters.Count; i++) {
-				CopyCustomAttributes(targetType.GenericParameters[i], yourType.GenericParameters[i]);
+				var targetParam = targetType.GenericParameters[i];
+				var yourParam = yourType.GenericParameters[i];
+				CopyCustomAttributes(targetParam, yourParam);
+				targetParam.Constraints.Clear();
+				targetParam.Constraints.AddRange(yourParam.Constraints.Select(FixTypeReference));
 			}
+		}
 
+		/// <summary>
+		/// Fixes the cil instruction. Currently mutates yourInstruction rather than returning a new instruction, because creating a new instruction creates a bugg that I don't understand.
+		/// </summary>
+		/// <param name="targetMethod">The target method.</param>
+		/// <param name="yourMethod">Your instructions.</param>
+		/// <returns>The return type is a sequence because instructions can sometimes be fixed to multiple instructions.</returns>
+		private void TransferMethodBody(MethodDefinition targetMethod, MethodDefinition yourMethod) {
+
+			targetMethod.Body.Instructions.Clear();
+			var injectManual = yourMethod.GetCustomAttribute<PatchworkDebugRegisterAttribute>();
+			FieldReference debugFieldRef = null;
+
+			var concat = targetMethod.Module.GetMethod(() => String.Concat("", ""));
+			var instructionEquiv = new Dictionary<Instruction, Instruction>();
+			targetMethod.Body.InitLocals = yourMethod.Body.Variables.Count > 0;
+
+			targetMethod.Body.Variables.Clear();
+			
+			foreach (var yourVar in yourMethod.Body.Variables) {
+				
+				var targetVarType = FixTypeReference(yourVar.VariableType);
+				var targetVar = new VariableDefinition(yourVar.Name, targetVarType);
+				targetMethod.Body.Variables.Add(targetVar);
+			}
+			var ilProcesser = targetMethod.Body.GetILProcessor();
+			if (injectManual != null) {
+				var debugDeclType = (TypeReference)injectManual.DeclaringType ?? targetMethod.DeclaringType;
+				var debugMember = injectManual.DebugFieldName;
+				debugFieldRef = debugDeclType.Resolve().GetField(debugMember);
+				if (debugFieldRef == null) {
+					throw Errors.Missing_member_in_attribute("field", yourMethod, debugMember);
+				}
+				ilProcesser.Emit(OpCodes.Ldstr, "");
+				ilProcesser.Emit(OpCodes.Stsfld, debugFieldRef);
+			}
+			//branch instructions reference other instructions in the method body as branch targets.
+			//in order to fix them, I will first have to reconstruct the other instructions in the body
+			for (int i = 0; i < yourMethod.Body.Instructions.Count; i++) {
+				var yourInstruction = yourMethod.Body.Instructions[i];
+				var yourOperand = yourInstruction.Operand;
+				//Note that properties or events are pure non-functional metadata, kind of like attributes.
+				//They will never be directly referenced in a CIL instruction, though reflection is a different story of course.
+				object targetOperand;
+				OpCode targetOpcode = yourInstruction.OpCode;
+				if (yourOperand is MethodReference) {
+					var yourMethodOperand = (MethodReference) yourOperand;
+					var memberAliasAttr = yourMethodOperand.Resolve().GetCustomAttribute<MemberAliasAttribute>();
+					if (memberAliasAttr != null && targetOpcode.EqualsAny(OpCodes.Call, OpCodes.Callvirt)) {
+						switch (memberAliasAttr.CallMode) {
+							case AliasCallMode.NonVirtual:
+								targetOpcode = OpCodes.Call;
+								break;
+							case AliasCallMode.Virtual:
+								targetOpcode = OpCodes.Callvirt;
+								break;
+						}
+					}
+					//FixMethodReference also resolves the aliased method, so processing MemberAliasAttribute isn't done yet.
+					var targetMethodRef = FixMethodReference(yourMethodOperand);
+					targetOperand = targetMethodRef;
+				} else if (yourOperand is TypeReference) {
+					//includes references to type parameters
+					var yourTypeRef = (TypeReference) yourOperand;
+					targetOperand = FixTypeReference(yourTypeRef);
+				} else if (yourOperand is FieldReference) {
+					var yourFieldRef = (FieldReference) yourOperand;
+					targetOperand = FixFieldReference(yourFieldRef);
+				} else if (yourOperand is ParameterReference) {
+					var yourParamRef = (ParameterReference) yourOperand;
+					targetOperand = FixParamReference(targetMethod, yourParamRef);
+				} else {
+					targetOperand = yourOperand;
+				}
+
+				var targetInstruction = CecilHelper.CreateInstruction(yourInstruction.OpCode, targetOperand);
+				targetInstruction.OpCode = targetOpcode;
+				targetInstruction.Operand = targetOperand;
+				targetInstruction.SequencePoint = yourInstruction.SequencePoint;
+				
+				if (injectManual != null) {
+					targetInstruction.OpCode = SimplifyOpCode(targetInstruction.OpCode);	
+				}
+				var lastInstr = ilProcesser.Body.Instructions.LastOrDefault();
+				if (yourInstruction.SequencePoint != null && injectManual != null && (lastInstr == null ||!lastInstr.OpCode.EqualsAny(OpCodes.Leave, OpCodes.Leave_S, OpCodes.Ret, OpCodes.Rethrow, OpCodes.Throw))) {
+					var str = i == 0 ? "" : " ⇒ ";
+					str += yourInstruction.SequencePoint.StartLine;
+					ilProcesser.Emit(OpCodes.Ldsfld, debugFieldRef);
+					ilProcesser.Emit(OpCodes.Ldstr, str);	
+					ilProcesser.Emit(OpCodes.Call, concat);
+					ilProcesser.Emit(OpCodes.Stsfld, debugFieldRef);
+				}
+				instructionEquiv[yourInstruction] = targetInstruction;
+				ilProcesser.Append(targetInstruction);
+			}
+			targetMethod.Body.ExceptionHandlers.Clear();
+			if (yourMethod.Body.HasExceptionHandlers) {
+				var handlers =
+					from exhandler in yourMethod.Body.ExceptionHandlers
+					select new ExceptionHandler(exhandler.HandlerType) {
+						CatchType = exhandler.CatchType == null ? null : FixTypeReference(exhandler.CatchType),
+						HandlerStart = instructionEquiv[exhandler.HandlerStart],
+						HandlerEnd = instructionEquiv[exhandler.HandlerEnd],
+						TryStart = instructionEquiv[exhandler.TryStart],
+						TryEnd = instructionEquiv[exhandler.TryEnd],
+						FilterStart = exhandler.FilterStart == null ? null : instructionEquiv[exhandler.FilterStart]
+					};
+				foreach (var exhandlr in handlers) {
+					targetMethod.Body.ExceptionHandlers.Add(exhandlr);
+				}
+			}
+			
+			
+			foreach (var targetInstruction in ilProcesser.Body.Instructions) {
+				var targetOperand = targetInstruction.Operand;
+				if (targetOperand is Instruction) { //conditional branch instructions
+					var asInstr = (Instruction) targetOperand;
+					targetOperand = instructionEquiv[asInstr];
+				}
+				else if (targetOperand is Instruction[]) { //Switch instruction (jump table)
+					var asInstrs = ((Instruction[]) targetOperand);
+					var equivTargetInstrs = asInstrs.Select(instr => instructionEquiv[instr]).ToArray();
+					targetOperand = equivTargetInstrs;
+				}
+				targetInstruction.Operand = targetOperand;
+			}
 		}
 	}
 }

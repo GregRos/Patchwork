@@ -11,9 +11,6 @@ using Patchwork.Utility;
 
 namespace Patchwork
 {
-	unsafe struct Example {
-		public fixed char str [20];
-	}
 	public partial class AssemblyPatcher
 	{
 		/// <summary>

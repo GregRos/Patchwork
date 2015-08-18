@@ -500,25 +500,35 @@ namespace Patchwork.Utility {
 		}
 
 		internal static IEnumerable<MethodDefinition> GetMethodsLike(this TypeDefinition type, MethodReference methodRef) {
-			return type.GetMethods(methodRef.Name, methodRef.Parameters.Select(x => x.ParameterType));
+			return type.GetMethods(methodRef.Name, methodRef.Parameters.Select(x => x.ParameterType), methodRef.ReturnType);
 		}
 
+		/// <summary>
+		/// This method only considers the return type of the method if its name is op_Explicit or op_Implicit.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="methodName"></param>
+		/// <param name="similarParams"></param>
+		/// <param name="returnType"></param>
+		/// <returns></returns>
 		internal static IEnumerable<MethodDefinition> GetMethods(this TypeDefinition type, string methodName,
-			IEnumerable<TypeReference> similarParams = null) {
+			IEnumerable<TypeReference> similarParams, TypeReference returnType) {
 			var sameName =
 				from method in type.Methods
 				where method.Name == methodName
 				select method;
 
-			if (similarParams == null) {
-				return sameName.ToList();
-			}
 			similarParams = similarParams.ToList();
+			var ignoreReturnType = !methodName.EqualsAny("op_Implicit", "op_Explicit");
 			var sameSig =
 				from method in sameName
 				where method.Parameters.Count == similarParams.Count()
-				where method.Parameters.Select(x => x.ParameterType).Zip(similarParams, AreTypesEquivForOverloading).All(x => x)
+				where similarParams == null
+					|| method.Parameters.Select(x => x.ParameterType).Zip(similarParams, AreTypesEquivForOverloading).All(x => x)
+				where ignoreReturnType || returnType == null || AreTypesEquivForOverloading(method.ReturnType, returnType)
 				select method;
+
+
 
 			return sameSig.ToList();
 		}
@@ -537,7 +547,10 @@ namespace Patchwork.Utility {
 			}
 			//first check is probably unnecessary because Name returns the type in a special way
 			//that encodes things like ByRef.
-			return a.MetadataType == b.MetadataType && a.Name == b.Name;
+			
+			//this isn't really a comprehensive identity test. At some undetermined point in the future it will be fixed.
+			//however, the problem cases are pretty rare.
+			return a.Name == b.Name; // [a.MetadataType == b.MetadataType] this was deleted because apparently the types can match even though the MT is different.
 
 		}
 
