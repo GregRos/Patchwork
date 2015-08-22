@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Patchwork.Attributes;
 using Patchwork.Collections;
@@ -157,14 +158,16 @@ namespace Patchwork {
 		}
 
 		private SimpleTypeLookup<MemberAction<T>> OrganizeMembers<T>(SimpleTypeLookup<TypeAction> organizedTypes,
-			Func<TypeDefinition, IEnumerable<T>> getMembers) where T : IMemberDefinition {
+			Func<TypeDefinition, IEnumerable<T>> getMembers, Func<MemberReference, bool> filter) where T : MemberReference, IMemberDefinition {
 
 			var memberSeq =
 					from pair in organizedTypes.SelectMany(x => x)
 					from yourMember in getMembers(pair.yourType)
 					where !yourMember.HasCustomAttribute<DisablePatchingAttribute>()
+					where filter(yourMember)
 					let actionAttr = GetMemberActionAttribute(yourMember, pair.typeActionAttr)
 					where actionAttr != null
+					
 					group new MemberAction<T>() {
 						targetType = pair.targetType,
 						yourType = pair.yourType,
@@ -202,6 +205,32 @@ namespace Patchwork {
 					Total = memberActions.Count
 				});
 		}
+
+		private static Func<MemberReference, bool> CreateMemberFilter(DisablePatchingByNameAttribute attribute) {
+			var regex = new Regex(attribute.Regex);
+			Func<MemberReference, bool> memberFilter = member => {
+				var notNotMatch = !regex.Match(member.FullName).Success;
+				if (member is PropertyReference) {
+					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Property);
+				} else if (member is MethodReference) {
+					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Method);
+				} else if (member is EventReference) {
+					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Event);
+				} else if (member is FieldReference) {
+					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Field);
+				} else if (member is TypeReference) {
+					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Type);
+				} else {
+					throw new PatchInternalException($"Unknown member type: {member.GetType()}");
+				}
+			};
+			return memberFilter;
+		}
+
+		private static Func<MemberReference, bool> CreateMemberFilter(IEnumerable<DisablePatchingByNameAttribute> attributes) {
+			return member => attributes.Select(CreateMemberFilter).All(f => f(member));
+		}
+
 		/// <summary>
 		///     Patches the current assembly with your patching assembly.
 		/// </summary>
@@ -245,22 +274,25 @@ namespace Patchwork {
 					PathHelper.GetUserFriendlyPath(TargetAssembly.MainModule.FullyQualifiedName)
 					);
 
+				var multicast = yourAssembly.GetCustomAttributes<DisablePatchingByNameAttribute>();
+				var filter = CreateMemberFilter(multicast);
+
 				if (!yourAssembly.IsPatchingAssembly()) {
 					throw new PatchDeclerationException(
 						"The assembly MUST have the PatchAssemblyAttribute attribute. Sorry.");
 				}
-
 
 				var allTypesInOrder = GetAllTypesInNestingOrder(yourAssembly.MainModule.Types).ToList();
 				//+ Organizing types by action attribute
 				var typesByActionSeq =
 					from type in allTypesInOrder
 					let typeActionAttr = GetTypeActionAttribute(type)
-					where typeActionAttr != null && Filter(type)
+					where typeActionAttr != null && Filter(type) && filter(type)
 					orderby type.UserFriendlyName()
-					group new {
+					group new TypeAction() {
 						yourType = type,
-						typeActionAttr
+						typeActionAttr = typeActionAttr,
+						targetType = null
 					} by typeActionAttr.GetType();
 
 				var typesByAction = typesByActionSeq.ToSimpleTypeLookup();
@@ -274,7 +306,11 @@ namespace Patchwork {
 						(NewTypeAttribute) newTypeAction.typeActionAttr);
 					if (status == NewMemberStatus.InvalidItem) {
 						Log_failed_to_create();
+						Log.Error(
+							"Since this is an implicitly created type, new members will be added to the existing type. Hopefuly, there will be no collisions.");
 						typesByAction.Remove(newTypeAction);
+						newTypeAction.typeActionAttr = new ModifiesTypeAttribute();
+						typesByAction.Add(typeof (ModifiesTypeAttribute), newTypeAction);
 					}
 				}
 
@@ -309,20 +345,20 @@ namespace Patchwork {
 
 				
 
-				var methodActions = OrganizeMembers(typePairings, x => x.Methods);
+				var methodActions = OrganizeMembers(typePairings, x => x.Methods, filter);
 
 				LogTasks(methodActions, "Method Tasks");
 
 				//+ Organizing fields
-				var fieldActions = OrganizeMembers(typePairings, x => x.Fields);
+				var fieldActions = OrganizeMembers(typePairings, x => x.Fields, filter);
 				LogTasks(fieldActions, "Field Tasks");
 				
 				//+ Organizing properties
 
-				var propActions = OrganizeMembers(typePairings, x => x.Properties);
+				var propActions = OrganizeMembers(typePairings, x => x.Properties, filter);
 
 				LogTasks(propActions, "Property Tasks");
-				var eventActions = OrganizeMembers(typePairings, x => x.Events);
+				var eventActions = OrganizeMembers(typePairings, x => x.Events, filter);
 
 				LogTasks(eventActions, "Event Tasks");
 				foreach (var eventAction in eventActions[typeof(NewMemberAttribute)]) {
@@ -476,7 +512,7 @@ namespace Patchwork {
 			Log.Information("Write completed successfuly.");
 		}
 
-		public TypeDefinition GetPatchedTypeByName(TypeReference typeRef) {
+		private TypeDefinition GetPatchedTypeByName(TypeReference typeRef) {
 			var patchedTypeName = typeRef.GetPatchedTypeFullName();
 			if (patchedTypeName == null) {
 				return null;

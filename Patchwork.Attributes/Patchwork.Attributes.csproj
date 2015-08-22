@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Patchwork.Attributes</RootNamespace>
     <AssemblyName>Patchwork.Attributes</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -48,8 +48,8 @@
     </Compile>
     <Compile Include="PatchingAttributes\DisablePatchingAttribute.cs" />
     <Compile Include="PatchingAttributes\DuplicatesBodyAttribute.cs" />
-    <Compile Include="PatchingAttributes\EncodeAsLiteralAttribute.cs" />
     <Compile Include="PatchingAttributes\ImportCustomAttributesAttribute.cs" />
+    <Compile Include="PatchingAttributes\DisablePatchingByNameAttribute.cs" />
     <Compile Include="PatchingAttributes\PatchworkDebugRegisterAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberActionAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberAliasAttribute.cs" />

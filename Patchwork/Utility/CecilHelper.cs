@@ -463,10 +463,9 @@ namespace Patchwork.Utility {
 		/// <param name="attrProvider">The attribute provider.</param>
 		/// <returns></returns>
 		internal static bool IsCompilerGenerated(this IMemberDefinition attrProvider) {
-			return
-				attrProvider.HasCustomAttribute<CompilerGeneratedAttribute>()
-					|| (attrProvider.DeclaringType != null
-						&& attrProvider.DeclaringType.HasCustomAttribute<CompilerGeneratedAttribute>());
+
+			return attrProvider.HasCustomAttribute<CompilerGeneratedAttribute>()
+				|| (attrProvider.DeclaringType?.IsCompilerGenerated() == true);
 		}
 
 		public static MethodReference GetMethod<T>(this ModuleDefinition module, Expression<Func<T>> expr) {

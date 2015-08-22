@@ -1,6 +1,4 @@
-using System;
 using System.Reflection;
-using Patchwork;
 using Patchwork.Attributes;
 
 [assembly: AssemblyCompany("Greg Ros")]

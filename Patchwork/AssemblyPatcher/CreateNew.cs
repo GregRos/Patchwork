@@ -280,7 +280,7 @@ namespace Patchwork
 		}
 
 		private void Log_implicitly_creating_member(string kind, MemberReference forMember) {
-			Log.Warning("Implicitly creating {0:l} for: {1:l}.", kind,forMember.UserFriendlyName());
+			Log.Information("Implicitly creating {0:l} for: {1:l}.", kind,forMember.UserFriendlyName());
 		}
 
 		private void Log_creating_member(string kind, MemberReference forMember) {

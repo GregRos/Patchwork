@@ -12,6 +12,6 @@ namespace Patchwork.Attributes {
 		/// <summary>
 		/// Patchwork version string.
 		/// </summary>
-		public const string Version = "0.5.9.0";
+		public const string Version = "0.6.0.0";
 	}
 }

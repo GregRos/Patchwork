@@ -27,7 +27,12 @@ namespace Patchwork
 			return targetParam;
 		}
 
-		public static OpCode SimplifyOpCode(OpCode toSimplify) {
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="toSimplify"></param>
+		/// <returns></returns>
+		private static OpCode SimplifyOpCode(OpCode toSimplify) {
 			switch (toSimplify.Code) {
 				case Code.Br_S:
 					return OpCodes.Br;
@@ -57,8 +62,10 @@ namespace Patchwork
 					return OpCodes.Blt_Un;
 				case Code.Leave_S:
 					return OpCodes.Leave;
+				default:
+					return toSimplify;
 			}
-			return toSimplify;
+
 		}
 
 		/*
@@ -68,13 +75,11 @@ namespace Patchwork
 		 * 
 		 * Also, most Fix methods are recursive, especially FixType.
 		 */
-
 		/// <summary>
 		///     Fixes a type reference, possibly replacing a reference to a patching type from your assembly with a reference to
 		///     the type being patched.
 		/// </summary>
 		/// <param name="yourTypeRef">The type reference.</param>
-		/// <param name="methodContext"></param>
 		/// <returns></returns>
 		/// <exception cref="NotSupportedException">
 		///     This method can only fix a reference to a patching type, or a reference to a
@@ -234,7 +239,6 @@ namespace Patchwork
 			 * 
 			 * 3. As a special case, any method reference (assume non-generic) that has a generic DeclaringType.
 			 */
-			int hadGenericParams = yourMethodRef.GenericParameters.Count;
 			MethodReference targetMethodRef;
 			var memberAlias = yourMethodDef.GetCustomAttribute<MemberAliasAttribute>();
 			if (yourMethodRef.IsGenericInstance) {
