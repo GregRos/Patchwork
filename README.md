@@ -191,22 +191,22 @@ Note that return types of existing methods cannot be modified.
 ### Modifying/Creating Properties
 Note that to modify a property's `get` and `set` accessors, you need to put `ModifiesMember` *on the accessor you want to modify*, not on the property deceleration. The accessors are actually methods, and it's those the framework modifies.
 
+However, you can choose to put `NewMember` on the property, in which case the accessors will be created automatically.
+
 This also applies to the property's accessibility. In the IL, only get/set methods have accessibility, so if you want to modify it you have to put the attribute on the accessor, possibly on both.
 
 You might need to use the explicit name of the property accessor to modify it (if your property is named differently). Accessor names are normally `get_PROPERTY` and `set_PROPERTY`.
 
-Pretty much *the only* time you'd want to use `ModifiesMember` attribute on a property itself is when you want to create a brand new accessor for the property. In this case, the property data must be modified. You'll still put the `NewMember` attribute on the new accessor. 
-
-If you're creating a new property, you have to put `NewMember` on the property, *AND* on its accessors. 
+Pretty much *the only* time you'd want to use `ModifiesMember` attribute on a property itself is when you want to create a brand new accessor for the property. In this case, the property data must be modified. You'll still put the `NewMember` attribute on the new accessor.  
 
 ### Modifying Constructors
 You can't create constructors for existing types, but you can modify existing ones. Constructors are just methods called `.ctor`. You just need to duplicate their signature in a normal method, and change the modified member name in the attribute. Every object has a default `.ctor`.
 
-Static constructors are called `.cctor`. Not all types have a static constructor. 
+Static constructors are called `.cctor`. Not all types have static constructors.
 
 Note that constructors also contain the type's initializers, so you may need to copy those or the class might not work correctly. 
 
-Constructors normally contain explicit calls to a base class constructor (e.g. `base::.ctor()`). It is best practice to add this call. This can be achieved by using the `MemberAlias` attribute. For example:
+Instance constructors normally contain explicit calls to a base class constructor (e.g. `base::.ctor()`). It is best practice to add this call. This can be achieved by using the `MemberAlias` attribute. For example:
 
 	[MemberAlias(".ctor", typeof(object))]
 	private void object_ctor() {
@@ -219,6 +219,7 @@ Constructors normally contain explicit calls to a base class constructor (e.g. `
 		IEModOptions.LoadFromPrefs();
 	}
 
+Static constructors do not contain such a call.
 
 ### Nested Types
 
