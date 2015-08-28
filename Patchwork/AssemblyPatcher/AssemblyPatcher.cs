@@ -13,21 +13,24 @@ using Serilog;
 
 namespace Patchwork {
 
-	public class FileChange {
+	public class BodyFileChange {
 		public SequencePoint Start;
 		public SequencePoint End;
 		public MethodDefinition ModifiedMember;
+		public string Name;
 	}
 
 	/// <summary>
 	///     A class that patches a specific assembly (a target assembly) with your assemblies.
 	/// </summary>
 	public partial class AssemblyPatcher {
+		private List<BodyFileChange> _bodyChanges = new List<BodyFileChange>();
 
-		public List<FileChange> Changes {
-			get;
-			set;
-		} = new List<FileChange>();
+		public IEnumerable<BodyFileChange> BodyChanges {
+			get {
+				return _bodyChanges;
+			}
+		}
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="AssemblyPatcher" /> class.

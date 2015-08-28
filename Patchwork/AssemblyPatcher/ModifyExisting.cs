@@ -225,11 +225,13 @@ namespace Patchwork
 				throw Errors.Invalid_member("method", yourMethod, targetMethod.FullName,
 					"You cannot modify the body of an abstract method.");
 			}
-			if (modifiesMemberAttr != null) {
-				Changes.Add(new FileChange() {
-					End = yourMethod.Body.Instructions.First(i => i.SequencePoint != null).SequencePoint,
-					Start = yourMethod.Body.Instructions.Last(i => i.SequencePoint != null).SequencePoint,
-					ModifiedMember = yourMethod.Module.MetadataResolver.Resolve(targetMethod)
+
+			if (modifiesMemberAttr != null && scope.HasFlag(ModificationScope.Body)) {
+				_bodyChanges.Add(new BodyFileChange() {
+					Start = yourMethod.Body.Instructions.First(i => i.SequencePoint != null).SequencePoint,
+					End = yourMethod.Body.Instructions.Last(i => i.SequencePoint != null).SequencePoint,
+					ModifiedMember = yourMethod.Module.Import(targetMethod).Resolve(),
+					Name = yourMethod.Name
 				});
 			}
 

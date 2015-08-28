@@ -24,7 +24,6 @@ namespace Patchwork
 			NewMemberAttribute newPropAttr) {
 			if (newPropAttr.IsImplicit) {
 				Log_implicitly_creating_member("property", yourProperty);
-
 			} else {
 				Log_creating_member("property", yourProperty);
 			}
