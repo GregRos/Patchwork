@@ -225,6 +225,13 @@ namespace Patchwork
 				throw Errors.Invalid_member("method", yourMethod, targetMethod.FullName,
 					"You cannot modify the body of an abstract method.");
 			}
+			if (modifiesMemberAttr != null) {
+				Changes.Add(new FileChange() {
+					End = yourMethod.Body.Instructions.First(i => i.SequencePoint != null).SequencePoint,
+					Start = yourMethod.Body.Instructions.Last(i => i.SequencePoint != null).SequencePoint,
+					ModifiedMember = yourMethod.Module.MetadataResolver.Resolve(targetMethod)
+				});
+			}
 
 			ModifyMethod(targetMethod, yourMethod, scope & ~ModificationScope.Body, newMemberAttr != null); 
 			ModifyMethod(targetMethod, bodySource, ModificationScope.Body & scope, false);
@@ -302,7 +309,6 @@ namespace Patchwork
 		/// <param name="yourMethod">Your instructions.</param>
 		/// <returns>The return type is a sequence because instructions can sometimes be fixed to multiple instructions.</returns>
 		private void TransferMethodBody(MethodDefinition targetMethod, MethodDefinition yourMethod) {
-
 			targetMethod.Body.Instructions.Clear();
 			var injectManual = yourMethod.GetCustomAttribute<PatchworkDebugRegisterAttribute>();
 			FieldReference debugFieldRef = null;

@@ -5,16 +5,30 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Patchwork.Attributes;
 using Patchwork.Collections;
 using Patchwork.Utility;
 using Serilog;
 
 namespace Patchwork {
+
+	public class FileChange {
+		public SequencePoint Start;
+		public SequencePoint End;
+		public MethodDefinition ModifiedMember;
+	}
+
 	/// <summary>
 	///     A class that patches a specific assembly (a target assembly) with your assemblies.
 	/// </summary>
 	public partial class AssemblyPatcher {
+
+		public List<FileChange> Changes {
+			get;
+			set;
+		} = new List<FileChange>();
+
 		/// <summary>
 		///     Initializes a new instance of the <see cref="AssemblyPatcher" /> class.
 		/// </summary>
