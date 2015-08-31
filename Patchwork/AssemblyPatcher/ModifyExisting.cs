@@ -304,6 +304,11 @@ namespace Patchwork
 			}
 		}
 
+		private static bool IsBreakingOpCode(OpCode code) {
+			return code.EqualsAny(OpCodes.Leave, OpCodes.Leave_S, OpCodes.Ret, OpCodes.Rethrow, OpCodes.Throw, OpCodes.Endfinally,
+				OpCodes.Endfilter);
+		}
+
 		/// <summary>
 		/// Fixes the cil instruction. Currently mutates yourInstruction rather than returning a new instruction, because creating a new instruction creates a bugg that I don't understand.
 		/// </summary>
@@ -386,7 +391,7 @@ namespace Patchwork
 					targetInstruction.OpCode = SimplifyOpCode(targetInstruction.OpCode);	
 				}
 				var lastInstr = ilProcesser.Body.Instructions.LastOrDefault();
-				if (yourInstruction.SequencePoint != null && injectManual != null && (lastInstr == null ||!lastInstr.OpCode.EqualsAny(OpCodes.Leave, OpCodes.Leave_S, OpCodes.Ret, OpCodes.Rethrow, OpCodes.Throw))) {
+				if (yourInstruction.SequencePoint != null && injectManual != null && (lastInstr == null ||!IsBreakingOpCode(lastInstr.OpCode))) {
 					var str = i == 0 ? "" : " ⇒ ";
 					str += yourInstruction.SequencePoint.StartLine;
 					ilProcesser.Emit(OpCodes.Ldsfld, debugFieldRef);
@@ -409,6 +414,7 @@ namespace Patchwork
 						TryEnd = instructionEquiv[exhandler.TryEnd],
 						FilterStart = exhandler.FilterStart == null ? null : instructionEquiv[exhandler.FilterStart]
 					};
+				
 				foreach (var exhandlr in handlers) {
 					targetMethod.Body.ExceptionHandlers.Add(exhandlr);
 				}
