@@ -608,6 +608,9 @@ namespace Patchwork.Utility {
 					return "ref " + baseType;
 				default:
 					var name = !longForm ? typeRef.Name : typeRef.FullName;
+					if (!longForm && typeRef.DeclaringType != null) {
+						name = $"{typeRef.DeclaringType.Name}/{name}";
+					}
 					return name;
 			}
 		}

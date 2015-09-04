@@ -183,7 +183,7 @@ namespace Patchwork {
 			}
 			var stack = new List<TypeDefinition>();
 			foreach (var type in currentNestingLevelTypes) {
-				if (type.HasCustomAttribute<DisablePatchingAttribute>()) {
+				if ((type.HasCustomAttribute<DisablePatchingAttribute>() || !type.HasCustomAttribute<PatchingAttribute>()) && !type.IsCompilerGenerated()) {
 					continue;
 				}
 				stack.AddRange(type.NestedTypes);

@@ -161,6 +161,9 @@ namespace Patchwork
 			} else {
 				TargetAssembly.MainModule.Types.Add(targetTypeDef);
 			}
+			if (targetTypeDef.Name.Contains("<>c")) {
+				int sdff = 5;
+			}
 			return targetTypeDef;
 		}
 
@@ -169,7 +172,7 @@ namespace Patchwork
 		/// </summary>
 		/// <param name="yourMethod"></param>
 		/// <returns></returns>
-		private MethodDefinition CopyMethod( MethodDefinition yourMethod) {
+		private MethodDefinition CopyAndCreateMethod(TypeDefinition targetType, MethodDefinition yourMethod) {
 			var targetMethod = new MethodDefinition(yourMethod.Name, yourMethod.Attributes, 
 				yourMethod.ReturnType) {
 					ImplAttributes = yourMethod.ImplAttributes,
@@ -183,6 +186,8 @@ namespace Patchwork
 					NoOptimization = yourMethod.NoOptimization,
 					ReturnType = yourMethod.ReturnType //<---- this is temporary (setting it again to emphasize)
 				};
+
+			targetType.Methods.Add(targetMethod);
 
 			targetMethod.SecurityDeclarations.AddRange(yourMethod.SecurityDeclarations.Select(x => new SecurityDeclaration(x.Action, x.GetBlob())));
 
@@ -272,8 +277,7 @@ namespace Patchwork
 				throw Errors.Duplicate_member("type", yourMethod.FullName, maybeDuplicate.FullName);
 			}
 
-			var method = CopyMethod(yourMethod);
-			targetDeclaringType.Methods.Add(method);
+			var method = CopyAndCreateMethod(targetDeclaringType, yourMethod);
 			return method;
 		}
 
