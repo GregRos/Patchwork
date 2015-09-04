@@ -9,11 +9,13 @@ using Patchwork.Utility;
 
 namespace Patchwork.Collections {
 
+
+
 	/// <summary>
 	/// This is kind of similar to an ILookup, with types as keys.
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
-	internal class SimpleTypeLookup<T> : IEnumerable<SimpleTypeGroup<T>> {
+	public class SimpleTypeLookup<T> : IEnumerable<SimpleTypeGroup<T>> {
 		private readonly Dictionary<Type, SimpleTypeGroup<T>> _lookup;
 
 		public SimpleTypeLookup() {

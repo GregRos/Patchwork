@@ -25,6 +25,7 @@
     <Prefer32Bit>true</Prefer32Bit>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <DocumentationFile>bin\Debug\Patchwork.XML</DocumentationFile>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'FIRSTRUN|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -73,8 +74,11 @@
     <Compile Include="AssemblyPatcher\DebugFlags.cs" />
     <Compile Include="AssemblyPatcher\FixReferences.cs" />
     <Compile Include="AssemblyPatcher\ImplicitImportSetting.cs" />
+    <Compile Include="AssemblyPatcher\PatchingManifestCreator.cs" />
+    <Compile Include="PatchingManifest\MemberAction.cs" />
     <Compile Include="AssemblyPatcher\ModifyExisting.cs" />
     <Compile Include="AssemblyPatcher\NewMemberStatus.cs" />
+    <Compile Include="PatchingManifest\TypeAction.cs" />
     <Compile Include="Collections\SimpleTypeGroup.cs" />
     <Compile Include="Collections\SimpleTypeLookup.cs" />
     <Compile Include="Errors\Errors.cs" />
@@ -82,6 +86,7 @@
     <Compile Include="Errors\PatchException.cs" />
     <Compile Include="Errors\PatchImportException.cs" />
     <Compile Include="Errors\PatchInternalException.cs" />
+    <Compile Include="PatchingManifest\PatchingManifest.cs" />
     <Compile Include="Utility\Accessibility.cs" />
     <Compile Include="AssemblyPatcher\AssemblyPatcher.cs" />
     <Compile Include="Utility\Asserts.cs" />

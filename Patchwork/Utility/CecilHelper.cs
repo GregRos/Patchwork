@@ -44,6 +44,16 @@ namespace Patchwork.Utility {
 			}
 		}
 
+		public static AssemblyDefinition Clone(this AssemblyDefinition definition) {
+			return AssemblyDefinition.ReadAssembly(new MemoryStream(definition.SerializeAssembly()));
+		}
+
+		public static byte[] SerializeAssembly(this AssemblyDefinition definition) {
+			var ms = new MemoryStream();
+			definition.Write(ms);
+			return ms.ToArray();
+		}
+
 		public static MethodDefinition MaybeResolve(this MethodReference mRef) {
 			return mRef == null ? null : mRef.Resolve();
 		}
@@ -68,6 +78,7 @@ namespace Patchwork.Utility {
 			});
 			return (Instruction) instr;
 		}
+
 
 		/// <summary>
 		///     Loads a copy of the assembly from memory.
@@ -178,6 +189,11 @@ namespace Patchwork.Utility {
 
 			return props;
 		}
+
+		public static IEnumerable<PropertyDefinition> GetPropertiesLike(this TypeDefinition typeDef,
+			PropertyDefinition likeWhat) {
+			return typeDef.GetProperties(likeWhat.Name, likeWhat.Parameters.Select(x => x.ParameterType));
+		} 
 
 		/// <summary>
 		///     Gets the property.

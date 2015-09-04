@@ -82,6 +82,14 @@ namespace Patchwork {
 		}
 
 		/// <summary>
+		/// Whether or not to backup the TargetAssembly before applying a patch. Set to false for faster execution.
+		/// </summary>
+		public bool UseBackup {
+			get;
+			private set;
+		} = true;
+
+		/// <summary>
 		///     Exposes the target assembly being patched by this instance.
 		/// </summary>
 		/// <value>
@@ -121,94 +129,15 @@ namespace Patchwork {
 		/// <param name="path"></param>
 		public void PatchAssembly(string path) {
 			bool readSymbols = File.Exists(Path.ChangeExtension(path, "pdb")) || File.Exists(path + ".mdb");
-			PatchAssembly(
-				AssemblyDefinition.ReadAssembly(path, new ReaderParameters() {ReadSymbols = readSymbols}));
+			var yourAssembly = AssemblyDefinition.ReadAssembly(path, new ReaderParameters() {
+				ReadSymbols = readSymbols
+			});
+			var manifest = CreateManifest(yourAssembly);
+			PatchManifest(manifest);
 		}
 
 		private void LogFailedToRemove(string memberType, MemberReference memberRef) {
 			Log.Warning("Tried to remove a {type:l} for {fullName:l}, but couldn't find it. This can be expected if you're both removing and adding the member at the same time.", memberType, memberRef.UserFriendlyName());
-		}
-
-		/// <summary>
-		/// This used to be an anonymous type, but later I realized I use it often enough that it needs a name.
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		private class MemberAction<T>
-			where T : IMemberDefinition {
-
-			public TypeDefinition targetType {
-				get;
-				set;
-			}
-
-			public TypeDefinition yourType {
-				get;
-				set;
-			}
-
-			public T yourMember {
-				get;
-				set;
-			}
-
-			public MemberActionAttribute memberActionAttr {
-				get;
-				set;
-			}
-		}
-
-		public class TypeAction {
-			public TypeDefinition yourType {
-				get;
-				set;
-			}
-
-			public TypeActionAttribute typeActionAttr {
-				get;
-				set;
-			}
-
-			public TypeDefinition targetType {
-				get;
-				set;
-			}
-		}
-
-		private SimpleTypeLookup<MemberAction<T>> OrganizeMembers<T>(SimpleTypeLookup<TypeAction> organizedTypes,
-			Func<TypeDefinition, IEnumerable<T>> getMembers, Func<MemberReference, bool> filter) where T : MemberReference, IMemberDefinition {
-
-			var memberSeq =
-					from pair in organizedTypes.SelectMany(x => x)
-					from yourMember in getMembers(pair.yourType)
-					where !yourMember.HasCustomAttribute<DisablePatchingAttribute>()
-					where filter(yourMember)
-					let actionAttr = GetMemberActionAttribute(yourMember, pair.typeActionAttr)
-					where actionAttr != null
-					
-					group new MemberAction<T>() {
-						targetType = pair.targetType,
-						yourType = pair.yourType,
-						yourMember = yourMember,
-						memberActionAttr = actionAttr
-					} by actionAttr.GetType();
-
-			return memberSeq.ToSimpleTypeLookup();
-		}
-
-		private void ImplicitlyAddNewMethods<T>(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions, MemberAction<T> rootMemberAction,
-			Func<T, IEnumerable<MethodDefinition>> getMethods) where T : IMemberDefinition {
-			var newMethods = getMethods(rootMemberAction.yourMember);
-			var allMethods = new HashSet<MethodDefinition>(methodActions.SelectMany(x => x).Select(x => x.yourMember));
-			foreach (var method in newMethods) {
-				if (allMethods.Contains(method)) continue;
-				methodActions.GetGroup(typeof (NewMemberAttribute)).Values.Add(new MemberAction<MethodDefinition>() {
-					yourMember = method,
-					memberActionAttr = new NewMemberAttribute(true),
-					targetType = rootMemberAction.targetType,
-					yourType = rootMemberAction.yourType
-				});
-			}
-
 		}
 
 		private void LogTasks<T>(SimpleTypeLookup<T> memberActions, string format) {
@@ -223,39 +152,140 @@ namespace Patchwork {
 				});
 		}
 
-		private static Func<MemberReference, bool> CreateMemberFilter(DisablePatchingByNameAttribute attribute) {
-			var regex = new Regex(attribute.Regex);
-			Func<MemberReference, bool> memberFilter = member => {
-				var notNotMatch = !regex.Match(member.FullName).Success;
-				if (member is PropertyReference) {
-					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Property);
-				} else if (member is MethodReference) {
-					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Method);
-				} else if (member is EventReference) {
-					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Event);
-				} else if (member is FieldReference) {
-					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Field);
-				} else if (member is TypeReference) {
-					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Type);
-				} else {
-					throw new PatchInternalException($"Unknown member type: {member.GetType()}");
+		private void IntroduceTypes(SimpleTypeLookup<TypeAction> typeActions) {
+			foreach (var newTypeAction in typeActions[typeof (NewTypeAttribute)]) {
+				bool needsInitialization = true;
+				var newType = CreateNewType(newTypeAction.YourType, (NewTypeAttribute) newTypeAction.ActionAttribute, out needsInitialization);
+				if (newType == null) {
+					typeActions.Remove(newTypeAction);
+					continue;
 				}
-			};
-			return memberFilter;
+				newTypeAction.TargetType = newType;
+				if (!needsInitialization) {
+					typeActions.Remove(newTypeAction);
+					newTypeAction.ActionAttribute = new ModifiesTypeAttribute();
+					typeActions.Add(typeof (ModifiesTypeAttribute), newTypeAction);
+				}
+			}
 		}
 
-		private static Func<MemberReference, bool> CreateMemberFilter(IEnumerable<DisablePatchingByNameAttribute> attributes) {
-			return member => attributes.Select(CreateMemberFilter).All(f => f(member));
+		private void IntroduceMethods(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions) {
+			foreach (var actionParams in methodActions[typeof (NewMemberAttribute)]) {
+				var newMethod = CreateNewMethod(actionParams.TypeAction.TargetType, actionParams.YourMember, (NewMemberAttribute) actionParams.ActionAttribute);
+				if (newMethod == null) {
+					methodActions.Remove(actionParams);
+				}
+			}
+		}
+
+		private void IntroduceFields(SimpleTypeLookup<MemberAction<FieldDefinition>> fieldActions) {
+			Log.Header("Creating new fields");
+			foreach (var fieldAction in fieldActions[typeof (NewMemberAttribute)]) {
+				var status = CreateNewField(fieldAction.TypeAction.TargetType,
+					fieldAction.YourMember,
+					(NewMemberAttribute) fieldAction.ActionAttribute);
+				if (status == null) {
+					fieldActions.Remove(fieldAction);
+				}
+			}
+		}
+
+		private void IntroduceProperties(SimpleTypeLookup<MemberAction<PropertyDefinition>> propActions) {
+			foreach (var propAction in propActions[typeof (NewMemberAttribute)]) {
+				var newProperty = CreateNewProperty(propAction.TypeAction.TargetType, propAction.YourMember, (NewMemberAttribute) propAction.ActionAttribute);
+				if (newProperty == null) {
+					propActions.Remove(propAction);
+				}
+			}
+		}
+
+		private void IntroduceEvents(SimpleTypeLookup<MemberAction<EventDefinition>> eventActions) {
+			foreach (var eventAction in eventActions[typeof (NewMemberAttribute)]) {
+				var newProperty = CreateNewEvent(eventAction.TypeAction.TargetType, eventAction.YourMember, (NewMemberAttribute) eventAction.ActionAttribute);
+				if (newProperty == null) {
+					eventActions.Remove(eventAction);
+				}
+			}
+		}
+
+		private void UpdateMethods(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions) {
+			foreach (var methodAction in methodActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
+				AutoModifyMethod(methodAction.TypeAction.TargetType,
+					methodAction.YourMember,
+					methodAction.ActionAttribute);
+			}
+		}
+
+		private void UpdateProperties(SimpleTypeLookup<MemberAction<PropertyDefinition>> propActions) {
+			foreach (var propAction in propActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
+				AutoModifyProperty(propAction.TypeAction.TargetType, propAction.ActionAttribute, propAction.YourMember);
+			}
+		}
+
+		private void UpdateFields(SimpleTypeLookup<MemberAction<FieldDefinition>> fieldActions) {
+			foreach (var fieldAction in fieldActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
+				AutoModifyField(fieldAction.TypeAction.TargetType, fieldAction.ActionAttribute, fieldAction.YourMember);
+			}
+		}
+
+		private void UpdateEvents(SimpleTypeLookup<MemberAction<EventDefinition>> eventActions) {
+			foreach (var eventAction in eventActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
+				AutoModifyEvent(eventAction.TypeAction.TargetType, eventAction.ActionAttribute, eventAction.YourMember);
+			}
+		}
+
+		private void UpdateTypes(SimpleTypeLookup<TypeAction> typeActions) {
+			foreach (var modType in typeActions[typeof (NewTypeAttribute)]) {
+				AutoModifyTypeDecleration(modType.YourType);
+			}
+		}
+
+		private void RemoveMethods(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions) {
+			foreach (var actionParams in methodActions[typeof (RemoveThisMemberAttribute)]) {
+				var result =
+					actionParams.TypeAction.TargetType.GetMethodsLike(actionParams.YourMember).ToList().Any(
+						x => actionParams.TypeAction.TargetType.Methods.Remove(x));
+				if (!result) {
+					LogFailedToRemove("method", actionParams.YourMember);
+				}
+			}
+		}
+
+		private void RemoveProperties(SimpleTypeLookup<MemberAction<PropertyDefinition>> propActions) {
+			foreach (var propAction in propActions[typeof (RemoveThisMemberAttribute)]) {
+				var removed = propAction.TypeAction.TargetType.GetPropertiesLike(propAction.YourMember).ToList().Any(x => propAction.TypeAction.TargetType.Properties.Remove(x));
+				if (!removed) {
+					LogFailedToRemove("property", propAction.YourMember);
+				}
+			}
+		}
+
+		private void RemoveFields(SimpleTypeLookup<MemberAction<FieldDefinition>> fieldActions) {
+			foreach (var fieldAction in fieldActions[typeof (RemoveThisMemberAttribute)]) {
+				var removed =
+					fieldAction.TypeAction.TargetType.Fields.RemoveWhere(x => x.Name == fieldAction.YourMember.Name);
+				if (!removed) {
+					LogFailedToRemove("field", fieldAction.YourMember);
+				}
+			}
+		}
+
+		private void RemoveEvents(SimpleTypeLookup<MemberAction<EventDefinition>> eventActions) {
+			foreach (var eventAction in eventActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
+				var removed =
+					eventAction.TypeAction.TargetType.Events.RemoveWhere(x => x.Name == eventAction.YourMember.Name);
+				if (!removed) {
+					LogFailedToRemove("event", eventAction.YourMember);
+				}
+			}
 		}
 
 		/// <summary>
-		///     Patches the current assembly with your patching assembly.
+		/// Applies the patch described in the given PatchingManifest to the TargetAssembly.
 		/// </summary>
-		/// <param name="yourAssembly">Your patching assembly.</param>
-		/// <exception cref="System.ArgumentException">The assembly MUST have the PatchAssemblyAttribute attribute. Sorry.</exception>
-		public void PatchAssembly(AssemblyDefinition yourAssembly) {
-			try {
-				/*	The point of this method is to introduce all the patched elements in the correct order,
+		/// <param name="manifest">The PatchingManifest. Note that the instance will be populated with additional information (such as newly created types) during execution.</param>
+		public void PatchManifest(PatchingManifest manifest) {
+			/*	The point of this method is to introduce all the patched elements in the correct order,
 			 * 	so the user doesn't have to worry about dependencies between code elements, and can have circular  dependencies.
 			 * 	
 			 * 	The order is the following:
@@ -283,238 +313,37 @@ namespace Patchwork {
 			2. Create new Xs
 			3. Update existing Xs (+ those we just created)
 			 */
-				Log.Information(
-					"Patching assembly {PatchName:l} [{PatchPath:l}] => {OrigName:l} [{OrigPath:l}]",
-					yourAssembly.Name.Name,
-					PathHelper.GetUserFriendlyPath(yourAssembly.MainModule.FullyQualifiedName),
-					TargetAssembly.Name.Name,
-					PathHelper.GetUserFriendlyPath(TargetAssembly.MainModule.FullyQualifiedName)
-					);
+			var targetAssemblyBackup = TargetAssembly.Clone();
+			try {
+				IntroduceTypes(manifest.TypeActions);
 
-				var multicast = yourAssembly.GetCustomAttributes<DisablePatchingByNameAttribute>();
-				var filter = CreateMemberFilter(multicast);
+				RemoveMethods(manifest.MethodActions);
+				IntroduceMethods(manifest.MethodActions);
 
-				if (!yourAssembly.IsPatchingAssembly()) {
-					throw new PatchDeclerationException(
-						"The assembly MUST have the PatchAssemblyAttribute attribute. Sorry.");
-				}
+				var patchingAssembly = manifest.PatchingAssembly;
+				CopyCustomAttributesByImportAttribute(TargetAssembly, patchingAssembly,
+					patchingAssembly.GetCustomAttribute<ImportCustomAttributesAttribute>());
+				CopyCustomAttributesByImportAttribute(TargetAssembly.MainModule, patchingAssembly.MainModule,
+					patchingAssembly.MainModule.GetCustomAttribute<ImportCustomAttributesAttribute>());
 
-				var allTypesInOrder = GetAllTypesInNestingOrder(yourAssembly.MainModule.Types).ToList();
-				//+ Organizing types by action attribute
-				var typesByActionSeq =
-					from type in allTypesInOrder
-					let typeActionAttr = GetTypeActionAttribute(type)
-					where typeActionAttr != null && Filter(type) && filter(type)
-					orderby type.UserFriendlyName()
-					group new TypeAction() {
-						yourType = type,
-						typeActionAttr = typeActionAttr,
-						targetType = null
-					} by typeActionAttr.GetType();
+				UpdateTypes(manifest.TypeActions);
 
-				var typesByAction = typesByActionSeq.ToSimpleTypeLookup();
+				RemoveFields(manifest.FieldActions);
+				IntroduceFields(manifest.FieldActions);
+				UpdateFields(manifest.FieldActions);
 
-				LogTasks(typesByAction, "Type Tasks");
+				RemoveProperties(manifest.PropertyActions);
+				IntroduceProperties(manifest.PropertyActions);
+				UpdateProperties(manifest.PropertyActions);
 
-				//++ 1. Creating new types
-				Log.Information("Creating new types");
-				foreach (var newTypeAction in typesByAction[typeof (NewTypeAttribute)]) {
-					var status = CreateNewType(newTypeAction.yourType,
-						(NewTypeAttribute) newTypeAction.typeActionAttr);
-					if (status == NewMemberStatus.InvalidItem) {
-						Log_failed_to_create();
-						Log.Error(
-							"Since this is an implicitly created type, new members will be added to the existing type. Hopefuly, there will be no collisions.");
-						typesByAction.Remove(newTypeAction);
-						newTypeAction.typeActionAttr = new ModifiesTypeAttribute();
-						typesByAction.Add(typeof (ModifiesTypeAttribute), newTypeAction);
-					}
-				}
+				RemoveEvents(manifest.EventActions);
+				IntroduceEvents(manifest.EventActions);
+				UpdateEvents(manifest.EventActions);
 
-				//+ Pairing types, organizing for modification
-				//we pair off each yourType with the targetType it modifies (note that a targetType is also one we created just now)
-				//we'll use these pairings throughout the rest of the method.
-				var typePairingsSeq =
-					from typeGroup in typesByAction
-					from typeAction in typeGroup
-					group new TypeAction {
-						yourType = typeAction.yourType, 
-						typeActionAttr = typeAction.typeActionAttr, 
-						targetType = GetPatchedTypeByName(typeAction.yourType)
-					} by typeAction.typeActionAttr.GetType();
-
-				var typePairings = typePairingsSeq.ToSimpleTypeLookup(); //cache them
-				foreach (var pairing in typePairings.SelectMany(x => x)) {
-					if (pairing.targetType == null) {
-						throw Errors.Missing_member_in_attribute("type",
-							pairing.yourType,
-							pairing.yourType.GetPatchedTypeFullName());
-					}
-					if (pairing.targetType.IsInterface && !(pairing.typeActionAttr is NewTypeAttribute)) {
-						throw Errors.Invalid_member("type",
-							pairing.yourType,
-							pairing.yourType.GetPatchedTypeFullName(),
-							"You cannot modify existing interfaces.");
-					}
-				}
-				//+ Organizing methods
-				Log.Information("Organizing methods.");
-
-				
-
-				var methodActions = OrganizeMembers(typePairings, x => x.Methods, filter);
-
-				LogTasks(methodActions, "Method Tasks");
-
-				//+ Organizing fields
-				var fieldActions = OrganizeMembers(typePairings, x => x.Fields, filter);
-				LogTasks(fieldActions, "Field Tasks");
-				
-				//+ Organizing properties
-
-				var propActions = OrganizeMembers(typePairings, x => x.Properties, filter);
-
-				LogTasks(propActions, "Property Tasks");
-				var eventActions = OrganizeMembers(typePairings, x => x.Events, filter);
-
-				LogTasks(eventActions, "Event Tasks");
-				foreach (var eventAction in eventActions[typeof(NewMemberAttribute)]) {
-					ImplicitlyAddNewMethods(methodActions, eventAction, vent => {
-						return new[] {
-							vent.AddMethod,
-							vent.RemoveMethod,
-							vent.InvokeMethod,
-						}.Concat(vent.OtherMethods).Where(method => method != null);
-					});
-				}
-
-				foreach (var propAction in propActions[typeof (NewMemberAttribute)]) {
-					ImplicitlyAddNewMethods(methodActions, propAction, prop => {
-						return new[] {
-							prop.GetMethod,
-							prop.SetMethod,
-						}.Concat(prop.OtherMethods).Where(method => method != null);
-					});
-				}
-
-				//++ 2. Removing methods
-				//remove all the methods
-				Log.Header("Removing methods");
-				foreach (var actionParams in methodActions[typeof (RemoveThisMemberAttribute)]) {
-					var result = actionParams.targetType.GetMethodsLike(actionParams.yourMember).ToList().Any(x => actionParams.targetType.Methods.Remove(x));
-					if (!result) {
-						LogFailedToRemove("method", actionParams.yourMember);
-					}
-				}
-
-				//++ 3. Creating new methods
-				Log.Header("Creating new methods");
-				//create all the new methods
-				foreach (var actionParams in methodActions[typeof (NewMemberAttribute)]) {
-					var status = CreateNewMethod(actionParams.targetType,
-						actionParams.yourMember,
-						(NewMemberAttribute) actionParams.memberActionAttr);
-					if (status == NewMemberStatus.InvalidItem) {
-						Log_failed_to_create();
-						methodActions.Remove(actionParams);
-					}
-				}
-				//++ 4. Adding custom attributes to module/assembly.
-				var assemblyImportAttribute = yourAssembly.GetCustomAttribute<ImportCustomAttributesAttribute>();
-				var moduleImportAttribute = yourAssembly.MainModule.GetCustomAttribute<ImportCustomAttributesAttribute>();
-				CopyCustomAttributesByImportAttribute(TargetAssembly, yourAssembly, assemblyImportAttribute);
-				CopyCustomAttributesByImportAttribute(TargetAssembly.MainModule, yourAssembly.MainModule, moduleImportAttribute);
-				
-				//++ 5. Modifying type declerations
-				Log.Information("Updating Type Ceclerations");
-				foreach (var modType in typesByAction[typeof (NewTypeAttribute)]) {
-					AutoModifyTypeDecleration(modType.yourType);
-				}
-
-				//++ 6. Updating Fields
-				Log.Header("Clearing fields in replaced types");
-				//+ Removing fields in replaced types
-				foreach (var pairing in typePairings[typeof (ReplaceTypeAttribute)]) {
-					Log.Information("Clearing fields in {0:l}", pairing.targetType.UserFriendlyName());
-					pairing.targetType.Fields.Clear();
-				}
-
-
-				//+ Removing fields
-				Log.Header("Removing fields");
-				foreach (var fieldAction in fieldActions[typeof (RemoveThisMemberAttribute)]) {
-					var removed =
-						fieldAction.targetType.Fields.RemoveWhere(x => x.Name == fieldAction.yourMember.Name);
-					if (!removed) {
-						LogFailedToRemove("field", fieldAction.yourMember);
-					}
-				}
-
-				//+ Creating new fields
-				Log.Header("Creating new fields");
-				foreach (var fieldAction in fieldActions[typeof (NewMemberAttribute)]) {
-					var status = CreateNewField(fieldAction.targetType,
-						fieldAction.yourMember,
-						(NewMemberAttribute) fieldAction.memberActionAttr);
-					if (status == NewMemberStatus.InvalidItem) {
-						Log_failed_to_create();
-						fieldActions.Remove(fieldAction);
-					}
-				}
-
-
-				//+ Modifying existing fields
-				Log.Header("Modifying fields");
-				foreach (
-					var fieldAction in fieldActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-					AutoModifyField(fieldAction.targetType, fieldAction.memberActionAttr, fieldAction.yourMember);
-				}
-
-
-				//++ 7. Updating properties
-				Log.Header("Removing properties");
-				//+ Removing properties
-				foreach (var propAction in propActions[typeof (RemoveThisMemberAttribute)]) {
-					var removed =
-						propAction.targetType.Properties.RemoveWhere(x => x.Name == propAction.yourMember.Name);
-					if (!removed) {
-						LogFailedToRemove("field", propAction.yourMember);
-					}
-				}
-
-				Log.Header("Creating properties");
-				//+ Creating properties
-				foreach (var propAction in propActions[typeof (NewMemberAttribute)]) {
-					var status = CreateNewProperty(propAction.targetType,
-						propAction.yourMember,
-						(NewMemberAttribute) propAction.memberActionAttr);
-					if (status == NewMemberStatus.InvalidItem) {
-						Log_failed_to_create();
-						propActions.Remove(propAction);
-					}
-				}
-
-				Log.Header("Modifying properties");
-				//+ Modifying properties
-				foreach (
-					var propAction in propActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-					AutoModifyProperty(propAction.targetType, propAction.memberActionAttr, propAction.yourMember);
-				}
-				//++ 8. Finalizing methods, generating method bodies.
-				Log.Header("Modifying/generating method bodies");
-				foreach (var methodAction in methodActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-					AutoModifyMethod(methodAction.targetType,
-						methodAction.yourMember,
-						methodAction.memberActionAttr);
-				}
-
-				Log.Information("Patching {@PatchName:l} => {@OrigName:l} completed",
-					yourAssembly.Name.Name,
-					TargetAssembly.Name.Name);
+				UpdateMethods(manifest.MethodActions);
 			}
-			catch (Exception ex) {
-				Log.Fatal(ex,
-					"An exception was unhandled. Since execution was halted mid-way, this means that this AssemblyPatcher has been corrupted.");
+			catch {
+				TargetAssembly = targetAssemblyBackup;
 				throw;
 			}
 		}
@@ -537,67 +366,6 @@ namespace Patchwork {
 			return TargetAssembly.MainModule.GetType(patchedTypeName);
 		}
 
-		private IEnumerable<TypeDefinition> GetAllTypesInNestingOrder(
-			ICollection<TypeDefinition> currentNestingLevelTypes) {
-			if (currentNestingLevelTypes.Count == 0) {
-				yield break;
-			}
-			var stack = new List<TypeDefinition>();
-			foreach (var type in currentNestingLevelTypes) {
-				if (type.HasCustomAttribute<DisablePatchingAttribute>()) {
-					continue;
-				}
-				stack.AddRange(type.NestedTypes);
-				yield return type;
-			}
-			foreach (var nestedType in GetAllTypesInNestingOrder(stack)) {
-				yield return nestedType;
-			}
-		}
-
-		private TypeActionAttribute GetTypeActionAttribute(TypeDefinition provider) {
-			var attr = provider.GetCustomAttribute<TypeActionAttribute>();
-			if (attr != null) {
-				return attr;
-			}
-			switch (ImplicitImports) {
-				case ImplicitImportSetting.OnlyCompilerGenerated:
-					if (provider.IsCompilerGenerated()) {
-						goto case ImplicitImportSetting.ImplicitByDefault;
-					}
-					goto case ImplicitImportSetting.NoImplicit;
-				case ImplicitImportSetting.ImplicitByDefault:
-					return new NewTypeAttribute(true);
-				default:
-				case ImplicitImportSetting.NoImplicit:
-					return null;
-			}
-		}
-
-		private MemberActionAttribute GetMemberActionAttribute(IMemberDefinition provider,
-			TypeActionAttribute typeAttr) {
-			var attr = provider.GetCustomAttribute<MemberActionAttribute>();
-			if (attr != null) {
-				if (attr is ModifiesMemberAttribute && !(typeAttr is ModifiesTypeAttribute)) {
-					throw Errors.Invalid_decleration("ModifiesMember is only legal inside ModifiesType.");
-				}
-				return attr;
-			}
-			if (typeAttr is NewTypeAttribute || typeAttr is ReplaceTypeAttribute) {
-				return new NewMemberAttribute();
-			}
-			switch (ImplicitImports) {
-				case ImplicitImportSetting.OnlyCompilerGenerated:
-					if (provider.IsCompilerGenerated()) {
-						goto case ImplicitImportSetting.ImplicitByDefault;
-					}
-					goto case ImplicitImportSetting.NoImplicit;
-				case ImplicitImportSetting.ImplicitByDefault:
-					return new NewMemberAttribute(true);
-				default:
-				case ImplicitImportSetting.NoImplicit:
-					return null;
-			}
-		}
 	}
+
 }

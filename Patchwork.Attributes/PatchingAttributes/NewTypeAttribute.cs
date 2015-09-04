@@ -12,5 +12,10 @@ namespace Patchwork.Attributes {
 		}
 
 		public bool IsImplicit { get; private set; }
+
+		internal bool NeedsInitialization {
+			get;
+			set;
+		}
 	}
 }

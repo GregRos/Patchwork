@@ -14,13 +14,35 @@ namespace Patchwork
 	public partial class AssemblyPatcher
 	{
 		/// <summary>
+		/// Creates a new property like the specified property, but doesn't add it anywhere.
+		/// </summary>
+		/// <param name="yourProperty"></param>
+		/// <returns></returns>
+		private PropertyDefinition CopyProperty(PropertyDefinition yourProperty) {
+			var targetPropertyType = FixTypeReference(yourProperty.PropertyType);
+			var targetProperty = new PropertyDefinition(yourProperty.Name,
+				yourProperty.Attributes,
+				targetPropertyType) {
+					HasThis = yourProperty.HasThis,
+					Constant = yourProperty.Constant,
+					HasDefault = yourProperty.HasDefault
+				};
+			foreach (var param in yourProperty.Parameters) {
+				targetProperty.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes,
+					FixTypeReference(param.ParameterType)));
+			}
+
+			return targetProperty;
+		}
+
+		/// <summary>
 		///     Creates a new property in the target assembly, but doesn't set its accessors.
 		/// </summary>
 		/// <param name="targetType">Type of the target.</param>
 		/// <param name="yourProperty">Your property.</param>
 		/// <param name="newPropAttr">The new property attribute.</param>
 		/// <exception cref="PatchDeclerationException">Thrown if this member collides with another member, and the error cannot be resolved.</exception>
-		private NewMemberStatus CreateNewProperty(TypeDefinition targetType, PropertyDefinition yourProperty,
+		private PropertyDefinition CreateNewProperty(TypeDefinition targetType, PropertyDefinition yourProperty,
 			NewMemberAttribute newPropAttr) {
 			if (newPropAttr.IsImplicit) {
 				Log_implicitly_creating_member("property", yourProperty);
@@ -33,30 +55,33 @@ namespace Patchwork
 				Log_duplicate_member("property", yourProperty, maybeDuplicate);
 				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
 					Log_overwriting();
-					return NewMemberStatus.Continue;
+					return maybeDuplicate;
 				}
 				if (newPropAttr.IsImplicit) {
-					return NewMemberStatus.InvalidItem;
+					Log_failed_to_create();
+					return null;
 				}
 				throw Errors.Duplicate_member("property", yourProperty.FullName, maybeDuplicate.FullName);
 			}
-			var targetPropertyType = FixTypeReference(yourProperty.PropertyType);
-			var targetProperty = new PropertyDefinition(yourProperty.Name,
-				yourProperty.Attributes,
-				targetPropertyType) {
-					HasThis = yourProperty.HasThis,
-					Constant =  yourProperty.Constant,
-					HasDefault = yourProperty.HasDefault
-				};
+			var targetProperty = CopyProperty(yourProperty);
 			targetType.Properties.Add(targetProperty);
-			foreach (var param in yourProperty.Parameters) {
-				targetProperty.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes,
-					FixTypeReference(param.ParameterType)));
-			}
-			return NewMemberStatus.Continue;
+			return targetProperty;
 		}
 
-		private NewMemberStatus CreateNewEvent(TypeDefinition targetType, EventDefinition yourEvent, NewMemberAttribute newEventAttr) {
+		/// <summary>
+		/// Creates an event like the specified event, but doesn't add it anywhere.
+		/// </summary>
+		/// <param name="yourEvent"></param>
+		/// <returns></returns>
+		private EventDefinition CopyEvent(EventDefinition yourEvent) {
+			var targetEventType = FixTypeReference(yourEvent.EventType);
+			var targetEvent = new EventDefinition(yourEvent.Name,
+				yourEvent.Attributes,
+				targetEventType);
+			return targetEvent;
+		}
+
+		private EventDefinition CreateNewEvent(TypeDefinition targetType, EventDefinition yourEvent, NewMemberAttribute newEventAttr) {
 			if (newEventAttr.IsImplicit) {
 				Log_implicitly_creating_member("property", yourEvent);
 
@@ -68,20 +93,35 @@ namespace Patchwork
 				Log_duplicate_member("property", yourEvent, maybeDuplicate);
 				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
 					Log_overwriting();
-					return NewMemberStatus.Continue;
+					return maybeDuplicate;
 				}
 				if (newEventAttr.IsImplicit) {
-					return NewMemberStatus.InvalidItem;
+					return null;
 				}
 				throw Errors.Duplicate_member("property", yourEvent.FullName, maybeDuplicate.FullName);
 			}
-			var targetEventType = FixTypeReference(yourEvent.EventType);
-			var targetEvent = new EventDefinition(yourEvent.Name,
-				yourEvent.Attributes,
-				targetEventType);
-
+			var targetEvent = CopyEvent(yourEvent);
 			targetType.Events.Add(targetEvent);
-			return NewMemberStatus.Continue;
+			return targetEvent;
+		}
+
+		/// <summary>
+		/// Creates a tpye like the specified type, but doesn't add it anywhere. However, its DeclaringType is set correctly.
+		/// </summary>
+		/// <param name="yourType"></param>
+		/// <returns></returns>
+		private TypeDefinition CopyType(TypeDefinition yourType) {
+			var targetTypeDef = new TypeDefinition(yourType.Namespace, yourType.Name, yourType.Attributes) {
+				DeclaringType = yourType.DeclaringType == null ? null : FixTypeReference(yourType.DeclaringType).Resolve(),
+				PackingSize = yourType.PackingSize,
+				ClassSize = yourType.ClassSize,
+			};
+			targetTypeDef.SecurityDeclarations.AddRange(yourType.SecurityDeclarations);
+			foreach (var yourTypeParam in yourType.GenericParameters) {
+				var targetTypeParam = new GenericParameter(yourTypeParam.Name, targetTypeDef);
+				targetTypeDef.GenericParameters.Add(targetTypeParam);
+			}
+			return targetTypeDef;
 		}
 
 		/// <summary>
@@ -91,7 +131,7 @@ namespace Patchwork
 		/// <param name="actionAttribute">The action attribute ordering the creation.</param>
 		/// <returns></returns>
 		/// <exception cref="PatchDeclerationException">Thrown if this member collides with another member, and the error cannot be resolved.</exception>
-		private NewMemberStatus CreateNewType(TypeDefinition yourType, NewTypeAttribute actionAttribute) {
+		private TypeDefinition CreateNewType(TypeDefinition yourType, NewTypeAttribute actionAttribute, out bool skipInitialization) {
 			
 			if (actionAttribute.IsImplicit) {
 				Log_implicitly_creating_member("type", yourType);
@@ -100,68 +140,36 @@ namespace Patchwork
 			}
 			var maybeDuplicate = TargetAssembly.MainModule.GetAllTypes().FirstOrDefault(x => x.FullName == yourType.FullName);
 			if (maybeDuplicate != null) {
+				skipInitialization = true;
 				Log_duplicate_member("type", yourType, maybeDuplicate);
-				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
+				if (DebugOptions.HasFlag(DebugFlags.CreationOverwrites)) {
 					Log_overwriting();
-					return NewMemberStatus.Continue;
+					return maybeDuplicate;
 				}
 				if (actionAttribute.IsImplicit) {
-					return NewMemberStatus.InvalidItem;
+					Log_failed_to_create();
+					Log.Error("Since this is an implicitly created type, new members will be added to the existing type. Hopefuly, there will be no collisions.");
+					return maybeDuplicate;
 				}
 				throw Errors.Duplicate_member("type", yourType.FullName, maybeDuplicate.FullName);
 			}
-			
-			var targetTypeDef = new TypeDefinition(yourType.Namespace, yourType.Name, yourType.Attributes) {
-				DeclaringType = yourType.DeclaringType == null ? null : FixTypeReference(yourType.DeclaringType).Resolve(),
-				PackingSize = yourType.PackingSize,
-				ClassSize = yourType.ClassSize,
-			};
-			
-			targetTypeDef.SecurityDeclarations.AddRange(yourType.SecurityDeclarations);
-			foreach (var yourTypeParam in yourType.GenericParameters) {
-				var targetTypeParam = new GenericParameter(yourTypeParam.Name, targetTypeDef);
-				targetTypeDef.GenericParameters.Add(targetTypeParam);
-			}
+			var targetTypeDef = CopyType(yourType);
+			Log.Verbose("Created: {0}", targetTypeDef.FullName);
+			skipInitialization = false;
 			if (yourType.DeclaringType != null) {
 				targetTypeDef.DeclaringType.NestedTypes.Add(targetTypeDef);
 			} else {
 				TargetAssembly.MainModule.Types.Add(targetTypeDef);
 			}
-			Log.Verbose("Created: {0}", targetTypeDef.FullName);
-			//Note that 
-			return NewMemberStatus.Continue;
+			return targetTypeDef;
 		}
 
 		/// <summary>
-		/// Creates a new method in the target assembly, for the specified type.
+		/// Creates a method like the specified method, but doesn't add it anywhere.
 		/// </summary>
-		/// <param name="targetDeclaringType">The type declaring the method in the target assembly.</param>
-		/// <param name="yourMethod">Your method, which describes the method to create..</param>
-		/// <param name="actionAttribute">The action attribute ordering creation.</param>
+		/// <param name="yourMethod"></param>
 		/// <returns></returns>
-		/// <exception cref="PatchDeclerationException">Thrown if this member collides with another member, and the error cannot be resolved.</exception>
-		private NewMemberStatus CreateNewMethod(TypeDefinition targetDeclaringType, MethodDefinition yourMethod,
-			NewMemberAttribute actionAttribute) {
-			if (actionAttribute.IsImplicit) {
-				Log_implicitly_creating_member("method", yourMethod);
-			} else {
-				Log_creating_member("method", yourMethod);
-			}
-			
-			var maybeDuplicate = targetDeclaringType.GetMethodsLike(yourMethod).FirstOrDefault();
-			if (maybeDuplicate != null) {
-				Log_duplicate_member("method", yourMethod, maybeDuplicate);
-				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
-					Log_overwriting();
-					//this only okay for controlled testing code.
-					return NewMemberStatus.Continue;
-				}
-				if (actionAttribute.IsImplicit) {
-					return NewMemberStatus.InvalidItem;
-				}
-				throw Errors.Duplicate_member("type", yourMethod.FullName, maybeDuplicate.FullName);
-			}
-			
+		private MethodDefinition CopyMethod( MethodDefinition yourMethod) {
 			var targetMethod = new MethodDefinition(yourMethod.Name, yourMethod.Attributes, 
 				yourMethod.ReturnType) {
 					ImplAttributes = yourMethod.ImplAttributes,
@@ -178,8 +186,6 @@ namespace Patchwork
 
 			targetMethod.SecurityDeclarations.AddRange(yourMethod.SecurityDeclarations.Select(x => new SecurityDeclaration(x.Action, x.GetBlob())));
 
-			targetDeclaringType.Methods.Add(targetMethod);
-
 			//First we add the parameters to the method so its signature is correct.
 			//Note that we do not fix the types at this stage. 
 			//This is because FixType calls can end up looking for the method we're adding right now
@@ -188,6 +194,7 @@ namespace Patchwork
 			//this may seem needlessly complicated and rather risky, and I thought so too, but there really isn't any way around it
 			//or at least, I'm not clever enough to come up with one that doesn't introduce more problems 
 			//(believe me, I've tried all sorts of things)
+
 			foreach (var yourParam in yourMethod.Parameters) {
 				targetMethod.Parameters.Add(new ParameterDefinition(yourParam.ParameterType));
 			}
@@ -231,7 +238,43 @@ namespace Patchwork
 
 			//note that YOU DO NOT do targetMethod.Parameters.AddRangE(yourMethod.Parameters)
 			//ParameterDefinitions are mutable!  and doing this can mutate them...
-			return NewMemberStatus.Continue;
+			return targetMethod;
+		}
+
+		/// <summary>
+		/// Creates a new method in the target assembly, for the specified type.
+		/// </summary>
+		/// <param name="targetDeclaringType">The type declaring the method in the target assembly.</param>
+		/// <param name="yourMethod">Your method, which describes the method to create..</param>
+		/// <param name="actionAttribute">The action attribute ordering creation.</param>
+		/// <returns></returns>
+		/// <exception cref="PatchDeclerationException">Thrown if this member collides with another member, and the error cannot be resolved.</exception>
+		private MethodDefinition CreateNewMethod(TypeDefinition targetDeclaringType, MethodDefinition yourMethod,
+			NewMemberAttribute actionAttribute) {
+			if (actionAttribute.IsImplicit) {
+				Log_implicitly_creating_member("method", yourMethod);
+			} else {
+				Log_creating_member("method", yourMethod);
+			}
+			
+			var maybeDuplicate = targetDeclaringType.GetMethodsLike(yourMethod).FirstOrDefault();
+			if (maybeDuplicate != null) {
+				Log_duplicate_member("method", yourMethod, maybeDuplicate);
+				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
+					Log_overwriting();
+					//this only okay for controlled testing code.
+					return maybeDuplicate;
+				}
+				if (actionAttribute.IsImplicit) {
+					Log_failed_to_create();
+					return null;
+				}
+				throw Errors.Duplicate_member("type", yourMethod.FullName, maybeDuplicate.FullName);
+			}
+
+			var method = CopyMethod(yourMethod);
+			targetDeclaringType.Methods.Add(method);
+			return method;
 		}
 
 		private void Log_overwriting() {
@@ -242,6 +285,15 @@ namespace Patchwork
 			Log.Error("Failed to create member.");
 		}
 
+		private FieldDefinition CopyField(FieldDefinition yourField) {
+			var targetField =
+				new FieldDefinition(yourField.Name, yourField.Resolve().Attributes, FixTypeReference(yourField.FieldType)) {
+					InitialValue = yourField.InitialValue, //probably for string consts	
+					Constant = yourField.Constant
+				};
+			return targetField;
+		}
+
 		/// <summary>
 		/// Creates a new field in the target assembly, for the specified type.
 		/// </summary>
@@ -250,7 +302,7 @@ namespace Patchwork
 		/// <param name="attr">The action attribute.</param>
 		/// <exception cref="PatchDeclerationException">Thrown if this member collides with another member, and the error cannot be resolved.</exception>
 		/// <returns></returns>
-		private NewMemberStatus CreateNewField(TypeDefinition targetDeclaringType, FieldDefinition yourField,
+		private FieldDefinition CreateNewField(TypeDefinition targetDeclaringType, FieldDefinition yourField,
 			NewMemberAttribute attr) {
 			if (attr.IsImplicit) {
 				Log_implicitly_creating_member("field", yourField);
@@ -262,20 +314,17 @@ namespace Patchwork
 				Log_duplicate_member("field", yourField, maybeDuplicate);
 				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
 					Log_overwriting();
-					return NewMemberStatus.Continue;
+					return maybeDuplicate;
 				}
 				if (attr.IsImplicit) {
-					return NewMemberStatus.InvalidItem;
+					Log_failed_to_create();
+					return null;
 				}
 				throw Errors.Duplicate_member("type", yourField.FullName, maybeDuplicate.FullName);
 			}
-			var targetField =
-				new FieldDefinition(yourField.Name, yourField.Resolve().Attributes, FixTypeReference(yourField.FieldType)) {
-					InitialValue = yourField.InitialValue, //probably for string consts	
-					Constant = yourField.Constant
-				};
+			var targetField = CopyField(yourField);
 			targetDeclaringType.Fields.Add(targetField);
-			return NewMemberStatus.Continue;
+			return targetField;
 		}
 
 		private void Log_implicitly_creating_member(string kind, MemberReference forMember) {

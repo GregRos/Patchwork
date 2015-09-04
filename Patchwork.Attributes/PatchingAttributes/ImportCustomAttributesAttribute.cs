@@ -6,7 +6,7 @@ namespace Patchwork.Attributes {
 	/// Specifies that Patchwork should import non-patching attributes on this module or assembly.
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Module | AttributeTargets.Assembly)]
-	public class ImportCustomAttributesAttribute : PatchingAttribute {
+	public class ImportCustomAttributesAttribute : AssemblyActionAttribute {
 		public IEnumerable<object> AttributeTypes {
 			get;
 			private set;

@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace Patchwork.Collections {
-	internal class SimpleTypeGroup<T> : IEnumerable<T> {
+	public class SimpleTypeGroup<T> : IEnumerable<T> {
 
 		public SimpleTypeGroup(Type key, IList<T> values) {
 			Values = values;

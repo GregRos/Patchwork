@@ -3,21 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil", "..\..\Patchwork\cecil-0.9.6\Mono.Cecil.csproj", "{D68133BD-1E63-496E-9EDE-4FBDBF77B486}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil", "cecil-0.9.6\Mono.Cecil.csproj", "{D68133BD-1E63-496E-9EDE-4FBDBF77B486}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil.Rocks", "..\..\Patchwork\cecil-0.9.6\rocks\Mono.Cecil.Rocks.csproj", "{FBC6DD59-D09D-499C-B03C-99C1C78FF2AC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil.Rocks", "cecil-0.9.6\rocks\Mono.Cecil.Rocks.csproj", "{FBC6DD59-D09D-499C-B03C-99C1C78FF2AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil.Mdb", "..\..\Patchwork\cecil-0.9.6\symbols\mdb\Mono.Cecil.Mdb.csproj", "{8559DD7F-A16F-46D0-A05A-9139FAEBA8FD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil.Mdb", "cecil-0.9.6\symbols\mdb\Mono.Cecil.Mdb.csproj", "{8559DD7F-A16F-46D0-A05A-9139FAEBA8FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil.Pdb", "..\..\Patchwork\cecil-0.9.6\symbols\pdb\Mono.Cecil.Pdb.csproj", "{63E6915C-7EA4-4D76-AB28-0D7191EEA626}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Cecil.Pdb", "cecil-0.9.6\symbols\pdb\Mono.Cecil.Pdb.csproj", "{63E6915C-7EA4-4D76-AB28-0D7191EEA626}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Tests.Patch", "..\..\Patchwork\Patchwork.Tests.Patch\Patchwork.Tests.Patch.csproj", "{9A1E9961-28B5-40B1-A04F-D46756746C88}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Tests.Patch", "Patchwork.Tests.Patch\Patchwork.Tests.Patch.csproj", "{9A1E9961-28B5-40B1-A04F-D46756746C88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Tests.Target", "..\..\Patchwork\Patchwork.Tests.Target\Patchwork.Tests.Target.csproj", "{551DCD0A-63F9-49BB-943C-EE470FA38AFD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Tests.Target", "Patchwork.Tests.Target\Patchwork.Tests.Target.csproj", "{551DCD0A-63F9-49BB-943C-EE470FA38AFD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Attributes", "..\..\Patchwork\Patchwork.Attributes\Patchwork.Attributes.csproj", "{47DCBAF7-F2E6-486C-8887-FA41C271B74E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork.Attributes", "Patchwork.Attributes\Patchwork.Attributes.csproj", "{47DCBAF7-F2E6-486C-8887-FA41C271B74E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork", "..\..\Patchwork\Patchwork\Patchwork.csproj", "{565C269A-F5EB-4BBE-86E5-75C8D4E1CDF7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patchwork", "Patchwork\Patchwork.csproj", "{565C269A-F5EB-4BBE-86E5-75C8D4E1CDF7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{940DBF76-F2FA-4DEC-9A9F-00C7C21A543B}"
 	ProjectSection(SolutionItems) = preProject
