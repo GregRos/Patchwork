@@ -152,16 +152,18 @@ namespace Patchwork {
 				});
 		}
 
+		
+
 		private void IntroduceTypes(SimpleTypeLookup<TypeAction> typeActions) {
 			foreach (var newTypeAction in typeActions[typeof (NewTypeAttribute)]) {
-				bool needsInitialization = true;
-				var newType = CreateNewType(newTypeAction.YourType, (NewTypeAttribute) newTypeAction.ActionAttribute, out needsInitialization);
+				bool skipInit = false;
+				var newType = CreateNewType(newTypeAction.YourType, (NewTypeAttribute) newTypeAction.ActionAttribute, out skipInit);
 				if (newType == null) {
 					typeActions.Remove(newTypeAction);
 					continue;
 				}
 				newTypeAction.TargetType = newType;
-				if (!needsInitialization) {
+				if (skipInit) {
 					typeActions.Remove(newTypeAction);
 					newTypeAction.ActionAttribute = new ModifiesTypeAttribute();
 					typeActions.Add(typeof (ModifiesTypeAttribute), newTypeAction);
@@ -175,6 +177,13 @@ namespace Patchwork {
 				if (newMethod == null) {
 					methodActions.Remove(actionParams);
 				}
+			}
+		}
+
+		private void ClearReplacedTypes(SimpleTypeLookup<TypeAction> typeActions) {
+			foreach (var pairing in typeActions[typeof (ReplaceTypeAttribute)]) {
+				Log.Information("Clearing fields in {0:l}", pairing.TargetType.UserFriendlyName());
+				pairing.TargetType.Fields.Clear();
 			}
 		}
 
@@ -271,7 +280,7 @@ namespace Patchwork {
 		}
 
 		private void RemoveEvents(SimpleTypeLookup<MemberAction<EventDefinition>> eventActions) {
-			foreach (var eventAction in eventActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
+			foreach (var eventAction in eventActions[typeof (RemoveThisMemberAttribute)]) {
 				var removed =
 					eventAction.TypeAction.TargetType.Events.RemoveWhere(x => x.Name == eventAction.YourMember.Name);
 				if (!removed) {
@@ -327,7 +336,7 @@ namespace Patchwork {
 					patchingAssembly.MainModule.GetCustomAttribute<ImportCustomAttributesAttribute>());
 
 				UpdateTypes(manifest.TypeActions);
-
+				ClearReplacedTypes(manifest.TypeActions);
 				RemoveFields(manifest.FieldActions);
 				IntroduceFields(manifest.FieldActions);
 				UpdateFields(manifest.FieldActions);
