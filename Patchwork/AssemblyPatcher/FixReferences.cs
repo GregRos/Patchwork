@@ -241,6 +241,7 @@ namespace Patchwork
 			 */
 			MethodReference targetMethodRef;
 			var memberAlias = yourMethodDef.GetCustomAttribute<MemberAliasAttribute>();
+			var modifiesMember = yourMethodDef.GetCustomAttribute<ModifiesMemberAttribute>();
 			if (yourMethodRef.IsGenericInstance) {
 				var yourGeneric = (GenericInstanceMethod) yourMethodRef;
 				var targetBaseMethod = FixMethodReference(yourGeneric.ElementMethod);
@@ -261,7 +262,9 @@ namespace Patchwork
 				var targetBaseMethodDef = yourMethodRef;
 				if (yourMethodDef.Module.Assembly.IsPatchingAssembly()) {
 					//additional checking
-					var methodName = memberAlias == null || memberAlias.AliasedMemberName == null ? yourMethodRef.Name : memberAlias.AliasedMemberName;
+					string methodName = memberAlias?.AliasedMemberName;
+					methodName = methodName ?? modifiesMember?.MemberName ?? yourMethodRef.Name;
+					
 					var targetMethodDef =
 						targetType.Resolve().GetMethods(methodName, yourMethodRef.Parameters.Select(x => x.ParameterType), yourMethodRef.ReturnType).SingleOrDefault
 							();
