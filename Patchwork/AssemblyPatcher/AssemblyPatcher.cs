@@ -24,13 +24,7 @@ namespace Patchwork {
 	///     A class that patches a specific assembly (a target assembly) with your assemblies.
 	/// </summary>
 	public partial class AssemblyPatcher {
-		private List<BodyFileChange> _bodyChanges = new List<BodyFileChange>();
 
-		public IEnumerable<BodyFileChange> BodyChanges {
-			get {
-				return _bodyChanges;
-			}
-		}
 
 		/// <summary>
 		///     Initializes a new instance of the <see cref="AssemblyPatcher" /> class.

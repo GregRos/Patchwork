@@ -226,15 +226,6 @@ namespace Patchwork
 					"You cannot modify the body of an abstract method.");
 			}
 
-			if (modifiesMemberAttr != null && scope.HasFlag(ModificationScope.Body)) {
-				_bodyChanges.Add(new BodyFileChange() {
-					Start = yourMethod.Body.Instructions.First(i => i.SequencePoint != null).SequencePoint,
-					End = yourMethod.Body.Instructions.Last(i => i.SequencePoint != null).SequencePoint,
-					ModifiedMember = yourMethod.Module.Import(targetMethod).Resolve(),
-					Name = yourMethod.Name
-				});
-			}
-
 			ModifyMethod(targetMethod, yourMethod, scope & ~ModificationScope.Body, newMemberAttr != null); 
 			ModifyMethod(targetMethod, bodySource, ModificationScope.Body & scope, false);
 		}
