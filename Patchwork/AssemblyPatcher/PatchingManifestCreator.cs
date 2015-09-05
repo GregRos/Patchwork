@@ -32,21 +32,6 @@ namespace Patchwork {
 			return memberSeq.ToSimpleTypeLookup();
 		}
 
-		public string RunPeVerify(string switches = "/il /md /verbose /hresult /nologo", IEnumerable<string> ignoreErrors = null) {
-			ignoreErrors = ignoreErrors ?? new string[] {};
-			var peVerifyPath = "PEVerify"; //will still be recognized as an executable, even without an extension.
-			var tempPath = Guid.NewGuid().ToString();
-			TargetAssembly.Write(tempPath);
-			var info = new ProcessStartInfo() {
-				UseShellExecute = false,
-				FileName = "cmd",
-				RedirectStandardOutput = true,
-				Arguments = string.Format($"/c \"\"{peVerifyPath}\" {switches} /ignore={ignoreErrors.Join(",")} \"{tempPath}\"\"")
-			};
-			using (var process = Process.Start(info)) {
-				return process.StandardOutput.ReadToEnd();
-			}
-		}
 
 		private void ImplicitlyAddNewMethods<T>(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions, MemberAction<T> rootMemberAction,
 			Func<T, IEnumerable<MethodDefinition>> getMethods) where T : IMemberDefinition {

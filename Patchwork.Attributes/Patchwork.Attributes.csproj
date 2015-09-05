@@ -65,6 +65,10 @@
     <Compile Include="PatchingAttributes\PatchingAttribute.cs" />
     <Compile Include="PatchingAttributes\RemoveThisMemberAttribute.cs" />
     <Compile Include="PatchingAttributes\ReplaceTypeAttribute.cs" />
+    <Compile Include="PatchingHistoryAttributes\PatchedByAssemblyAttribute.cs" />
+    <Compile Include="PatchingHistoryAttributes\PatchingHistoryAttribute.cs" />
+    <Compile Include="PatchingHistoryAttributes\PatchedByMemberAttribute.cs" />
+    <Compile Include="PatchingHistoryAttributes\PatchedByTypeAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Patchwork.Version.cs" />
   </ItemGroup>

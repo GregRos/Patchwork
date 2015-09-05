@@ -228,6 +228,7 @@ namespace Patchwork
 
 			ModifyMethod(targetMethod, yourMethod, scope & ~ModificationScope.Body, newMemberAttr != null); 
 			ModifyMethod(targetMethod, bodySource, ModificationScope.Body & scope, false);
+			targetMethod.AddPatchedByMemberAttribute(yourMethod, memberAction.GetType());
 		}
 
 		/// <summary>

@@ -24,8 +24,6 @@ namespace Patchwork {
 	///     A class that patches a specific assembly (a target assembly) with your assemblies.
 	/// </summary>
 	public partial class AssemblyPatcher {
-
-
 		/// <summary>
 		///     Initializes a new instance of the <see cref="AssemblyPatcher" /> class.
 		/// </summary>

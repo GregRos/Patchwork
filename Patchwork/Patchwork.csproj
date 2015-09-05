@@ -95,6 +95,7 @@
     <Compile Include="Utility\LogHelper.cs" />
     <Compile Include="Utility\PathHelper.cs" />
     <Compile Include="Utility\CecilHelper.cs" />
+    <Compile Include="Utility\PeVerifyRunner.cs" />
     <Compile Include="Utility\SeqHelper.cs" />
     <Compile Include="Utility\StringHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -123,11 +124,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Binaries\PEVerify" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="PEVerify" />
-    <Content Include="pevrfyrc.dll" />
+    <Content Include="Binaries\pevrfyrc.dll" />
   </ItemGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

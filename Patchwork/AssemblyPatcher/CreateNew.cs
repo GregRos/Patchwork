@@ -161,9 +161,6 @@ namespace Patchwork
 			} else {
 				TargetAssembly.MainModule.Types.Add(targetTypeDef);
 			}
-			if (targetTypeDef.Name.Contains("<>c")) {
-				int sdff = 5;
-			}
 			return targetTypeDef;
 		}
 

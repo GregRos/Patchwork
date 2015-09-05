@@ -435,15 +435,38 @@ namespace Patchwork.Utility {
 					null);
 			var imported = module.Import(ctor);
 			var ctorArgs =
-				from ctorArg in constructorArgs
-				let type = module.Import(ctorArg.GetType())
-				select new CustomAttributeArgument(type, ctorArg);
+				from ctorParamArg in imported.Parameters.Zip(constructorArgs, Tuple.Create)
+				let paramType = ctorParamArg.Item1.ParameterType
+				let argValueAsType = ctorParamArg.Item2 as Type
+				let argValue = argValueAsType == null ? ctorParamArg.Item2 : module.Import(argValueAsType)
+				let argType = module.Import(ctorParamArg.Item2 is Type ? typeof(Type) : ctorParamArg.Item2.GetType())
+				let ctorArg = paramType.MetadataType != MetadataType.Object ? ctorParamArg.Item2 : 
+					new CustomAttributeArgument(argType, argValue)
+				select new CustomAttributeArgument(paramType, ctorArg);
 
 			var customAttr = new CustomAttribute(imported);
 			customAttr.ConstructorArguments.AddRange(ctorArgs);
 			provider.CustomAttributes.Add(customAttr);
-		} 
+		}
 
+		internal static void AddPatchedByMemberAttribute(this IMemberDefinition targetMember, IMemberDefinition yourMember, Type actionAttributeType) {
+			dynamic dynMemberDef = targetMember;
+			//calling PatchedByMemberAttribute(string patchMemberName, object actionAttributeType);
+			targetMember.AddCustomAttribute((ModuleDefinition)dynMemberDef.Module, typeof(PatchedByMemberAttribute), yourMember.FullName, actionAttributeType);
+		}
+
+		internal static void AddPatchedByTypeAttribute(this TypeDefinition targetType, TypeDefinition yourType, Type actionAttributeType) {
+			
+			//calling PatchedByTypeAttribute(object patchType, object actionAttributeType);
+			targetType.AddCustomAttribute(targetType.Module, typeof(PatchedByTypeAttribute), yourType, actionAttributeType);
+		}
+
+		internal static void AddPatchedByAssemblyAttribute(this AssemblyDefinition targetAssembly,
+			AssemblyDefinition yourAssembly) {
+
+			//PatchedByAssemblyAttribute(string fullName);
+			targetAssembly.AddCustomAttribute(targetAssembly.MainModule, typeof(PatchedByAssemblyAttribute), yourAssembly.FullName);
+		}
 		/// <summary>
 		///     If given a ref to a patching type, returns the type that it patches. Otherwise, returns null.
 		/// </summary>
