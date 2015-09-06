@@ -62,27 +62,12 @@ namespace Patchwork
 			}
 		}
 
-		private void AutoModifyProperty(TypeDefinition targetType, MemberActionAttribute propActionAttr,
-			PropertyDefinition yourProp) {
+		private void AutoModifyProperty(MemberActionAttribute propActionAttr,
+			PropertyDefinition yourProp, PropertyDefinition targetProp) {
 			Log_modifying_member("property", yourProp);
-			var modifiesMemberAttr = propActionAttr as ModifiesMemberAttribute;
-			var newMemberAttr = propActionAttr as NewMemberAttribute;
-			string targetPropName;
-			ModificationScope scope;
-
-			if (modifiesMemberAttr != null) {
-				targetPropName = modifiesMemberAttr.MemberName ?? yourProp.Name;
-				scope = modifiesMemberAttr.Scope;
-			} else if (newMemberAttr != null) {
-				targetPropName = yourProp.Name;
-				scope = ModificationScope.All;
-			} else {
-				throw Errors.Unknown_action_attribute(propActionAttr);
-			}
-			var targetProp = targetType.GetProperty(targetPropName,
-				yourProp.Parameters.Select(x => x.ParameterType));
+			ModificationScope scope = GetModificationScope(yourProp, propActionAttr);
 			if (targetProp == null) {
-				throw Errors.Missing_member_in_attribute("property", yourProp, targetPropName);
+				throw Errors.Missing_member_in_attribute("property", yourProp, GetPatchedMemberName(yourProp, propActionAttr));
 			}
 			
 			if ((scope & ModificationScope.CustomAttributes) != 0) {
@@ -104,26 +89,12 @@ namespace Patchwork
 			}
 		}
 
-		private void AutoModifyEvent(TypeDefinition targetType, MemberActionAttribute eventActionAttr,
-			EventDefinition yourEvent) {
+		private void AutoModifyEvent(MemberActionAttribute eventActionAttr,
+			EventDefinition yourEvent, EventDefinition targetEvent) {
 			Log_modifying_member("property", yourEvent);
-			var modifiesMemberAttr = eventActionAttr as ModifiesMemberAttribute;
-			var newMemberAttr = eventActionAttr as NewMemberAttribute;
-			string targetEventName;
-			ModificationScope scope;
-
-			if (modifiesMemberAttr != null) {
-				targetEventName = modifiesMemberAttr.MemberName ?? yourEvent.Name;
-				scope = modifiesMemberAttr.Scope;
-			} else if (newMemberAttr != null) {
-				targetEventName = yourEvent.Name;
-				scope = ModificationScope.All;
-			} else {
-				throw Errors.Unknown_action_attribute(eventActionAttr);
-			}
-			var targetEvent = targetType.GetEvent(targetEventName);
+			ModificationScope scope = GetModificationScope(yourEvent, eventActionAttr);
 			if (targetEvent == null) {
-				throw Errors.Missing_member_in_attribute("property", yourEvent, targetEventName);
+				throw Errors.Missing_member_in_attribute("property", yourEvent, GetPatchedMemberName(yourEvent, eventActionAttr));
 			}
 			
 			if ((scope & ModificationScope.CustomAttributes) != 0) {
@@ -143,25 +114,14 @@ namespace Patchwork
 			}
 		}
 
-		private void AutoModifyField(TypeDefinition targetType, MemberActionAttribute fieldActionAttr,
-			FieldDefinition yourField) {
+		private void AutoModifyField(MemberActionAttribute fieldActionAttr,
+			FieldDefinition yourField, FieldDefinition targetField) {
 			Log_modifying_member("field", yourField);
 			(fieldActionAttr != null).AssertTrue();
-			var asModifies = fieldActionAttr as ModifiesMemberAttribute;
-			string targetFieldName = null;
-			ModificationScope scope;
-			if (asModifies != null) {
-				targetFieldName = asModifies.MemberName ?? yourField.Name;
-				scope = asModifies.Scope;
-			} else if (fieldActionAttr is NewMemberAttribute) {
-				targetFieldName = yourField.Name;
-				scope = ModificationScope.All;
-			} else {
-				throw Errors.Unknown_action_attribute(fieldActionAttr);
-			}
-			var targetField = targetType.GetField(targetFieldName);
+			ModificationScope scope = GetModificationScope(yourField, fieldActionAttr);
+
 			if (targetField == null) {
-				throw Errors.Missing_member_in_attribute("field", yourField, targetFieldName);
+				throw Errors.Missing_member_in_attribute("field", yourField, GetPatchedMemberName(yourField, fieldActionAttr));
 			}
 			if ((scope & ModificationScope.Accessibility) != 0) {
 				targetField.SetAccessibility(yourField.GetAccessbility());
@@ -175,59 +135,47 @@ namespace Patchwork
 			}
 		}
 
+		private MethodDefinition GetBodySource(TypeDefinition targetType, MethodDefinition yourMethod,
+			DuplicatesBodyAttribute insertAttribute) {
+			//Note that the source type is resolved using yourMethod's module, which uses a different IMetadataResolver, 
+			//and thus will resolve the method from the target, unmodified assembly.
+
+			var importSourceType = insertAttribute.SourceType != null
+				? yourMethod.Module.Import((TypeReference) insertAttribute.SourceType)
+				: yourMethod.Module.Import(targetType);
+
+			var importMethod = importSourceType.Resolve().GetMethods(insertAttribute.MethodName,
+				yourMethod.Parameters.Select(x => x.ParameterType), yourMethod.ReturnType).SingleOrDefault();
+
+			var others =
+				importSourceType.Resolve().Methods.Where(x => x.Name == insertAttribute.MethodName).ToArray();
+
+			if (importMethod == null) {
+				throw Errors.Missing_member_in_attribute("method", yourMethod, insertAttribute.MethodName);
+			}
+			return importMethod;
+		}
+
 		private void AutoModifyMethod(TypeDefinition targetType, MethodDefinition yourMethod,
-			MemberActionAttribute memberAction) {
+			MemberActionAttribute memberAction, MethodDefinition targetMethod) {
 			Log_modifying_member("method", yourMethod);
-			var bodySource = yourMethod;
 			var insertAttribute = yourMethod.GetCustomAttribute<DuplicatesBodyAttribute>();
-			if (insertAttribute != null) {
-				//Note that the source type is resolved using yourMethod's module, which uses a different IMetadataResolver, 
-				//and thus will resolve the method from the target, unmodified assembly.
-
-				var importSourceType = insertAttribute.SourceType != null
-					? yourMethod.Module.Import((TypeReference) insertAttribute.SourceType)
-					: yourMethod.Module.Import(targetType);
-
-				var importMethod = importSourceType.Resolve().GetMethods(insertAttribute.MethodName,
-					yourMethod.Parameters.Select(x => x.ParameterType), yourMethod.ReturnType).SingleOrDefault();
-
-				var others =
-					importSourceType.Resolve().Methods.Where(x => x.Name == insertAttribute.MethodName).ToArray();
-
-				if (importMethod == null) {
-					throw Errors.Missing_member_in_attribute("method", yourMethod, insertAttribute.MethodName);
-				}
-
-				bodySource = importMethod;
-			}
-			var modifiesMemberAttr = memberAction as ModifiesMemberAttribute;
-			var newMemberAttr = memberAction as NewMemberAttribute;
-			ModificationScope scope;
-			string targetMethodName;
-			
-			if (modifiesMemberAttr != null) {
-				targetMethodName = modifiesMemberAttr.MemberName ?? yourMethod.Name;
-				scope = modifiesMemberAttr.Scope;
-				
-			} else if (newMemberAttr != null) {
-				targetMethodName = yourMethod.Name;
-				scope = ModificationScope.All;
-			} else {
-				throw Errors.Unknown_action_attribute(memberAction);
-			}
-			var targetMethod =
-				targetType.GetMethods(targetMethodName, yourMethod.Parameters.Select(x => x.ParameterType), yourMethod.ReturnType).FirstOrDefault();
-
+			var bodySource = insertAttribute == null ? yourMethod : GetBodySource(targetType,yourMethod,insertAttribute);
+			ModificationScope scope = GetModificationScope(yourMethod, memberAction);
 			if (targetMethod == null) {
-				throw Errors.Missing_member_in_attribute("method", yourMethod, targetMethodName);
-			}
-			if (modifiesMemberAttr != null && targetMethod.IsAbstract && (scope & ModificationScope.Body) != 0) {
-				throw Errors.Invalid_member("method", yourMethod, targetMethod.FullName,
-					"You cannot modify the body of an abstract method.");
+				throw Errors.Missing_member_in_attribute("method", yourMethod, GetPatchedMemberName(yourMethod, memberAction));
 			}
 
-			ModifyMethod(targetMethod, yourMethod, scope & ~ModificationScope.Body, newMemberAttr != null); 
-			ModifyMethod(targetMethod, bodySource, ModificationScope.Body & scope, false);
+			if (scope.HasFlag(AdvancedModificationScope.ExplicitOverrides)) {
+				targetMethod.Overrides.Clear();
+				foreach (var explicitOverride in yourMethod.Overrides) {
+					targetMethod.Overrides.Add(FixMethodReference(explicitOverride));
+				}
+			}
+			//we call this twice to handle the DuplicatesBody case. The first time we set everything except for the body,
+			//and then we set only the body.
+			ModifyMethod(targetMethod, yourMethod, scope & ~ModificationScope.Body); 
+			ModifyMethod(targetMethod, bodySource, ModificationScope.Body & scope);
 			targetMethod.AddPatchedByMemberAttribute(yourMethod, memberAction.GetType());
 		}
 
@@ -237,19 +185,9 @@ namespace Patchwork
 		/// <param name="targetMethod">The target method.</param>
 		/// <param name="yourMethod">Your method.</param>
 		/// <param name="scope">The extent to which to modify the method..</param>
-		
-		private void ModifyMethod(MethodDefinition targetMethod, MethodDefinition yourMethod, ModificationScope scope, bool isNew) {
+		private void ModifyMethod(MethodDefinition targetMethod, MethodDefinition yourMethod, ModificationScope scope) {
 			if ((scope & ModificationScope.Accessibility) != 0) {
 				targetMethod.SetAccessibility(yourMethod.GetAccessbility());
-			}
-
-			if (isNew) {
-				//There is absolutely no point allowing you to modify the explicit overrides of existing methods.
-				//I thought of adding an enum value, but it will just cause confusion.
-				targetMethod.Overrides.Clear();
-				foreach (var explicitOverride in yourMethod.Overrides) {
-					targetMethod.Overrides.Add(FixMethodReference(explicitOverride));
-				}
 			}
 
 			if ((scope & ModificationScope.CustomAttributes) != 0) {
@@ -302,12 +240,13 @@ namespace Patchwork
 		}
 
 		/// <summary>
-		/// Fixes the cil instruction. Currently mutates yourInstruction rather than returning a new instruction, because creating a new instruction creates a bugg that I don't understand.
+		/// Transfers the method body of yourMethod into the targetMethod, keeping everything neat and tidy, creating new copies of yourMethod's instructions.
 		/// </summary>
 		/// <param name="targetMethod">The target method.</param>
 		/// <param name="yourMethod">Your instructions.</param>
-		/// <returns>The return type is a sequence because instructions can sometimes be fixed to multiple instructions.</returns>
 		private void TransferMethodBody(MethodDefinition targetMethod, MethodDefinition yourMethod) {
+			//TODO: This method needs to be refactored somehow. In particular, the IL transformation in PatchworkDebugRegisterAttribute needs to be applied separately.
+
 			targetMethod.Body.Instructions.Clear();
 			var injectManual = yourMethod.GetCustomAttribute<PatchworkDebugRegisterAttribute>();
 			FieldReference debugFieldRef = null;

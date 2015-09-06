@@ -13,13 +13,6 @@ using Serilog;
 
 namespace Patchwork {
 
-	public class BodyFileChange {
-		public SequencePoint Start;
-		public SequencePoint End;
-		public MethodDefinition ModifiedMember;
-		public string Name;
-	}
-
 	/// <summary>
 	///     A class that patches a specific assembly (a target assembly) with your assemblies.
 	/// </summary>
@@ -164,10 +157,12 @@ namespace Patchwork {
 		}
 
 		private void IntroduceMethods(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions) {
-			foreach (var actionParams in methodActions[typeof (NewMemberAttribute)]) {
-				var newMethod = CreateNewMethod(actionParams.TypeAction.TargetType, actionParams.YourMember, (NewMemberAttribute) actionParams.ActionAttribute);
+			foreach (var eventAction in methodActions[typeof (NewMemberAttribute)]) {
+				var newMethod = CreateNewMethod(eventAction.TypeAction.TargetType, eventAction.YourMember, (NewMemberAttribute) eventAction.ActionAttribute);
 				if (newMethod == null) {
-					methodActions.Remove(actionParams);
+					methodActions.Remove(eventAction);
+				} else {
+					eventAction.TargetMember = newMethod;
 				}
 			}
 		}
@@ -182,12 +177,15 @@ namespace Patchwork {
 		private void IntroduceFields(SimpleTypeLookup<MemberAction<FieldDefinition>> fieldActions) {
 			Log.Header("Creating new fields");
 			foreach (var fieldAction in fieldActions[typeof (NewMemberAttribute)]) {
-				var status = CreateNewField(fieldAction.TypeAction.TargetType,
+				var newField = CreateNewField(fieldAction.TypeAction.TargetType,
 					fieldAction.YourMember,
 					(NewMemberAttribute) fieldAction.ActionAttribute);
-				if (status == null) {
+				if (newField == null) {
 					fieldActions.Remove(fieldAction);
+				} else {
+					fieldAction.TargetMember = newField;
 				}
+				
 			}
 		}
 
@@ -196,15 +194,19 @@ namespace Patchwork {
 				var newProperty = CreateNewProperty(propAction.TypeAction.TargetType, propAction.YourMember, (NewMemberAttribute) propAction.ActionAttribute);
 				if (newProperty == null) {
 					propActions.Remove(propAction);
+				} else {
+					propAction.TargetMember = newProperty;
 				}
 			}
 		}
 
 		private void IntroduceEvents(SimpleTypeLookup<MemberAction<EventDefinition>> eventActions) {
 			foreach (var eventAction in eventActions[typeof (NewMemberAttribute)]) {
-				var newProperty = CreateNewEvent(eventAction.TypeAction.TargetType, eventAction.YourMember, (NewMemberAttribute) eventAction.ActionAttribute);
-				if (newProperty == null) {
+				var newEvent = CreateNewEvent(eventAction.TypeAction.TargetType, eventAction.YourMember, (NewMemberAttribute) eventAction.ActionAttribute);
+				if (newEvent == null) {
 					eventActions.Remove(eventAction);
+				} else {
+					eventAction.TargetMember = newEvent;
 				}
 			}
 		}
@@ -213,25 +215,25 @@ namespace Patchwork {
 			foreach (var methodAction in methodActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
 				AutoModifyMethod(methodAction.TypeAction.TargetType,
 					methodAction.YourMember,
-					methodAction.ActionAttribute);
+					methodAction.ActionAttribute, methodAction.TargetMember);
 			}
 		}
 
 		private void UpdateProperties(SimpleTypeLookup<MemberAction<PropertyDefinition>> propActions) {
 			foreach (var propAction in propActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-				AutoModifyProperty(propAction.TypeAction.TargetType, propAction.ActionAttribute, propAction.YourMember);
+				AutoModifyProperty(propAction.ActionAttribute, propAction.YourMember, propAction.TargetMember);
 			}
 		}
 
 		private void UpdateFields(SimpleTypeLookup<MemberAction<FieldDefinition>> fieldActions) {
 			foreach (var fieldAction in fieldActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-				AutoModifyField(fieldAction.TypeAction.TargetType, fieldAction.ActionAttribute, fieldAction.YourMember);
+				AutoModifyField(fieldAction.ActionAttribute, fieldAction.YourMember, fieldAction.TargetMember);
 			}
 		}
 
 		private void UpdateEvents(SimpleTypeLookup<MemberAction<EventDefinition>> eventActions) {
 			foreach (var eventAction in eventActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-				AutoModifyEvent(eventAction.TypeAction.TargetType, eventAction.ActionAttribute, eventAction.YourMember);
+				AutoModifyEvent(eventAction.ActionAttribute, eventAction.YourMember, eventAction.TargetMember);
 			}
 		}
 
@@ -243,9 +245,8 @@ namespace Patchwork {
 
 		private void RemoveMethods(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions) {
 			foreach (var actionParams in methodActions[typeof (RemoveThisMemberAttribute)]) {
-				var result =
-					actionParams.TypeAction.TargetType.GetMethodsLike(actionParams.YourMember).ToList().Any(
-						x => actionParams.TypeAction.TargetType.Methods.Remove(x));
+				var method = actionParams.TypeAction.TargetType.GetMethodLike(actionParams.YourMember);
+				var result = actionParams.TypeAction.TargetType.Methods.Remove(method);
 				if (!result) {
 					LogFailedToRemove("method", actionParams.YourMember);
 				}
@@ -254,7 +255,8 @@ namespace Patchwork {
 
 		private void RemoveProperties(SimpleTypeLookup<MemberAction<PropertyDefinition>> propActions) {
 			foreach (var propAction in propActions[typeof (RemoveThisMemberAttribute)]) {
-				var removed = propAction.TypeAction.TargetType.GetPropertiesLike(propAction.YourMember).ToList().Any(x => propAction.TypeAction.TargetType.Properties.Remove(x));
+				var prop = propAction.TypeAction.TargetType.GetPropertyLike(propAction.YourMember);
+				var removed = propAction.TypeAction.TargetType.Properties.Remove(prop);
 				if (!removed) {
 					LogFailedToRemove("property", propAction.YourMember);
 				}
@@ -287,28 +289,6 @@ namespace Patchwork {
 		/// <param name="manifest">The PatchingManifest. Note that the instance will be populated with additional information (such as newly created types) during execution.</param>
 		public void PatchManifest(PatchingManifest manifest) {
 			/*	The point of this method is to introduce all the patched elements in the correct order,
-			 * 	so the user doesn't have to worry about dependencies between code elements, and can have circular  dependencies.
-			 * 	
-			 * 	The order is the following:
-			 *  1. Declare all the new types, in the order of their nesting level (.e.g topmost types, nested types, types nested in those, etc),
-				 *  But don't set anything that references other things, like BaseType, interfaces, custom attributes, etc.
-				 *  Type parameters *are* added at this stage, but no constraints are specified.
-			 *  2. Remove any methods that need removing.
-			 *	3. Declare all the new methods, including signatures and type parameters + constraints, but without setting their bodies.
-				 *	This is performed now because types can reference attribute constructors that don't exist until we create them,
-				 *	but method definitions alone just reference types, and don't need to know about inheritance or constraints.
-				 *	Don't set custom attributes in this stage.
-			 *  4. Add any custom attributes for things that aren't part of the method/type hierarchy, such as assemblies.
-			 *  5.  Set the type information we didn't set in (1), according to the same order, including custom attributes.
-				 *  When/if modifying type inheritance is allowed, this process will occur at this stage.
-			 * 	6.	remove/define/modify fields. This is where most enum processing happens. Custom attributes are set at this stage.
-			 * 	7.	Remove/define/modify properties. This doesn't change anything about methods. Custom attributes are set at this stage.
-			 * 	8.	Fill/modify the bodies of all remaining methods, and also modify accessibility/attributes of existing ones.
-			 * 			Note that methods that are the source of DuplicatesBody will be resolved in their unmodified version,
-			 * 			so the modifications won't influence this functionality.
-				   		Custom attributes are set at this stage.
-				 *		Also, explicit overrides (what in C# is explicit interface implementation) are specified here.
-				
 			Standard order of business for order between modify/remove/update:
 			1. Remove Xs
 			2. Create new Xs
@@ -316,31 +296,73 @@ namespace Patchwork {
 			 */
 			var targetAssemblyBackup = TargetAssembly.Clone();
 			try {
+				//+INTRODUCE NEW TYPES
+				//Declare all the new types, in the order of their nesting level (.e.g topmost types, nested types, types nested in those, etc),
+				//But don't set anything that references other things, like BaseType, interfaces, custom attributes, etc.
+				//Type parameters *are* added at this stage, but no constraints are specified.
+				//Remove any methods that need removing.
+				//DEPENDENCIES: None
 				IntroduceTypes(manifest.TypeActions);
 
+				//+REMOVE EXISTING METHODS
+				//Remove any methods that need removing.
+				//DEPENDENCIES: Probably none
 				RemoveMethods(manifest.MethodActions);
+
+				//+INTRODUCE NEW METHODS
+				//Declare all the new methods, including signatures and type parameters + constraints, but without setting their bodies.
+				//This is performed now because types can reference attribute constructors that don't exist until we create them,
+				//but method definitions alone just reference types, and don't need to know about inheritance or constraints.
+				//Don't set custom attributes in this stage.
+				//DEPENDENCIES: Type definitions (for parameters, return types, constraints, ...)
 				IntroduceMethods(manifest.MethodActions);
 
+				//+IMPORT ASSEMBLY/MODULE CUSTOM ATTRIBUTES
+				//Add any custom attributes for things that aren't part of the method/type hierarchy, such as assemblies.
+				//DEPENDENCIES: Method definitions, type definitions. (for attribute types and attribute constructors)
 				var patchingAssembly = manifest.PatchingAssembly;
+				//for assmebly:
 				CopyCustomAttributesByImportAttribute(TargetAssembly, patchingAssembly,
 					patchingAssembly.GetCustomAttribute<ImportCustomAttributesAttribute>());
+				//for module:
 				CopyCustomAttributesByImportAttribute(TargetAssembly.MainModule, patchingAssembly.MainModule,
 					patchingAssembly.MainModule.GetCustomAttribute<ImportCustomAttributesAttribute>());
 
+				//+UPDATE TYPE DEFINITIONS
+				//Set the type information we didn't set in (1), according to the same order, including custom attributes.
+				//When/if modifying type inheritance is allowed, this process will occur at this stage.
+				//DEPENDENCIES: Type definitions (obviously), method definitions (for attribute constructors)
 				UpdateTypes(manifest.TypeActions);
+
+				//+FIELDS
+				//remove/define/modify fields. This is where most enum processing happens. Custom attributes are set at this stage.
+				//DEPENDENCIES: Type definitions, method definitions (for attribute constructors)
 				ClearReplacedTypes(manifest.TypeActions);
 				RemoveFields(manifest.FieldActions);
 				IntroduceFields(manifest.FieldActions);
 				UpdateFields(manifest.FieldActions);
 
+				//+PROPERTIES
+				//Remove/define/modify properties. This doesn't change anything about methods. Custom attributes are set at this stage.
+				//DEPENDENCIES: Type definitions, method definitions (attribute constructors, getter/setters)
 				RemoveProperties(manifest.PropertyActions);
 				IntroduceProperties(manifest.PropertyActions);
 				UpdateProperties(manifest.PropertyActions);
 
+				//+EVENTS
+				//Remove/define/modify events. This doesn't change anything about methods. Custom attributes are set at this stage.
+				//DEPENENCIES: Type definitions, method definitions (attribute constructors, add/remove/invoke handlers)
 				RemoveEvents(manifest.EventActions);
 				IntroduceEvents(manifest.EventActions);
 				UpdateEvents(manifest.EventActions);
 
+				//+FINALIZE METHODS, GENERATE METHOD BODIES
+				//Fill/modify the bodies of all remaining methods, and also modify accessibility/attributes of existing ones.
+				//Note that methods that are the source of DuplicatesBody will be resolved in their unmodified version,
+				//so the modifications won't influence this functionality.
+				//Custom attributes are set at this stage.
+				//Also, explicit overrides (what in C# is explicit interface implementation) are specified here.
+				//DEPENDENCIES: Type definitions, method definitions, field definitions
 				UpdateMethods(manifest.MethodActions);
 			}
 			catch {

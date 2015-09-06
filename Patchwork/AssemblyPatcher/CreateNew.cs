@@ -258,8 +258,8 @@ namespace Patchwork
 			} else {
 				Log_creating_member("method", yourMethod);
 			}
-			
-			var maybeDuplicate = targetDeclaringType.GetMethodsLike(yourMethod).FirstOrDefault();
+
+			var maybeDuplicate = targetDeclaringType.GetMethodLike(yourMethod);
 			if (maybeDuplicate != null) {
 				Log_duplicate_member("method", yourMethod, maybeDuplicate);
 				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {

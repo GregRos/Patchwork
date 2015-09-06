@@ -11,6 +11,8 @@ using Mono.Cecil.Cil;
 using Patchwork.Attributes;
 using Serilog;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
+using MethodBody = Mono.Cecil.Cil.MethodBody;
+
 namespace Patchwork.Utility {
 	/// <summary>
 	///     Helper methods (mainly extension methods) for working with Cecil and .NET reflection classes. Some are publically visible.
@@ -46,6 +48,18 @@ namespace Patchwork.Utility {
 
 		public static AssemblyDefinition Clone(this AssemblyDefinition definition) {
 			return AssemblyDefinition.ReadAssembly(new MemoryStream(definition.SerializeAssembly()));
+		}
+
+		public static SequencePoint FirstSequencePoint(this MethodBody body) {
+			return body.Instructions.Select(x => x.SequencePoint).First(x => x != null);
+		}
+
+		public static SequencePoint LastSequencePoint(this MethodBody body) {
+			return body.Instructions.Select(x => x.SequencePoint).Last(x => x != null);
+		}
+
+		public static string GetPatchedMemberName(this IMemberDefinition yourMember) {
+			return yourMember.GetCustomAttribute<ModifiesMemberAttribute>()?.MemberName ?? yourMember.Name;
 		}
 
 		public static byte[] SerializeAssembly(this AssemblyDefinition definition) {
@@ -190,9 +204,10 @@ namespace Patchwork.Utility {
 			return props;
 		}
 
-		public static IEnumerable<PropertyDefinition> GetPropertiesLike(this TypeDefinition typeDef,
-			PropertyDefinition likeWhat) {
-			return typeDef.GetProperties(likeWhat.Name, likeWhat.Parameters.Select(x => x.ParameterType));
+		public static PropertyDefinition GetPropertyLike(this TypeDefinition typeDef,
+			PropertyDefinition likeWhat, string altName = null) {
+			return
+				typeDef.GetProperties(altName ?? likeWhat.Name, likeWhat.Parameters.Select(x => x.ParameterType)).SingleOrDefault();
 		} 
 
 		/// <summary>
@@ -515,6 +530,10 @@ namespace Patchwork.Utility {
 			return module.Import(ExprHelper.GetMethod(expr));
 		}
 
+		internal static string UserFriendlyNameDef(this IMemberDefinition memberDef) {
+			return ((MemberReference) memberDef).UserFriendlyName();
+		}
+
 		/// <summary>
 		///     Returns a user-friendly name for the reference.
 		///     It's not as short as Name, but not as long as FullName.
@@ -537,9 +556,13 @@ namespace Patchwork.Utility {
 			return memberRef.FullName;
 		}
 
-		internal static IEnumerable<MethodDefinition> GetMethodsLike(this TypeDefinition type, MethodReference methodRef) {
-			return type.GetMethods(methodRef.Name, methodRef.Parameters.Select(x => x.ParameterType), methodRef.ReturnType);
+		internal static MethodDefinition GetMethodLike(this TypeDefinition type, MethodReference methodRef, string altName = null) {
+			return
+				type.GetMethods(altName ?? methodRef.Name, methodRef.Parameters.Select(x => x.ParameterType), methodRef.ReturnType)
+					.SingleOrDefault();
 		}
+
+		
 
 		/// <summary>
 		/// This method only considers the return type of the method if its name is op_Explicit or op_Implicit.

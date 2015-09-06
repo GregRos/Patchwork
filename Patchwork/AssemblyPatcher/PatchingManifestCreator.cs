@@ -26,7 +26,8 @@ namespace Patchwork {
 				group new MemberAction<T>() {
 					YourMember = yourMember,
 					ActionAttribute = actionAttr,
-					TypeAction = pair
+					TypeAction = pair,
+					TargetMember = pair.TargetType == null ? null : GetPatchedMember(pair.TargetType, yourMember)
 				} by actionAttr.GetType();
 
 			return memberSeq.ToSimpleTypeLookup();
@@ -42,7 +43,8 @@ namespace Patchwork {
 				methodActions.GetGroup(typeof (NewMemberAttribute)).Values.Add(new MemberAction<MethodDefinition>() {
 					YourMember = method,
 					ActionAttribute = new NewMemberAttribute(true),
-					TypeAction = rootMemberAction.TypeAction
+					TypeAction = rootMemberAction.TypeAction,
+					TargetMember = null
 				});
 			}
 

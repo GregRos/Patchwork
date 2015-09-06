@@ -33,6 +33,11 @@ namespace Patchwork {
 			set;
 		}
 
+		public T TargetMember {
+			get;
+			set;
+		}
+
 		public MemberActionAttribute ActionAttribute {
 			get;
 			set;

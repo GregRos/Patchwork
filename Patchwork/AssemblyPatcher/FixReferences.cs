@@ -213,6 +213,62 @@ namespace Patchwork
 			return newRef;
 		}
 
+		
+
+		private static string GetPatchedMemberName(IMemberDefinition yourMemberDef, MemberActionAttribute actionAttribute = null) {
+			string targetMemberName;
+			ModificationScope? dummy;
+			GetMemberModificationInfo(yourMemberDef, out targetMemberName, out dummy, actionAttribute);
+			return targetMemberName;
+		}
+
+		private static ModificationScope GetModificationScope(IMemberDefinition yourMemberDef,
+			MemberActionAttribute actionAttribute = null) {
+			string dummy;
+			ModificationScope? scope;
+			GetMemberModificationInfo(yourMemberDef, out dummy, out scope, actionAttribute);
+			if (!scope.HasValue) {
+				throw new ArgumentException(
+					$"The specified member {yourMemberDef.UserFriendlyNameDef()} has no valid modification scope.");
+			}
+			return scope.Value;
+		}
+
+		private static void GetMemberModificationInfo(IMemberDefinition yourMemberDef, out string patchedMemberName,
+			out ModificationScope? modScope, MemberActionAttribute actionAttribute = null) {
+			actionAttribute = actionAttribute ?? yourMemberDef.GetCustomAttribute<MemberActionAttribute>();
+			var asModifiesAttr = actionAttribute as ModifiesMemberAttribute;
+			var asNewMember = actionAttribute as NewMemberAttribute;
+			var memberName = asModifiesAttr?.MemberName ?? yourMemberDef.Name;
+			var scope = asNewMember != null ? AdvancedModificationScope.NewlyCreated : asModifiesAttr?.Scope;
+			patchedMemberName = memberName;
+			modScope = scope;
+		}
+
+		private T GetPatchedMember<T>(TypeDefinition targetType, T yourMemberDef, MemberActionAttribute actionAttribute = null)
+		where T : MemberReference,IMemberDefinition {
+			var targetMemberName = GetPatchedMemberName(yourMemberDef,actionAttribute);
+			var t = typeof (T);
+			if (t == typeof(MethodDefinition)) {
+				return targetType.GetMethodLike(yourMemberDef as MethodDefinition, targetMemberName) as T;
+			}
+			if (t == typeof(PropertyDefinition)) {
+				return targetType.GetPropertyLike(yourMemberDef as PropertyDefinition, targetMemberName) as T;
+			}
+			if (t == typeof(FieldDefinition)) {
+				return targetType.GetField(targetMemberName) as T;
+			}
+			if (t == typeof (EventDefinition)) {
+				return targetType.GetEvent(targetMemberName) as T;
+			}
+			if (t == typeof (TypeDefinition)) {
+				return GetPatchedTypeByName(yourMemberDef as TypeDefinition) as T;
+			}
+			throw new ArgumentException($"Unknown member definition of type {t}");
+		}
+		
+
+
 		/// <summary>
 		///     Fixes the method reference.
 		/// </summary>
@@ -220,7 +276,7 @@ namespace Patchwork
 		/// <param name="isntFixTypeCall">This parameter is sort of a hack that lets FixType call FixMethod to fix MVars, without infinite recursion. If set to false, it avoids fixing some types.</param>
 		/// <returns></returns>
 		/// <exception cref="Exception">Method isn't part of a patching type in this assembly...</exception>
-		private MethodReference FixMethodReference(MethodReference yourMethodRef, bool isntFixTypeCall = true) {
+		private MethodReference  FixMethodReference(MethodReference yourMethodRef, bool isntFixTypeCall = true) {
 			//Fixes reference like YourAssembly::PatchingClass::Method to TargetAssembly::PatchedClass::Method
 			if (yourMethodRef == null) {
 				Log_called_to_fix_null("method");
@@ -264,10 +320,8 @@ namespace Patchwork
 					//additional checking
 					string methodName = memberAlias?.AliasedMemberName;
 					methodName = methodName ?? modifiesMember?.MemberName ?? yourMethodRef.Name;
-					
-					var targetMethodDef =
-						targetType.Resolve().GetMethods(methodName, yourMethodRef.Parameters.Select(x => x.ParameterType), yourMethodRef.ReturnType).SingleOrDefault
-							();
+
+					var targetMethodDef = targetType.Resolve().GetMethodLike(yourMethodRef, methodName);
 					var debugOverloads =
 						targetType.Resolve().Methods.Where(x => x.Name == yourMethodRef.Name).ToArray();
 					if (targetMethodDef == null) {

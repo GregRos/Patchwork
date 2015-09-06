@@ -242,9 +242,8 @@ The dots are actually part of the name of the method, just like the dot in `.cto
 In this section I'll list the limitations of the library, in terms of the code that it can deal with at this stage, and what it *can't* allow you to do. This section will be updated as more features get worked in.
 
 ### Assemblies
-1. Referencing external assemblies that aren't referenced by the target assembly may or may not work. Things in the GAC are usually safe though.
-2. Multi-module assemblies won't work properly (either as patches or patch targets). Note that few IDEs (if any) can naturally produce such assemblies, though they can be the result of tools such as ILMerge.
-3. Inter-dependencies between multiple patch assemblies will most likely work, but they haven't been sufficiently tested.
+1. Multi-module assemblies won't work properly (either as patches or patch targets). Note that few IDEs (if any) can naturally produce such assemblies, though they can be the result of tools such as ILMerge.
+2. Inter-dependencies between multiple patch assemblies will most likely work, but they haven't been sufficiently tested.
 
 ### Members
 2. You can't add new constructors or finalizers to existing types.

@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 
 namespace Patchwork.Attributes {
 	/// <summary>
@@ -9,28 +10,42 @@ namespace Patchwork.Attributes {
 		/// <summary>
 		///     Don't modify element.
 		/// </summary>
-		Nothing = 0x0,
+		Nothing = 0,
 
 		/// <summary>
 		///     Modifies the body of the element. For properties, this can change the getter/setter methods, if new ones were
 		///     defined. For fields, this changes the constant value.
 		/// </summary>
-		Body = 0x1,
+		Body = 1 << 0,
 
 		/// <summary>
 		///     Modifies accessibility only.
 		/// </summary>
-		Accessibility = 0x2,
+		Accessibility = 1 << 1,
 
 		/// <summary>
 		/// Adds any custom attributes on the member (doesn't erase existing attributes).
 		/// </summary>
-		CustomAttributes = 0x4,
-
+		CustomAttributes = 1 << 2,
 
 		/// <summary>
 		///     All the things!
 		/// </summary>
-		All = Body | Accessibility | CustomAttributes
+		All = Body | Accessibility | CustomAttributes,
+	}
+
+	/// <summary>
+	/// Contains advanced modification scopes for internal use.
+	/// </summary>
+	internal static class AdvancedModificationScope {
+		/// <summary>
+		/// Specifies that a method's explicitly declared overrides section should be changed. 
+		/// </summary>
+		public const ModificationScope ExplicitOverrides = (ModificationScope) (1 << 16);
+
+		/// <summary>
+		/// ALL the things! For real this time!
+		/// </summary>
+		public const ModificationScope NewlyCreated = ModificationScope.All | ExplicitOverrides;
 	}
 }
