@@ -16,7 +16,6 @@ namespace Patchwork.Attributes {
 		/// 
 		/// </summary>
 		/// <param name="yourMemberName">The member name. The declaring type is inferred.</param>
-		/// <param name="actionAttributeType">The type of action attribute according to which the type was patched.</param>
 		public PatchedByMemberAttribute(string yourMemberName) {
 			YourMemberName = yourMemberName;
 		}

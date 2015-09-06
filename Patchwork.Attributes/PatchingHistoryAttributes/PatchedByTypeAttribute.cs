@@ -16,7 +16,6 @@ namespace Patchwork.Attributes {
 		/// 
 		/// </summary>
 		/// <param name="yourType">The type according to which this type was patched.</param>
-		/// <param name="actionAttributeType">The type of action attribute, denoting the patching action taken.</param>
 		public PatchedByTypeAttribute(string yourType) : base() {
 			YourType = yourType;
 		}
