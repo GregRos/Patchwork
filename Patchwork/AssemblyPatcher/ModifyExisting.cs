@@ -9,11 +9,8 @@ using Mono.Cecil.Cil;
 using Patchwork.Attributes;
 using Patchwork.Utility;
 
-namespace Patchwork
-{		
-
-	public partial class AssemblyPatcher
-	{
+namespace Patchwork {
+	public partial class AssemblyPatcher {
 		private CustomAttributeArgument CopyCustomAttributeArg(CustomAttributeArgument yourArgument) {
 			return new CustomAttributeArgument(FixTypeReference(yourArgument.Type), yourArgument.Value);
 		}
@@ -23,7 +20,7 @@ namespace Patchwork
 			if (importAttribute == null) return;
 			var legalAttributes = importAttribute.AttributeTypes.Cast<TypeReference>().Select(x => x.Name);
 			Func<CustomAttribute, bool> importOnly = attr => legalAttributes.Contains(attr.AttributeType.Name);
-			CopyCustomAttributes(targetMember, yourMember, importOnly);	
+			CopyCustomAttributes(targetMember, yourMember, importOnly);
 		}
 
 		/// <summary>
@@ -32,21 +29,21 @@ namespace Patchwork
 		/// </summary>
 		/// <param name="targetMember">The target member.</param>
 		/// <param name="yourMember">Your member, the source of the attributes.</param>
-		private void CopyCustomAttributes(ICustomAttributeProvider targetMember, ICustomAttributeProvider yourMember, Func<CustomAttribute, bool> filter = null) {
-			var copyPatchworkAttributes = History.HasFlag(HistorySetting.PatchingAttributes);
+		private void CopyCustomAttributes(ICustomAttributeProvider targetMember, ICustomAttributeProvider yourMember,
+			Func<CustomAttribute, bool> filter = null) {
 			filter = filter ?? (x => true);
 			var filteredAttrs =
 				from attr in yourMember.CustomAttributes
 				let attrType = attr.AttributeType.Resolve()
 				let attrAssembly = attrType.Module.Assembly
-				let isFromPatchworkAttributes = attrType.Module.Assembly.FullName.Contains(nameof(Patchwork.Attributes))
-				let isFromPatchworkOther = !isFromPatchworkAttributes && attrType.Module.Assembly.FullName.Contains(nameof(Patchwork))
+				let isFromPatchworkAttributes = attrType.Module.Assembly.FullName == typeof (PatchworkVersion).Assembly.FullName
+				let isFromPatchworkOther = attrType.Module.Assembly.FullName == typeof (AssemblyPatcher).Assembly.FullName
 				//attributes that are in Patchwork but not Patchwork.Attributes are never included
-				where !isFromPatchworkOther 
-				//attributes from Patchwork.Attributes may be included depending on the argument
-				where copyPatchworkAttributes || !isFromPatchworkAttributes
+				where !isFromPatchworkOther
+				//attributes from Patchwork.Attributes may be included depending on whether History is enabled.
+				where EmbedHistory || !isFromPatchworkAttributes
 				//attributes specifically designated NeverEmbed should not be embedded.
-				where !attrType.CustomAttributes.Any(attrOnAttr => attrOnAttr.AttributeType.Name.Contains(nameof(NeverEmbedAttribute)))
+				where attrType.CustomAttributes.All(attrOnAttr => attrOnAttr.AttributeType.FullName != typeof (NeverEmbedAttribute).FullName)
 				//attributes from a patching assembly are only included if they have the NewType attribute
 				where !attrAssembly.IsPatchingAssembly() || attrType.Resolve().HasCustomAttribute<NewTypeAttribute>()
 				//also, apply this custom filter:
@@ -72,7 +69,7 @@ namespace Patchwork
 			}
 		}
 
-		private void AutoModifyProperty(MemberActionAttribute propActionAttr,
+		private void ModifyProperty(MemberActionAttribute propActionAttr,
 			PropertyDefinition yourProp, PropertyDefinition targetProp) {
 			Log_modifying_member("property", yourProp);
 			ModificationScope scope = GetModificationScope(yourProp, propActionAttr);
@@ -97,7 +94,7 @@ namespace Patchwork
 			}
 		}
 
-		private void AutoModifyEvent(MemberActionAttribute eventActionAttr,
+		private void ModifyEvent(MemberActionAttribute eventActionAttr,
 			EventDefinition yourEvent, EventDefinition targetEvent) {
 			Log_modifying_member("property", yourEvent);
 			ModificationScope scope = GetModificationScope(yourEvent, eventActionAttr);
@@ -108,8 +105,10 @@ namespace Patchwork
 			CopyCustomAttributes(targetEvent, yourEvent, attrFilter);
 			if ((scope & ModificationScope.Body) != 0) {
 				targetEvent.AddMethod = yourEvent.AddMethod != null ? FixMethodReference(yourEvent.AddMethod).Resolve() : null;
-				targetEvent.RemoveMethod = yourEvent.RemoveMethod != null ? FixMethodReference(yourEvent.RemoveMethod).Resolve() : null;
-				targetEvent.InvokeMethod = yourEvent.InvokeMethod != null ? FixMethodReference(yourEvent.InvokeMethod).Resolve() : null;
+				targetEvent.RemoveMethod = yourEvent.RemoveMethod != null
+					? FixMethodReference(yourEvent.RemoveMethod).Resolve() : null;
+				targetEvent.InvokeMethod = yourEvent.InvokeMethod != null
+					? FixMethodReference(yourEvent.InvokeMethod).Resolve() : null;
 				targetEvent.OtherMethods.Clear();
 				if (yourEvent.HasOtherMethods) {
 					//I have absolutely NO idea what this is used for
@@ -118,10 +117,10 @@ namespace Patchwork
 					}
 				}
 			}
-			
+
 		}
 
-		private void AutoModifyField(MemberActionAttribute fieldActionAttr,
+		private void ModifyField(MemberActionAttribute fieldActionAttr,
 			FieldDefinition yourField, FieldDefinition targetField) {
 			Log_modifying_member("field", yourField);
 			(fieldActionAttr != null).AssertTrue();
@@ -135,9 +134,6 @@ namespace Patchwork
 			}
 			var attrFilter = AttrFilter(scope);
 			CopyCustomAttributes(targetField, yourField, attrFilter);
-			if ((scope & ModificationScope.CustomAttributes) != 0) {
-				
-			}
 			if ((scope & ModificationScope.Body) != 0) {
 				targetField.InitialValue = yourField.InitialValue; //dunno what this is used for
 				targetField.Constant = yourField.Constant;
@@ -168,7 +164,7 @@ namespace Patchwork
 			return importMethod;
 		}
 
-		private void AutoModifyMethod(TypeDefinition targetType, MethodDefinition yourMethod,
+		private void ModifyMethod(TypeDefinition targetType, MethodDefinition yourMethod,
 			MemberActionAttribute memberAction, MethodDefinition targetMethod) {
 			Log_modifying_member("method", yourMethod);
 			var insertAttribute = yourMethod.GetCustomAttribute<DuplicatesBodyAttribute>();
@@ -207,7 +203,10 @@ namespace Patchwork
 					targetMethod.Body = null;
 				}
 			}
-			targetMethod.AddPatchedByMemberAttribute(yourMethod);
+			if (EmbedHistory) {
+				targetMethod.AddPatchedByMemberAttribute(yourMethod);
+			}
+
 			var toggleAttributesAttr = yourMethod.GetCustomAttribute<ToggleMethodAttributes>();
 			var toggleValue = toggleAttributesAttr?.Attributes ?? 0;
 			targetMethod.Attributes ^= (MethodAttributes) toggleValue;
@@ -223,7 +222,7 @@ namespace Patchwork
 			Log.Debug("Modifying {0:l} for: {1:l}", kind, forMember.UserFriendlyName());
 		}
 
-		private void AutoModifyTypeDecleration(TypeDefinition yourType) {
+		private void ModifyTypeDecleration(TypeDefinition yourType) {
 			Log_modifying_member("type", yourType);
 			var targetType = TargetAssembly.MainModule.GetType(yourType.GetPatchedTypeFullName());
 			targetType.BaseType = yourType.BaseType == null ? null : FixTypeReference(yourType.BaseType);
@@ -237,7 +236,9 @@ namespace Patchwork
 				targetParam.Constraints.Clear();
 				targetParam.Constraints.AddRange(yourParam.Constraints.Select(FixTypeReference));
 			}
-			targetType.AddPatchedByTypeAttribute(yourType);
+			if (EmbedHistory) {
+				targetType.AddPatchedByTypeAttribute(yourType);
+			}
 		}
 
 		private static bool IsBreakingOpCode(OpCode code) {
@@ -262,16 +263,16 @@ namespace Patchwork
 			targetMethod.Body.InitLocals = yourMethod.Body.Variables.Count > 0;
 
 			targetMethod.Body.Variables.Clear();
-			
+
 			foreach (var yourVar in yourMethod.Body.Variables) {
-				
+
 				var targetVarType = FixTypeReference(yourVar.VariableType);
 				var targetVar = new VariableDefinition(yourVar.Name, targetVarType);
 				targetMethod.Body.Variables.Add(targetVar);
 			}
 			var ilProcesser = targetMethod.Body.GetILProcessor();
 			if (injectManual != null) {
-				var debugDeclType = (TypeReference)injectManual.DeclaringType ?? targetMethod.DeclaringType;
+				var debugDeclType = (TypeReference) injectManual.DeclaringType ?? targetMethod.DeclaringType;
 				var debugMember = injectManual.DebugFieldName;
 				debugFieldRef = debugDeclType.Resolve().GetField(debugMember);
 				if (debugFieldRef == null) {
@@ -323,16 +324,17 @@ namespace Patchwork
 				targetInstruction.OpCode = targetOpcode;
 				targetInstruction.Operand = targetOperand;
 				targetInstruction.SequencePoint = yourInstruction.SequencePoint;
-				
+
 				if (injectManual != null) {
-					targetInstruction.OpCode = SimplifyOpCode(targetInstruction.OpCode);	
+					targetInstruction.OpCode = SimplifyOpCode(targetInstruction.OpCode);
 				}
 				var lastInstr = ilProcesser.Body.Instructions.LastOrDefault();
-				if (yourInstruction.SequencePoint != null && injectManual != null && (lastInstr == null ||!IsBreakingOpCode(lastInstr.OpCode))) {
+				if (yourInstruction.SequencePoint != null && injectManual != null
+					&& (lastInstr == null || !IsBreakingOpCode(lastInstr.OpCode))) {
 					var str = i == 0 ? "" : " ⇒ ";
 					str += yourInstruction.SequencePoint.StartLine;
 					ilProcesser.Emit(OpCodes.Ldsfld, debugFieldRef);
-					ilProcesser.Emit(OpCodes.Ldstr, str);	
+					ilProcesser.Emit(OpCodes.Ldstr, str);
 					ilProcesser.Emit(OpCodes.Call, concat);
 					ilProcesser.Emit(OpCodes.Stsfld, debugFieldRef);
 				}
@@ -351,20 +353,21 @@ namespace Patchwork
 						TryEnd = instructionEquiv[exhandler.TryEnd],
 						FilterStart = exhandler.FilterStart == null ? null : instructionEquiv[exhandler.FilterStart]
 					};
-				
+
 				foreach (var exhandlr in handlers) {
 					targetMethod.Body.ExceptionHandlers.Add(exhandlr);
 				}
 			}
-			
-			
+
+
 			foreach (var targetInstruction in ilProcesser.Body.Instructions) {
 				var targetOperand = targetInstruction.Operand;
-				if (targetOperand is Instruction) { //conditional branch instructions
+				if (targetOperand is Instruction) {
+					//conditional branch instructions
 					var asInstr = (Instruction) targetOperand;
 					targetOperand = instructionEquiv[asInstr];
-				}
-				else if (targetOperand is Instruction[]) { //Switch instruction (jump table)
+				} else if (targetOperand is Instruction[]) {
+					//Switch instruction (jump table)
 					var asInstrs = ((Instruction[]) targetOperand);
 					var equivTargetInstrs = asInstrs.Select(instr => instructionEquiv[instr]).ToArray();
 					targetOperand = equivTargetInstrs;

@@ -140,6 +140,13 @@ namespace Patchwork.Utility {
 			return prop;
 		}
 
+		internal static bool IsOfType(this TypeDefinition typeDef, string parentType) {
+			var isActualType = typeDef.FullName == parentType;
+			var hasInterface = typeDef.Interfaces.Any(intf => intf.FullName == parentType);
+			var parentIsType = typeDef.BaseType?.Resolve().IsOfType(parentType) == true;
+			return isActualType || hasInterface || parentIsType;
+		}
+
 		/// <summary>
 		///     Loads the member from its IMemberDefinition.
 		/// </summary>

@@ -31,9 +31,6 @@ namespace Patchwork {
 			Log = log ?? Serilog.Log.Logger;
 			Log.Information("Created patcher for assembly: {0:l}", targetAssembly.Name);
 			Filter = x => true;
-			var assemblyLocation = typeof (PatchworkVersion).Assembly.Location;
-			Log.Information("Patching the assembly using Patchwork.Attributes to embed some common information.");
-			PatchAssembly(assemblyLocation); //we add the Shared members of the Patchwork.Attributes assembly
 		}
 
 		public AssemblyPatcher(string targetAssemblyPath,
@@ -67,9 +64,9 @@ namespace Patchwork {
 		}
 
 		/// <summary>
-		/// The history setting, which specifies how many history to embed. Embedding history causes a dependency on Patchwork.Attributes.
+		/// Specifies whether to embed history, which includes special patching history attributes, as well as most patching attributes. If enabled, creates a dependency on Patchwork.Attributes.
 		/// </summary>
-		public HistorySetting History {
+		public bool EmbedHistory {
 			get;
 			set;
 		}
@@ -79,7 +76,7 @@ namespace Patchwork {
 		/// </summary>
 		public bool UseBackup {
 			get;
-			private set;
+			set;
 		} = true;
 
 		/// <summary>
@@ -90,7 +87,7 @@ namespace Patchwork {
 		/// </value>
 		public AssemblyDefinition TargetAssembly {
 			get;
-			private set;
+			set;
 		}
 
 		/// <summary>
@@ -221,7 +218,7 @@ namespace Patchwork {
 
 		private void UpdateMethods(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions) {
 			foreach (var methodAction in methodActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-				AutoModifyMethod(methodAction.TypeAction.TargetType,
+				ModifyMethod(methodAction.TypeAction.TargetType,
 					methodAction.YourMember,
 					methodAction.ActionAttribute, methodAction.TargetMember);
 			}
@@ -229,25 +226,25 @@ namespace Patchwork {
 
 		private void UpdateProperties(SimpleTypeLookup<MemberAction<PropertyDefinition>> propActions) {
 			foreach (var propAction in propActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-				AutoModifyProperty(propAction.ActionAttribute, propAction.YourMember, propAction.TargetMember);
+				ModifyProperty(propAction.ActionAttribute, propAction.YourMember, propAction.TargetMember);
 			}
 		}
 
 		private void UpdateFields(SimpleTypeLookup<MemberAction<FieldDefinition>> fieldActions) {
 			foreach (var fieldAction in fieldActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-				AutoModifyField(fieldAction.ActionAttribute, fieldAction.YourMember, fieldAction.TargetMember);
+				ModifyField(fieldAction.ActionAttribute, fieldAction.YourMember, fieldAction.TargetMember);
 			}
 		}
 
 		private void UpdateEvents(SimpleTypeLookup<MemberAction<EventDefinition>> eventActions) {
 			foreach (var eventAction in eventActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-				AutoModifyEvent(eventAction.ActionAttribute, eventAction.YourMember, eventAction.TargetMember);
+				ModifyEvent(eventAction.ActionAttribute, eventAction.YourMember, eventAction.TargetMember);
 			}
 		}
 
 		private void UpdateTypes(SimpleTypeLookup<TypeAction> typeActions) {
 			foreach (var modType in typeActions[typeof (NewTypeAttribute)]) {
-				AutoModifyTypeDecleration(modType.YourType);
+				ModifyTypeDecleration(modType.YourType);
 			}
 		}
 
@@ -372,6 +369,11 @@ namespace Patchwork {
 				//Also, explicit overrides (what in C# is explicit interface implementation) are specified here.
 				//DEPENDENCIES: Type definitions, method definitions, field definitions
 				UpdateMethods(manifest.MethodActions);
+
+				//+ADD PATCHING HISTORY TO ASSEMBLY
+				if (EmbedHistory) {
+					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchingAssembly);	
+				}
 			}
 			catch {
 				TargetAssembly = targetAssemblyBackup;
