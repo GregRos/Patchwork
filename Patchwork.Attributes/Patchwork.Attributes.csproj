@@ -47,10 +47,15 @@
     <Compile Include="..\Patchwork.SharedAttributes.cs">
       <Link>Patchwork.SharedAttributes.cs</Link>
     </Compile>
+    <Compile Include="NeverEmbedAttribute.cs" />
+    <Compile Include="PatchingAttributes\AdvancedModificationScope.cs" />
+    <Compile Include="PatchingAttributes\AliasCallMode.cs" />
+    <Compile Include="PatchingAttributes\AssemblyActionAttribute.cs" />
     <Compile Include="PatchingAttributes\DisablePatchingAttribute.cs" />
     <Compile Include="PatchingAttributes\DuplicatesBodyAttribute.cs" />
     <Compile Include="PatchingAttributes\ImportCustomAttributesAttribute.cs" />
     <Compile Include="PatchingAttributes\DisablePatchingByNameAttribute.cs" />
+    <Compile Include="PatchingAttributes\PatchingTarget.cs" />
     <Compile Include="PatchingAttributes\PatchworkDebugRegisterAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberActionAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberAliasAttribute.cs" />

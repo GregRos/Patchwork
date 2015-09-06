@@ -16,6 +16,7 @@ namespace Patchwork.Attributes {
 			| AttributeTargets.Field
 			| AttributeTargets.Assembly
 			| AttributeTargets.Struct)]
+	[NeverEmbed]
 	public class DisablePatchingAttribute : Attribute {
 
 	}

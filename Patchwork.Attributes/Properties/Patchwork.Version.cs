@@ -7,7 +7,6 @@ namespace Patchwork.Attributes {
 	/// Provides version information for Patchwork and its related assemblies.
 	/// </summary>
 	[EditorBrowsable(EditorBrowsableState.Advanced)]
-	[NewType(true)] //although this is an explicit member, we want to make it behave like an implicit one.
 	public static class PatchworkVersion {
 		/// <summary>
 		/// Patchwork version string.

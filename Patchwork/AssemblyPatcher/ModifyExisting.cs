@@ -33,14 +33,24 @@ namespace Patchwork
 		/// <param name="targetMember">The target member.</param>
 		/// <param name="yourMember">Your member, the source of the attributes.</param>
 		private void CopyCustomAttributes(ICustomAttributeProvider targetMember, ICustomAttributeProvider yourMember, Func<CustomAttribute, bool> filter = null) {
+			var copyPatchworkAttributes = History.HasFlag(HistorySetting.PatchingAttributes);
 			filter = filter ?? (x => true);
 			var filteredAttrs =
 				from attr in yourMember.CustomAttributes
 				let attrType = attr.AttributeType.Resolve()
 				let attrAssembly = attrType.Module.Assembly
-				where !attrAssembly.Name.Name.Contains("Patchwork")
-				&& (!attrAssembly.IsPatchingAssembly() || attrType.Resolve().HasCustomAttribute<NewTypeAttribute>())
-				&& filter(attr)
+				let isFromPatchworkAttributes = attrType.Module.Assembly.FullName.Contains(nameof(Patchwork.Attributes))
+				let isFromPatchworkOther = !isFromPatchworkAttributes && attrType.Module.Assembly.FullName.Contains(nameof(Patchwork))
+				//attributes that are in Patchwork but not Patchwork.Attributes are never included
+				where !isFromPatchworkOther 
+				//attributes from Patchwork.Attributes may be included depending on the argument
+				where copyPatchworkAttributes || !isFromPatchworkAttributes
+				//attributes specifically designated NeverEmbed should not be embedded.
+				where !attrType.CustomAttributes.Any(attrOnAttr => attrOnAttr.AttributeType.Name.Contains(nameof(NeverEmbedAttribute)))
+				//attributes from a patching assembly are only included if they have the NewType attribute
+				where !attrAssembly.IsPatchingAssembly() || attrType.Resolve().HasCustomAttribute<NewTypeAttribute>()
+				//also, apply this custom filter:
+				where filter(attr)
 				select attr;
 
 			foreach (var yourAttr in filteredAttrs) {
@@ -69,12 +79,10 @@ namespace Patchwork
 			if (targetProp == null) {
 				throw Errors.Missing_member_in_attribute("property", yourProp, GetPatchedMemberName(yourProp, propActionAttr));
 			}
-			
-			if ((scope & ModificationScope.CustomAttributes) != 0) {
-				CopyCustomAttributes(targetProp, yourProp);
-				for (int i = 0; i < yourProp.Parameters.Count; i++) {
-					CopyCustomAttributes(targetProp.Parameters[i], yourProp.Parameters[i]);
-				}
+			var attrFilter = AttrFilter(scope);
+			CopyCustomAttributes(targetProp, yourProp, attrFilter);
+			for (int i = 0; i < yourProp.Parameters.Count; i++) {
+				CopyCustomAttributes(targetProp.Parameters[i], yourProp.Parameters[i], attrFilter);
 			}
 			if ((scope & ModificationScope.Body) != 0) {
 				targetProp.GetMethod = yourProp.GetMethod != null ? FixMethodReference(yourProp.GetMethod).Resolve() : null;
@@ -96,10 +104,8 @@ namespace Patchwork
 			if (targetEvent == null) {
 				throw Errors.Missing_member_in_attribute("property", yourEvent, GetPatchedMemberName(yourEvent, eventActionAttr));
 			}
-			
-			if ((scope & ModificationScope.CustomAttributes) != 0) {
-				CopyCustomAttributes(targetEvent, yourEvent);
-			}
+			var attrFilter = AttrFilter(scope);
+			CopyCustomAttributes(targetEvent, yourEvent, attrFilter);
 			if ((scope & ModificationScope.Body) != 0) {
 				targetEvent.AddMethod = yourEvent.AddMethod != null ? FixMethodReference(yourEvent.AddMethod).Resolve() : null;
 				targetEvent.RemoveMethod = yourEvent.RemoveMethod != null ? FixMethodReference(yourEvent.RemoveMethod).Resolve() : null;
@@ -126,8 +132,10 @@ namespace Patchwork
 			if ((scope & ModificationScope.Accessibility) != 0) {
 				targetField.SetAccessibility(yourField.GetAccessbility());
 			}
+			var attrFilter = AttrFilter(scope);
+			CopyCustomAttributes(targetField, yourField, attrFilter);
 			if ((scope & ModificationScope.CustomAttributes) != 0) {
-				CopyCustomAttributes(targetField, yourField);
+				
 			}
 			if ((scope & ModificationScope.Body) != 0) {
 				targetField.InitialValue = yourField.InitialValue; //dunno what this is used for
@@ -172,46 +180,36 @@ namespace Patchwork
 					targetMethod.Overrides.Add(FixMethodReference(explicitOverride));
 				}
 			}
-			//we call this twice to handle the DuplicatesBody case. The first time we set everything except for the body,
-			//and then we set only the body.
-			ModifyMethod(targetMethod, yourMethod, scope & ~ModificationScope.Body); 
-			ModifyMethod(targetMethod, bodySource, ModificationScope.Body & scope);
-			targetMethod.AddPatchedByMemberAttribute(yourMethod, memberAction.GetType());
-		}
 
-		/// <summary>
-		///     Patches the target method by overwriting some aspects with your method, such as: its body and accessibility. Also allows adding custom attributes.
-		/// </summary>
-		/// <param name="targetMethod">The target method.</param>
-		/// <param name="yourMethod">Your method.</param>
-		/// <param name="scope">The extent to which to modify the method..</param>
-		private void ModifyMethod(MethodDefinition targetMethod, MethodDefinition yourMethod, ModificationScope scope) {
+			var attrFilter = AttrFilter(scope);
+			CopyCustomAttributes(targetMethod, yourMethod, attrFilter);
+			CopyCustomAttributes(targetMethod.MethodReturnType, yourMethod.MethodReturnType, attrFilter);
+			for (int i = 0; i < yourMethod.Parameters.Count; i++) {
+				CopyCustomAttributes(targetMethod.Parameters[i], yourMethod.Parameters[i], attrFilter);
+			}
+			for (int i = 0; i < yourMethod.GenericParameters.Count; i++) {
+				CopyCustomAttributes(targetMethod.GenericParameters[i], yourMethod.GenericParameters[i], attrFilter);
+			}
+
 			if ((scope & ModificationScope.Accessibility) != 0) {
 				targetMethod.SetAccessibility(yourMethod.GetAccessbility());
 			}
 
-			if ((scope & ModificationScope.CustomAttributes) != 0) {
-				CopyCustomAttributes(targetMethod, yourMethod);
-				CopyCustomAttributes(targetMethod.MethodReturnType, yourMethod.MethodReturnType);
-				for (int i = 0; i < yourMethod.Parameters.Count; i++) {
-					CopyCustomAttributes(targetMethod.Parameters[i], yourMethod.Parameters[i]);
-				}
-				for (int i = 0; i < yourMethod.GenericParameters.Count; i++) {
-					CopyCustomAttributes(targetMethod.GenericParameters[i], yourMethod.GenericParameters[i]);
+			if (scope.HasFlag(ModificationScope.Body)) {
+				if (yourMethod.Body != null) {
+					TransferMethodBody(targetMethod, bodySource);
+				} else {
+					//this happens in abstract methods and some others.
+					targetMethod.Body = null;
 				}
 			}
+			targetMethod.AddPatchedByMemberAttribute(yourMethod);
+		}
 
-			if ((scope & ModificationScope.Body) == 0) {
-				return;
-			}
-
-			if (yourMethod.Body != null) {
-				TransferMethodBody(targetMethod, yourMethod);
-			} else {
-				//this happens in abstract methods and some others.
-				targetMethod.Body = null;
-			}
-
+		private static Func<CustomAttribute, bool> AttrFilter(ModificationScope scope) {
+			Func<CustomAttribute, bool> onlyPwAttrs = x => x.AttributeType.Namespace == nameof(Patchwork.Attributes);
+			Func<CustomAttribute, bool> anyAttr = x => true;
+			return scope.HasFlag(ModificationScope.CustomAttributes) ? anyAttr : onlyPwAttrs;
 		}
 
 		private void Log_modifying_member(string kind, MemberReference forMember) {
@@ -232,6 +230,7 @@ namespace Patchwork
 				targetParam.Constraints.Clear();
 				targetParam.Constraints.AddRange(yourParam.Constraints.Select(FixTypeReference));
 			}
+			targetType.AddPatchedByTypeAttribute(yourType);
 		}
 
 		private static bool IsBreakingOpCode(OpCode code) {

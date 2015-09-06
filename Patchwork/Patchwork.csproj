@@ -73,6 +73,7 @@
     <Compile Include="AssemblyPatcher\CreateNew.cs" />
     <Compile Include="AssemblyPatcher\DebugFlags.cs" />
     <Compile Include="AssemblyPatcher\FixReferences.cs" />
+    <Compile Include="AssemblyPatcher\HistorySetting.cs" />
     <Compile Include="AssemblyPatcher\ImplicitImportSetting.cs" />
     <Compile Include="AssemblyPatcher\PatchingManifestCreator.cs" />
     <Compile Include="PatchingManifest\MemberAction.cs" />

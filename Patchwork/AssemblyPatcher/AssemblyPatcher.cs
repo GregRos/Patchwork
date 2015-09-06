@@ -67,6 +67,14 @@ namespace Patchwork {
 		}
 
 		/// <summary>
+		/// The history setting, which specifies how many history to embed. Embedding history causes a dependency on Patchwork.Attributes.
+		/// </summary>
+		public HistorySetting History {
+			get;
+			set;
+		}
+
+		/// <summary>
 		/// Whether or not to backup the TargetAssembly before applying a patch. Set to false for faster execution.
 		/// </summary>
 		public bool UseBackup {

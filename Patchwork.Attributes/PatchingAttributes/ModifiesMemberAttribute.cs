@@ -23,5 +23,4 @@ namespace Patchwork.Attributes {
 
 		public ModificationScope Scope { get; private set; }
 	}
-
 }

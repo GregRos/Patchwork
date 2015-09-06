@@ -464,16 +464,16 @@ namespace Patchwork.Utility {
 			provider.CustomAttributes.Add(customAttr);
 		}
 
-		internal static void AddPatchedByMemberAttribute(this IMemberDefinition targetMember, IMemberDefinition yourMember, Type actionAttributeType) {
+		internal static void AddPatchedByMemberAttribute(this IMemberDefinition targetMember, IMemberDefinition yourMember) {
 			dynamic dynMemberDef = targetMember;
 			//calling PatchedByMemberAttribute(string patchMemberName, object actionAttributeType);
-			targetMember.AddCustomAttribute((ModuleDefinition)dynMemberDef.Module, typeof(PatchedByMemberAttribute), yourMember.FullName, actionAttributeType);
+			targetMember.AddCustomAttribute((ModuleDefinition)dynMemberDef.Module, typeof(PatchedByMemberAttribute), yourMember.FullName);
 		}
 
-		internal static void AddPatchedByTypeAttribute(this TypeDefinition targetType, TypeDefinition yourType, Type actionAttributeType) {
+		internal static void AddPatchedByTypeAttribute(this TypeDefinition targetType, TypeDefinition yourType) {
 			
 			//calling PatchedByTypeAttribute(object patchType, object actionAttributeType);
-			targetType.AddCustomAttribute(targetType.Module, typeof(PatchedByTypeAttribute), yourType, actionAttributeType);
+			targetType.AddCustomAttribute(targetType.Module, typeof(PatchedByTypeAttribute), yourType.FullName);
 		}
 
 		internal static void AddPatchedByAssemblyAttribute(this AssemblyDefinition targetAssembly,
