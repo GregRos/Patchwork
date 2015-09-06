@@ -10,6 +10,7 @@ using Mono.Cecil.Rocks;
 using Mono.Cecil.Cil;
 using Patchwork.Attributes;
 using Serilog;
+using FieldAttributes = Mono.Cecil.FieldAttributes;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
 
@@ -30,6 +31,7 @@ namespace Patchwork.Utility {
 			foreach (var type in allTypes) {
 				foreach (var field in type.Fields) {
 					field.SetAccessibility(Accessibility.Public);
+					field.IsInitOnly = false;
 				}
 				foreach (var method in type.Methods) {
 					method.SetAccessibility(Accessibility.Public);

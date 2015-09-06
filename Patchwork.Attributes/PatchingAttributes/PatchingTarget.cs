@@ -1,5 +1,4 @@
-﻿using System;
-
+using System;
 namespace Patchwork.Attributes {
 	[Flags]
 	public enum PatchingTarget {

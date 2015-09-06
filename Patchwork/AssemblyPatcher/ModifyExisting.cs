@@ -118,6 +118,7 @@ namespace Patchwork
 					}
 				}
 			}
+			
 		}
 
 		private void AutoModifyField(MemberActionAttribute fieldActionAttr,
@@ -141,6 +142,9 @@ namespace Patchwork
 				targetField.InitialValue = yourField.InitialValue; //dunno what this is used for
 				targetField.Constant = yourField.Constant;
 			}
+			var toggleAttributesAttr = yourField.GetCustomAttribute<ToggleFieldAttributes>();
+			var toggleValue = toggleAttributesAttr?.Attributes ?? 0;
+			targetField.Attributes ^= (FieldAttributes) toggleValue;
 		}
 
 		private MethodDefinition GetBodySource(TypeDefinition targetType, MethodDefinition yourMethod,
@@ -168,7 +172,7 @@ namespace Patchwork
 			MemberActionAttribute memberAction, MethodDefinition targetMethod) {
 			Log_modifying_member("method", yourMethod);
 			var insertAttribute = yourMethod.GetCustomAttribute<DuplicatesBodyAttribute>();
-			var bodySource = insertAttribute == null ? yourMethod : GetBodySource(targetType,yourMethod,insertAttribute);
+			var bodySource = insertAttribute == null ? yourMethod : GetBodySource(targetType, yourMethod, insertAttribute);
 			ModificationScope scope = GetModificationScope(yourMethod, memberAction);
 			if (targetMethod == null) {
 				throw Errors.Missing_member_in_attribute("method", yourMethod, GetPatchedMemberName(yourMethod, memberAction));
@@ -204,6 +208,9 @@ namespace Patchwork
 				}
 			}
 			targetMethod.AddPatchedByMemberAttribute(yourMethod);
+			var toggleAttributesAttr = yourMethod.GetCustomAttribute<ToggleMethodAttributes>();
+			var toggleValue = toggleAttributesAttr?.Attributes ?? 0;
+			targetMethod.Attributes ^= (MethodAttributes) toggleValue;
 		}
 
 		private static Func<CustomAttribute, bool> AttrFilter(ModificationScope scope) {

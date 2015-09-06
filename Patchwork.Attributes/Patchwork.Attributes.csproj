@@ -56,6 +56,7 @@
     <Compile Include="PatchingAttributes\ImportCustomAttributesAttribute.cs" />
     <Compile Include="PatchingAttributes\DisablePatchingByNameAttribute.cs" />
     <Compile Include="PatchingAttributes\PatchingTarget.cs" />
+    <Compile Include="PatchingAttributes\ToggleFieldAttributes.cs" />
     <Compile Include="PatchingAttributes\PatchworkDebugRegisterAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberActionAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberAliasAttribute.cs" />
@@ -64,6 +65,8 @@
     <Compile Include="PatchingAttributes\ModifiesMemberAttribute.cs" />
     <Compile Include="PatchingAttributes\ModifiesTypeAttribute.cs" />
     <Compile Include="PatchingAttributes\NewMemberAttribute.cs" />
+    <Compile Include="PatchingAttributes\ToggleMethodAttributes.cs" />
+    <Compile Include="PatchingAttributes\ToggleTypeAttributes.cs" />
     <Compile Include="PatchingAttributes\TypeActionAttribute.cs" />
     <Compile Include="PatchingAttributes\NewTypeAttribute.cs" />
     <Compile Include="PatchingAttributes\PatchAssemblyAttribute.cs" />
