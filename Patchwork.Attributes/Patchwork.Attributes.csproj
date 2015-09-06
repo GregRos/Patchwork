@@ -23,6 +23,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Patchwork.Attributes.XML</DocumentationFile>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -50,6 +51,7 @@
     <Compile Include="PatchingAttributes\DuplicatesBodyAttribute.cs" />
     <Compile Include="PatchingAttributes\ImportCustomAttributesAttribute.cs" />
     <Compile Include="PatchingAttributes\DisablePatchingByNameAttribute.cs" />
+    <Compile Include="PatchingAttributes\ToggleFieldAttributes.cs" />
     <Compile Include="PatchingAttributes\PatchworkDebugRegisterAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberActionAttribute.cs" />
     <Compile Include="PatchingAttributes\MemberAliasAttribute.cs" />

@@ -141,6 +141,7 @@ namespace Patchwork
 					}
 				}
 			}
+			
 		}
 
 		private void AutoModifyField(TypeDefinition targetType, MemberActionAttribute fieldActionAttr,
@@ -173,6 +174,9 @@ namespace Patchwork
 				targetField.InitialValue = yourField.InitialValue; //dunno what this is used for
 				targetField.Constant = yourField.Constant;
 			}
+			var toggleAttributesAttr = yourField.GetCustomAttribute<ToggleFieldAttributes>();
+			var toggleValue = toggleAttributesAttr?.Attributes ?? 0;
+			targetField.Attributes ^= (FieldAttributes) toggleValue;
 		}
 
 		private void AutoModifyMethod(TypeDefinition targetType, MethodDefinition yourMethod,
@@ -237,6 +241,10 @@ namespace Patchwork
 
 			ModifyMethod(targetMethod, yourMethod, scope & ~ModificationScope.Body, newMemberAttr != null); 
 			ModifyMethod(targetMethod, bodySource, ModificationScope.Body & scope, false);
+
+			var toggleAttributesAttr = yourMethod.GetCustomAttribute<ToggleMethodAttributes>();
+			var toggleValue = toggleAttributesAttr?.Attributes ?? 0;
+			targetMethod.Attributes ^= (MethodAttributes)toggleValue;
 		}
 
 		/// <summary>
