@@ -137,6 +137,7 @@ namespace Patchwork {
 			if ((scope & ModificationScope.Body) != 0) {
 				targetField.InitialValue = yourField.InitialValue; //dunno what this is used for
 				targetField.Constant = yourField.Constant;
+				targetField.HasConstant = yourField.HasConstant;
 			}
 			var toggleAttributesAttr = yourField.GetCustomAttribute<ToggleFieldAttributes>();
 			var toggleValue = toggleAttributesAttr?.Attributes ?? 0;

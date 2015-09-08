@@ -117,8 +117,9 @@ namespace Patchwork {
 		/// Patches the current assembly with the assembly in the specified path.
 		/// </summary>
 		/// <param name="path"></param>
-		public void PatchAssembly(string path) {
-			bool readSymbols = File.Exists(Path.ChangeExtension(path, "pdb")) || File.Exists(path + ".mdb");
+		/// <param name="readSymbols"></param>
+		public void PatchAssembly(string path, bool readSymbols = true) {
+			readSymbols = readSymbols && File.Exists(Path.ChangeExtension(path, "pdb")) || File.Exists(path + ".mdb");
 			var yourAssembly = AssemblyDefinition.ReadAssembly(path, new ReaderParameters() {
 				ReadSymbols = readSymbols
 			});
@@ -379,6 +380,20 @@ namespace Patchwork {
 				TargetAssembly = targetAssemblyBackup;
 				throw;
 			}
+		}
+
+		/// <summary>
+		/// This method runs the PEVerify command-line tool on the patched assembly. It does this by first writing it to a temporary file.<br/>
+		///PEVerify is a tool that verifies IL. It goes over it and looks for various issues.<br/>
+		///Some of the errors it reports are relatively harmless but others mean the assembly cannot be loaded.<br/>
+		///Ideally, it should report no errors.<br/>
+		///This operation returns an extended and user-friendly form of the output, translating metadata tokens into user-readable names.
+		/// </summary>
+		/// <param name="switches">Command line switches supplied to PEVerify. </param>
+		/// <param name="ignoreErrors">A list of error numbers to ignore. Errors usually appear in hexadecimal format.</param>
+		/// <returns></returns>
+		public string RunPeVerify(string switches = PeVerifyRunner.DefaultPeVerifySwitches, IEnumerable<long> ignoreErrors = null) {
+			return PeVerifyRunner.RunPeVerify(TargetAssembly, switches, ignoreErrors);
 		}
 
 		public void WriteTo(string path) {

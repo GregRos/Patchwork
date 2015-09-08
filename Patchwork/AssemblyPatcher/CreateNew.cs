@@ -25,11 +25,17 @@ namespace Patchwork
 				targetPropertyType) {
 					HasThis = yourProperty.HasThis,
 					Constant = yourProperty.Constant,
-					HasDefault = yourProperty.HasDefault
+					HasDefault = yourProperty.HasDefault,
+					HasConstant = yourProperty.HasConstant,
 				};
-			foreach (var param in yourProperty.Parameters) {
-				targetProperty.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes,
-					FixTypeReference(param.ParameterType)));
+			foreach (var yourParam in yourProperty.Parameters) {
+				targetProperty.Parameters.Add(new ParameterDefinition(yourParam.Name, yourParam.Attributes,
+					FixTypeReference(yourParam.ParameterType)) {
+						Constant = yourParam.Constant,
+						MarshalInfo = CopyMarshalInfo(yourParam.MarshalInfo),
+						//we need to set this because Cecil behaves weirdly when you set Constant (even though Constant returns null if there is no Constant, if you set Constant to null it thinks there is a constant, and its value is null)
+						HasConstant = yourParam.HasConstant	
+					});
 			}
 
 			return targetProperty;
@@ -226,8 +232,11 @@ namespace Patchwork
 			var parList = new List<ParameterDefinition>();
 			foreach (var yourParam in yourMethod.Parameters) {
 				var targetParamType = FixTypeReference(yourParam.ParameterType);
+				//we need to set this because Cecil behaves weirdly when you set Constant to `null`
 				var targetParam = new ParameterDefinition(yourParam.Name, yourParam.Attributes, targetParamType) {
 					Constant = yourParam.Constant,
+					MarshalInfo = CopyMarshalInfo(yourParam.MarshalInfo),
+					HasConstant = yourParam.HasConstant
 				};
 				parList.Add(targetParam);
 			}
@@ -286,11 +295,17 @@ namespace Patchwork
 			Log.Error("Failed to create member.");
 		}
 
+		private MarshalInfo CopyMarshalInfo(MarshalInfo info) {
+			return info == null ? null : new MarshalInfo(info.NativeType);
+		}
+
 		private FieldDefinition CopyField(FieldDefinition yourField) {
 			var targetField =
 				new FieldDefinition(yourField.Name, yourField.Resolve().Attributes, FixTypeReference(yourField.FieldType)) {
-					InitialValue = yourField.InitialValue, //probably for string consts	
-					Constant = yourField.Constant
+					InitialValue = yourField.InitialValue, //for field RVA
+					Constant = yourField   ,
+					MarshalInfo = CopyMarshalInfo(yourField.MarshalInfo),
+					HasConstant = yourField.HasConstant
 				};
 			return targetField;
 		}

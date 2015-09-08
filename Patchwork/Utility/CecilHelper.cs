@@ -20,7 +20,7 @@ namespace Patchwork.Utility {
 	/// </summary>
 	public static class CecilHelper {
 		/// <summary>
-		///     Makes an assembly 'open', which means that everything is public and nothing is sealed. Ideal for writing a patching
+		///     Makes an assembly 'open', whic7h means that everything is public and nothing is sealed. Ideal for writing a patching
 		///     assembly.
 		/// </summary>
 		/// <param name="assembly">The assembly.</param>
@@ -569,6 +569,56 @@ namespace Patchwork.Utility {
 			return
 				type.GetMethods(altName ?? methodRef.Name, methodRef.Parameters.Select(x => x.ParameterType), methodRef.ReturnType)
 					.SingleOrDefault();
+		}
+
+		private static ConditionalWeakTable<ModuleDefinition, IDictionary<uint, IMetadataTokenProvider>> _tokenProviderCache =
+			new ConditionalWeakTable<ModuleDefinition, IDictionary<uint, IMetadataTokenProvider>>();
+
+		private static IDictionary<uint,IMetadataTokenProvider> InitializeTokenProviderCache(ModuleDefinition module) {
+			var dict = new Dictionary<uint, IMetadataTokenProvider>();
+			var allTypes = module.GetAllTypes();
+			foreach (var type in allTypes) {
+				foreach (var prop in type.Properties) {
+					dict[prop.MetadataToken.ToUInt32()] = prop;
+				}
+				foreach (var vent in type.Events) {
+					dict[vent.MetadataToken.ToUInt32()] = vent;
+				}
+			}
+			foreach (var expType in module.ExportedTypes) {
+				dict[expType.MetadataToken.ToUInt32()] = expType;
+			}
+			foreach (var modRef in module.ModuleReferences) {
+				dict[modRef.MetadataToken.ToUInt32()] = modRef;
+			}
+			foreach (var assRef in module.AssemblyReferences) {
+				dict[assRef.MetadataToken.ToUInt32()] = assRef;
+			}
+			return dict;
+		}
+
+		/// <summary>
+		/// This method returns the member with the specified metadata token in the given module. It supports more TokenTypes than the standard Cecil method.
+		/// </summary>
+		/// <param name="module"></param>
+		/// <param name="token"></param>
+		/// <returns></returns>
+		public static IMetadataTokenProvider LookupTokenExtended(this ModuleDefinition module, MetadataToken token) {
+			switch (token.TokenType) {
+				case TokenType.TypeDef:
+				case TokenType.TypeRef:
+				case TokenType.MemberRef:
+				case TokenType.Field:
+				case TokenType.Method:
+				case TokenType.MethodSpec:
+				case TokenType.TypeSpec:
+					return module.LookupToken(token);
+				default:
+					IMetadataTokenProvider provider;
+					var success = _tokenProviderCache.GetValue(module, InitializeTokenProviderCache).TryGetValue(token.ToUInt32(),
+						out provider);
+					return success ? provider : null;
+			}
 		}
 
 		

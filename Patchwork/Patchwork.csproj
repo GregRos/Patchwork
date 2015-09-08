@@ -124,11 +124,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Binaries\PEVerify" />
+    <None Include="PEVerify">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Binaries\pevrfyrc.dll" />
+    <Content Include="pevrfyrc.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
