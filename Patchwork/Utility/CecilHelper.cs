@@ -433,7 +433,7 @@ namespace Patchwork.Utility {
 		/// <typeparam name="T"></typeparam>
 		/// <param name="provider">The provider.</param>
 		/// <returns></returns>
-		internal static IEnumerable<T> GetCustomAttributes<T>(this ICustomAttributeProvider provider) {
+		public static IEnumerable<T> GetCustomAttributes<T>(this ICustomAttributeProvider provider) {
 			//this is a bit more complicated than you'd think. If we try to load the type itself, we'll get an error about dependencies.
 			//loading in a ReflectionOnly context will create problems of their own.
 			//so we're passively reading the attributes using Cecil, without loading anything, until we find the one we want
@@ -447,7 +447,7 @@ namespace Patchwork.Utility {
 		/// <typeparam name="T"></typeparam>
 		/// <param name="provider">The provider.</param>
 		/// <returns></returns>
-		internal static T GetCustomAttribute<T>(this ICustomAttributeProvider provider) {
+		public static T GetCustomAttribute<T>(this ICustomAttributeProvider provider) {
 			return provider.GetCustomAttributes<T>().FirstOrDefault();
 		}
 
@@ -486,10 +486,10 @@ namespace Patchwork.Utility {
 		}
 
 		internal static void AddPatchedByAssemblyAttribute(this AssemblyDefinition targetAssembly,
-			AssemblyDefinition yourAssembly) {
+			AssemblyDefinition yourAssembly, int index) {
 
 			//PatchedByAssemblyAttribute(string fullName);
-			targetAssembly.AddCustomAttribute(targetAssembly.MainModule, typeof(PatchedByAssemblyAttribute), yourAssembly.FullName);
+			targetAssembly.AddCustomAttribute(targetAssembly.MainModule, typeof(PatchedByAssemblyAttribute), yourAssembly.MainModule.FullyQualifiedName, index);
 		}
 		/// <summary>
 		///     If given a ref to a patching type, returns the type that it patches. Otherwise, returns null.

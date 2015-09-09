@@ -37,6 +37,7 @@
 			this.button4 = new System.Windows.Forms.Button();
 			this.label2 = new System.Windows.Forms.Label();
 			this.textBox1 = new System.Windows.Forms.TextBox();
+			this.button5 = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// ctrlGameName
@@ -57,7 +58,7 @@
 			this.label1.BackColor = System.Drawing.Color.Transparent;
 			this.label1.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.label1.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-			this.label1.Location = new System.Drawing.Point(500, 30);
+			this.label1.Location = new System.Drawing.Point(516, 30);
 			this.label1.Name = "label1";
 			this.label1.RightToLeft = System.Windows.Forms.RightToLeft.No;
 			this.label1.Size = new System.Drawing.Size(97, 18);
@@ -72,7 +73,7 @@
 			this.ctrlReplaceFiles.AutoSize = true;
 			this.ctrlReplaceFiles.BackColor = System.Drawing.Color.Transparent;
 			this.ctrlReplaceFiles.Font = new System.Drawing.Font("Georgia", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.ctrlReplaceFiles.Location = new System.Drawing.Point(20, 239);
+			this.ctrlReplaceFiles.Location = new System.Drawing.Point(20, 179);
 			this.ctrlReplaceFiles.Name = "ctrlReplaceFiles";
 			this.ctrlReplaceFiles.Size = new System.Drawing.Size(231, 27);
 			this.ctrlReplaceFiles.TabIndex = 2;
@@ -84,32 +85,31 @@
 			// 
 			this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.button1.BackColor = System.Drawing.Color.Transparent;
+			this.button1.BackColor = System.Drawing.SystemColors.Control;
 			this.button1.FlatAppearance.BorderColor = System.Drawing.Color.Black;
 			this.button1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
 			this.button1.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
-			this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			this.button1.Font = new System.Drawing.Font("Georgia", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.button1.Location = new System.Drawing.Point(20, 272);
+			this.button1.Location = new System.Drawing.Point(20, 212);
 			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(577, 68);
+			this.button1.Size = new System.Drawing.Size(593, 68);
 			this.button1.TabIndex = 3;
 			this.button1.Text = "Launch with Mods";
 			this.button1.UseVisualStyleBackColor = false;
+			this.button1.Click += new System.EventHandler(this.button1_Click);
 			// 
 			// button2
 			// 
 			this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.button2.BackColor = System.Drawing.Color.Transparent;
+			this.button2.BackColor = System.Drawing.SystemColors.Control;
 			this.button2.FlatAppearance.BorderColor = System.Drawing.Color.Black;
 			this.button2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
 			this.button2.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
-			this.button2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			this.button2.Font = new System.Drawing.Font("Georgia", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.button2.Location = new System.Drawing.Point(20, 346);
+			this.button2.Location = new System.Drawing.Point(20, 286);
 			this.button2.Name = "button2";
-			this.button2.Size = new System.Drawing.Size(577, 58);
+			this.button2.Size = new System.Drawing.Size(593, 58);
 			this.button2.TabIndex = 4;
 			this.button2.Text = "Launch without Mods";
 			this.button2.UseVisualStyleBackColor = false;
@@ -118,13 +118,12 @@
 			// button3
 			// 
 			this.button3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.button3.BackColor = System.Drawing.Color.Transparent;
+			this.button3.BackColor = System.Drawing.SystemColors.Control;
 			this.button3.FlatAppearance.BorderColor = System.Drawing.Color.Black;
 			this.button3.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
 			this.button3.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
-			this.button3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			this.button3.Font = new System.Drawing.Font("Georgia", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.button3.Location = new System.Drawing.Point(456, 410);
+			this.button3.Location = new System.Drawing.Point(472, 350);
 			this.button3.Name = "button3";
 			this.button3.Size = new System.Drawing.Size(141, 34);
 			this.button3.TabIndex = 5;
@@ -134,13 +133,12 @@
 			// button4
 			// 
 			this.button4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.button4.BackColor = System.Drawing.Color.Transparent;
+			this.button4.BackColor = System.Drawing.SystemColors.Control;
 			this.button4.FlatAppearance.BorderColor = System.Drawing.Color.Black;
 			this.button4.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
 			this.button4.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
-			this.button4.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
 			this.button4.Font = new System.Drawing.Font("Georgia", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.button4.Location = new System.Drawing.Point(20, 410);
+			this.button4.Location = new System.Drawing.Point(20, 350);
 			this.button4.Name = "button4";
 			this.button4.Size = new System.Drawing.Size(148, 34);
 			this.button4.TabIndex = 6;
@@ -166,13 +164,34 @@
 			this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.textBox1.Font = new System.Drawing.Font("Courier New", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.textBox1.Location = new System.Drawing.Point(20, 83);
 			this.textBox1.Multiline = true;
 			this.textBox1.Name = "textBox1";
-			this.textBox1.Size = new System.Drawing.Size(577, 150);
+			this.textBox1.ReadOnly = true;
+			this.textBox1.Size = new System.Drawing.Size(593, 90);
 			this.textBox1.TabIndex = 7;
-			this.textBox1.Text = "File: \r\n";
+			this.textBox1.Text = "Error! Your game files don\'t much the expected files.\r\n\r\nClick Fix! to correct th" +
+    "e issue. Otherwise the program can\'t work properly.\r\n";
+			this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
+			// 
+			// button5
+			// 
+			this.button5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.button5.BackColor = System.Drawing.Color.Red;
+			this.button5.FlatAppearance.BorderColor = System.Drawing.Color.White;
+			this.button5.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
+			this.button5.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
+			this.button5.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+			this.button5.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.button5.Location = new System.Drawing.Point(519, 56);
+			this.button5.Name = "button5";
+			this.button5.Size = new System.Drawing.Size(94, 26);
+			this.button5.TabIndex = 9;
+			this.button5.Text = "Fix!";
+			this.button5.UseVisualStyleBackColor = false;
+			this.button5.Click += new System.EventHandler(this.button5_Click);
 			// 
 			// guiHome
 			// 
@@ -180,7 +199,8 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.Linen;
 			this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-			this.ClientSize = new System.Drawing.Size(616, 456);
+			this.ClientSize = new System.Drawing.Size(632, 396);
+			this.Controls.Add(this.button5);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.textBox1);
 			this.Controls.Add(this.button4);
@@ -211,6 +231,7 @@
 		private System.Windows.Forms.Button button4;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.TextBox textBox1;
+		private System.Windows.Forms.Button button5;
 	}
 }
 

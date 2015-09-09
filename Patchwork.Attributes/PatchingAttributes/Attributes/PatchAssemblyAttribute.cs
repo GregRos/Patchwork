@@ -7,15 +7,8 @@ namespace Patchwork.Attributes {
 	[AttributeUsage(AttributeTargets.Assembly)]
 	[NeverEmbed]
 	public class PatchAssemblyAttribute : PatchingAttribute {
-		public object PatchExecutionType {
-			get;
-		}
-		/// <summary>
-		/// Constructs a new instance of the attribute.
-		/// </summary>
-		/// <param name="patchExecutionType">A type that inherits from PatchExecution and implements auto-execution related operations. Must define a default constructor.</param>
-		public PatchAssemblyAttribute(object patchExecutionType = null) {
-			PatchExecutionType = patchExecutionType;
+		public PatchAssemblyAttribute() {
+			
 		}
 	}
 }

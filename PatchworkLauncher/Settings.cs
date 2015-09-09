@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -7,6 +8,41 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace PatchworkLauncher {
+
+	internal class ModEntry {
+
+		public bool Enabled {
+			get;
+			set;
+		}
+
+		public string Path {
+			get;
+			set;
+		}
+
+		public string Name {
+			get;
+			set;
+		}
+
+		public string Target {
+			get;
+			set;
+		}
+	}
+
+	internal class ModExecutionHistory {
+		public DateTime ExecutionDate {
+			get;
+			set;
+		}
+
+		public ObservableCollection<ModEntry> Entries {
+			get;
+		} = new ObservableCollection<ModEntry>();
+	}
+
 	internal class Settings : INotifyPropertyChanged {
 		private string _modsFolder;
 		private bool _replaceFiles;
@@ -29,6 +65,11 @@ namespace PatchworkLauncher {
 				_replaceFiles = value;
 				OnPropertyChanged();
 			}
+		}
+
+		public ModExecutionHistory LastExecution {
+			get;
+			set;
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;

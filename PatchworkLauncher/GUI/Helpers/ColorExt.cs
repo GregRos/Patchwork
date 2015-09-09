@@ -3,9 +3,6 @@ using System.Drawing;
 
 namespace PatchworkLauncher {
 	public static class ColorExt {
-
-		
-
 		public static Color Transform(this Color color, Func<ColorChannel, byte, byte> selector) {
 			return Color.FromArgb(selector(ColorChannel.A, color.A), selector(ColorChannel.R, color.R),
 				selector(ColorChannel.G, color.G),

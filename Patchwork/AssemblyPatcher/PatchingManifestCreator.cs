@@ -85,10 +85,19 @@ namespace Patchwork {
 				throw new PatchDeclerationException(
 					"The assembly MUST have the PatchAssemblyAttribute attribute. Sorry.");
 			}
-			var executionInfo = patchAssemblyAttr.PatchExecutionType as TypeReference;
+			var execInfoAttrs =
+				yourAssembly.MainModule.Types.Where(
+					x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof (PatchExecutionInfoAttribute).FullName)).ToList
+					();
+			if (execInfoAttrs.Count > 1) {
+				throw new PatchDeclerationException(
+					$"More than one class was found that is decorated with {nameof(PatchExecutionInfoAttribute)}");
+			}
+			var execInfoAttr = execInfoAttrs.FirstOrDefault();
+			
 			PatchExecutionInfo exec = null;
-			if (executionInfo != null) {
-				var loadedType = executionInfo.Resolve().LoadType();
+			if (execInfoAttr != null) {
+				var loadedType = execInfoAttr.Resolve().LoadType();
 				try {
 					exec = (PatchExecutionInfo) Activator.CreateInstance(loadedType);
 				}
@@ -99,7 +108,12 @@ namespace Patchwork {
 				}
 				catch (TargetInvocationException ex) {
 					throw new PatchDeclerationException(
-						$"Calling the constructor of the assembly's {nameof(PatchExecutionInfo)} class threw an exception.", ex.InnerException);
+						$"Calling the constructor of the assembly's {nameof(PatchExecutionInfo)} class threw an exception.",
+						ex.InnerException);
+				}
+				catch (InvalidCastException) {
+					throw new PatchDeclerationException(
+						$"The class decorated with {nameof(PatchExecutionInfoAttribute)} does not inherit from {nameof(PatchExecutionInfo)}");
 				}
 				catch (Exception ex) {
 					throw new PatchDeclerationException(

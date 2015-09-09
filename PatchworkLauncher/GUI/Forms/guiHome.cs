@@ -37,7 +37,7 @@ namespace PatchworkLauncher {
 			var myLightBlue = Color.FromArgb(255, 197, 202, 255);
 			using (LinearGradientBrush brush = new LinearGradientBrush(ClientRectangle,
 				Color.White,
-				myLightBlue.Lighten(15),
+				Color.Azure,
 				90F)) {
 				e.Graphics.FillRectangle(brush, ClientRectangle);
 			}
@@ -52,6 +52,21 @@ namespace PatchworkLauncher {
 				LastInvalidated = ms;
 			}
 			
+		}
+
+		private void textBox1_TextChanged(object sender, EventArgs e)
+		{
+
+		}
+
+		private void button5_Click(object sender, EventArgs e)
+		{
+
+		}
+
+		private void button1_Click(object sender, EventArgs e)
+		{
+
 		}
 	}
 }

@@ -47,27 +47,27 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LauncherState.cs" />
-    <Compile Include="ColorChannel.cs" />
-    <Compile Include="ColorExt.cs" />
-    <Compile Include="guiHome.cs">
+    <Compile Include="Classes\ColorChannel.cs" />
+    <Compile Include="GUI\Helpers\ColorExt.cs" />
+    <Compile Include="GUI\Forms\guiHome.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="guiHome.Designer.cs">
+    <Compile Include="GUI\Forms\guiHome.Designer.cs">
       <DependentUpon>guiHome.cs</DependentUpon>
     </Compile>
-    <Compile Include="Mods.cs">
+    <Compile Include="GUI\Forms\Mods.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Mods.Designer.cs">
+    <Compile Include="GUI\Forms\Mods.Designer.cs">
       <DependentUpon>Mods.cs</DependentUpon>
     </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="guiHome.resx">
+    <EmbeddedResource Include="GUI\Forms\guiHome.resx">
       <DependentUpon>guiHome.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Mods.resx">
+    <EmbeddedResource Include="GUI\Forms\Mods.resx">
       <DependentUpon>Mods.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -94,7 +94,33 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Background.png" />
+    <None Include="GUI\Forms\Background.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\cecil-0.9.6\Mono.Cecil.csproj">
+      <Project>{d68133bd-1e63-496e-9ede-4fbdbf77b486}</Project>
+      <Name>Mono.Cecil</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil-0.9.6\rocks\Mono.Cecil.Rocks.csproj">
+      <Project>{fbc6dd59-d09d-499c-b03c-99c1c78ff2ac}</Project>
+      <Name>Mono.Cecil.Rocks</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil-0.9.6\symbols\mdb\Mono.Cecil.Mdb.csproj">
+      <Project>{8559dd7f-a16f-46d0-a05a-9139faeba8fd}</Project>
+      <Name>Mono.Cecil.Mdb</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil-0.9.6\symbols\pdb\Mono.Cecil.Pdb.csproj">
+      <Project>{63e6915c-7ea4-4d76-ab28-0d7191eea626}</Project>
+      <Name>Mono.Cecil.Pdb</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Patchwork.Attributes\Patchwork.Attributes.csproj">
+      <Project>{47dcbaf7-f2e6-486c-8887-fa41c271b74e}</Project>
+      <Name>Patchwork.Attributes</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Patchwork\Patchwork.csproj">
+      <Project>{565c269a-f5eb-4bbe-86e5-75c8d4e1cdf7}</Project>
+      <Name>Patchwork</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

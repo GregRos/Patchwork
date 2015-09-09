@@ -289,6 +289,8 @@ namespace Patchwork {
 			}
 		}
 
+		private int _assemblyHistoryIndex = 0;
+
 		/// <summary>
 		/// Applies the patch described in the given PatchingManifest to the TargetAssembly.
 		/// </summary>
@@ -373,7 +375,7 @@ namespace Patchwork {
 
 				//+ADD PATCHING HISTORY TO ASSEMBLY
 				if (EmbedHistory) {
-					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchAssembly);	
+					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchAssembly, _assemblyHistoryIndex++);	
 				}
 			}
 			catch {

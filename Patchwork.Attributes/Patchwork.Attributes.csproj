@@ -56,6 +56,7 @@
     <Compile Include="PatchingAttributes\Attributes\DuplicatesBodyAttribute.cs" />
     <Compile Include="PatchingAttributes\Attributes\ImportCustomAttributesAttribute.cs" />
     <Compile Include="PatchingAttributes\Attributes\DisablePatchingByNameAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\PatchExecutionInfoAttribute.cs" />
     <Compile Include="PatchingAttributes\PatchingTarget.cs" />
     <Compile Include="PatchingAttributes\Attributes\ToggleFieldAttributes.cs" />
     <Compile Include="PatchingAttributes\Attributes\PatchworkDebugRegisterAttribute.cs" />
