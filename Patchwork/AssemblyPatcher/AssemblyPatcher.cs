@@ -326,7 +326,7 @@ namespace Patchwork {
 				//+IMPORT ASSEMBLY/MODULE CUSTOM ATTRIBUTES
 				//Add any custom attributes for things that aren't part of the method/type hierarchy, such as assemblies.
 				//DEPENDENCIES: Method definitions, type definitions. (for attribute types and attribute constructors)
-				var patchingAssembly = manifest.PatchingAssembly;
+				var patchingAssembly = manifest.PatchAssembly;
 				//for assmebly:
 				CopyCustomAttributesByImportAttribute(TargetAssembly, patchingAssembly,
 					patchingAssembly.GetCustomAttribute<ImportCustomAttributesAttribute>());
@@ -373,7 +373,7 @@ namespace Patchwork {
 
 				//+ADD PATCHING HISTORY TO ASSEMBLY
 				if (EmbedHistory) {
-					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchingAssembly);	
+					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchAssembly);	
 				}
 			}
 			catch {

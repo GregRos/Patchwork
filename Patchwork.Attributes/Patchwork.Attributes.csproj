@@ -47,32 +47,33 @@
     <Compile Include="..\Patchwork.SharedAttributes.cs">
       <Link>Patchwork.SharedAttributes.cs</Link>
     </Compile>
+    <Compile Include="Automatic Patching\PatchExecutionInfo.cs" />
     <Compile Include="NeverEmbedAttribute.cs" />
     <Compile Include="PatchingAttributes\AdvancedModificationScope.cs" />
     <Compile Include="PatchingAttributes\AliasCallMode.cs" />
-    <Compile Include="PatchingAttributes\AssemblyActionAttribute.cs" />
-    <Compile Include="PatchingAttributes\DisablePatchingAttribute.cs" />
-    <Compile Include="PatchingAttributes\DuplicatesBodyAttribute.cs" />
-    <Compile Include="PatchingAttributes\ImportCustomAttributesAttribute.cs" />
-    <Compile Include="PatchingAttributes\DisablePatchingByNameAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\AssemblyActionAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\DisablePatchingAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\DuplicatesBodyAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\ImportCustomAttributesAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\DisablePatchingByNameAttribute.cs" />
     <Compile Include="PatchingAttributes\PatchingTarget.cs" />
-    <Compile Include="PatchingAttributes\ToggleFieldAttributes.cs" />
-    <Compile Include="PatchingAttributes\PatchworkDebugRegisterAttribute.cs" />
-    <Compile Include="PatchingAttributes\MemberActionAttribute.cs" />
-    <Compile Include="PatchingAttributes\MemberAliasAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\ToggleFieldAttributes.cs" />
+    <Compile Include="PatchingAttributes\Attributes\PatchworkDebugRegisterAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\MemberActionAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\MemberAliasAttribute.cs" />
     <Compile Include="PatchingAttributes\ModificationScope.cs" />
-    <Compile Include="PatchingAttributes\ModifiesAccessibilityAttribute.cs" />
-    <Compile Include="PatchingAttributes\ModifiesMemberAttribute.cs" />
-    <Compile Include="PatchingAttributes\ModifiesTypeAttribute.cs" />
-    <Compile Include="PatchingAttributes\NewMemberAttribute.cs" />
-    <Compile Include="PatchingAttributes\ToggleMethodAttributes.cs" />
-    <Compile Include="PatchingAttributes\ToggleTypeAttributes.cs" />
-    <Compile Include="PatchingAttributes\TypeActionAttribute.cs" />
-    <Compile Include="PatchingAttributes\NewTypeAttribute.cs" />
-    <Compile Include="PatchingAttributes\PatchAssemblyAttribute.cs" />
-    <Compile Include="PatchingAttributes\PatchingAttribute.cs" />
-    <Compile Include="PatchingAttributes\RemoveThisMemberAttribute.cs" />
-    <Compile Include="PatchingAttributes\ReplaceTypeAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\ModifiesAccessibilityAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\ModifiesMemberAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\ModifiesTypeAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\NewMemberAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\ToggleMethodAttributes.cs" />
+    <Compile Include="PatchingAttributes\Attributes\ToggleTypeAttributes.cs" />
+    <Compile Include="PatchingAttributes\Attributes\TypeActionAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\NewTypeAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\PatchAssemblyAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\PatchingAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\RemoveThisMemberAttribute.cs" />
+    <Compile Include="PatchingAttributes\Attributes\ReplaceTypeAttribute.cs" />
     <Compile Include="PatchingHistoryAttributes\PatchedByAssemblyAttribute.cs" />
     <Compile Include="PatchingHistoryAttributes\PatchingHistoryAttribute.cs" />
     <Compile Include="PatchingHistoryAttributes\PatchedByMemberAttribute.cs" />
@@ -80,9 +81,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Patchwork.Version.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Shared\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

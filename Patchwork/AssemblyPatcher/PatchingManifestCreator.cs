@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -79,9 +80,31 @@ namespace Patchwork {
 			var multicast = yourAssembly.GetCustomAttributes<DisablePatchingByNameAttribute>();
 			var filter = CreateMemberFilter(multicast);
 
-			if (!yourAssembly.IsPatchingAssembly()) {
+			var patchAssemblyAttr = yourAssembly.GetCustomAttribute<PatchAssemblyAttribute>();
+			if (patchAssemblyAttr != null) {
 				throw new PatchDeclerationException(
 					"The assembly MUST have the PatchAssemblyAttribute attribute. Sorry.");
+			}
+			var executionInfo = patchAssemblyAttr.PatchExecutionType as TypeReference;
+			PatchExecutionInfo exec = null;
+			if (executionInfo != null) {
+				var loadedType = executionInfo.Resolve().LoadType();
+				try {
+					exec = (PatchExecutionInfo) Activator.CreateInstance(loadedType);
+				}
+				catch (MissingMethodException ex) {
+					throw new PatchDeclerationException(
+						$"Could not instantiate the {nameof(PatchExecutionInfo)} class for the assembly {yourAssembly.Name.Name}, probably because it has no default constructor.",
+						ex);
+				}
+				catch (TargetInvocationException ex) {
+					throw new PatchDeclerationException(
+						$"Calling the constructor of the assembly's {nameof(PatchExecutionInfo)} class threw an exception.", ex.InnerException);
+				}
+				catch (Exception ex) {
+					throw new PatchDeclerationException(
+						$"Could not instantiate the {nameof(PatchExecutionInfo)} class due to an exception.", ex);
+				}
 			}
 
 			var allTypesInOrder = GetAllTypesInNestingOrder(yourAssembly.MainModule.Types).ToList();
@@ -123,13 +146,16 @@ namespace Patchwork {
 				});
 			}
 
+			
+
 			var patchingManifest = new PatchingManifest() {
 				EventActions = events,
 				FieldActions = fields,
 				PropertyActions = properties,
 				MethodActions = methods,
 				TypeActions = types,
-				PatchingAssembly = yourAssembly
+				PatchAssembly = yourAssembly,
+				PatchExecution = exec
 			};
 
 			return patchingManifest;

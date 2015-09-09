@@ -10,7 +10,12 @@ using Patchwork.Collections;
 namespace Patchwork {
 	public class PatchingManifest {
 
-		public AssemblyDefinition PatchingAssembly {
+		public AssemblyDefinition PatchAssembly {
+			get;
+			internal set;
+		}
+
+		public PatchExecutionInfo PatchExecution {
 			get;
 			internal set;
 		}
