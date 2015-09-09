@@ -12,7 +12,15 @@ using Patchwork.Utility;
 namespace Patchwork {
 	public partial class AssemblyPatcher {
 		private CustomAttributeArgument CopyCustomAttributeArg(CustomAttributeArgument yourArgument) {
-			return new CustomAttributeArgument(FixTypeReference(yourArgument.Type), yourArgument.Value);
+			
+			var type = FixTypeReference(yourArgument.Type);
+			var value = yourArgument.Value;
+			if (value is CustomAttributeArgument) {
+				value = CopyCustomAttributeArg((CustomAttributeArgument) value);
+			} else if (value is TypeReference) {
+				value = FixTypeReference((TypeReference) value);
+			}
+			return new CustomAttributeArgument(type, value);
 		}
 
 		private void CopyCustomAttributesByImportAttribute(ICustomAttributeProvider targetMember,
