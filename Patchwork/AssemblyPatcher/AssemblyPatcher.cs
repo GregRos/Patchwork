@@ -406,7 +406,18 @@ namespace Patchwork {
 			Log.Information("Write completed successfuly.");
 		}
 
+		private bool IsNastyType(TypeReference typeRef) {
+			return typeRef.Name.Contains(".") || typeRef.DeclaringType != null && IsNastyType(typeRef.DeclaringType);
+		}
+
 		private TypeDefinition GetPatchedTypeByName(TypeReference typeRef) {
+			if (IsNastyType(typeRef)) {
+				if (typeRef.IsNested) {
+					var declaringType = GetPatchedTypeByName(typeRef.DeclaringType);
+					return declaringType.GetNestedType(typeRef.Name).Resolve();
+				}
+				return TargetAssembly.MainModule.GetType(typeRef.Namespace, typeRef.Name);
+			}
 			var patchedTypeName = typeRef.GetPatchedTypeFullName();
 			if (patchedTypeName == null) {
 				return null;

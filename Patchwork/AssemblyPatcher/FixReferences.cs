@@ -21,6 +21,7 @@ namespace Patchwork
 		/// <param name="targetMethod"></param>
 		/// <param name="yourParamRef"></param>
 		/// <returns></returns>
+		/// 
 		private ParameterDefinition FixParamReference(MethodDefinition targetMethod,
 			ParameterReference yourParamRef) {
 			var targetParam = targetMethod.Parameters[yourParamRef.Index];
@@ -260,9 +261,6 @@ namespace Patchwork
 			}
 			if (t == typeof (EventDefinition)) {
 				return targetType.GetEvent(targetMemberName) as T;
-			}
-			if (t == typeof (TypeDefinition)) {
-				return GetPatchedTypeByName(yourMemberDef as TypeDefinition) as T;
 			}
 			throw new ArgumentException($"Unknown member definition of type {t}");
 		}

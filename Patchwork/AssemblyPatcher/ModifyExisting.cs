@@ -233,7 +233,7 @@ namespace Patchwork {
 
 		private void ModifyTypeDecleration(TypeDefinition yourType) {
 			Log_modifying_member("type", yourType);
-			var targetType = TargetAssembly.MainModule.GetType(yourType.GetPatchedTypeFullName());
+			var targetType = GetPatchedTypeByName(yourType);
 			targetType.BaseType = yourType.BaseType == null ? null : FixTypeReference(yourType.BaseType);
 			targetType.Interfaces.AddRange(yourType.Interfaces.Select(FixTypeReference));
 
