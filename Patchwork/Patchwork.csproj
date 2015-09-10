@@ -71,6 +71,8 @@
       <Link>Properties\Patchwork.SharedAttributes.cs</Link>
     </Compile>
     <Compile Include="AssemblyPatcher\CreateNew.cs" />
+    <Compile Include="Collections\CachingDictionary.cs" />
+    <Compile Include="Collections\MappingCache.cs" />
     <Compile Include="DebugFlags.cs" />
     <Compile Include="AssemblyPatcher\FixReferences.cs" />
     <Compile Include="ImplicitImportSetting.cs" />
@@ -89,6 +91,7 @@
     <Compile Include="Utility\Accessibility.cs" />
     <Compile Include="AssemblyPatcher\AssemblyPatcher.cs" />
     <Compile Include="Utility\Asserts.cs" />
+    <Compile Include="Utility\CecilExtensions.cs" />
     <Compile Include="Utility\CommonBindingFlags.cs" />
     <Compile Include="Utility\ExprHelper.cs" />
     <Compile Include="Utility\LogHelper.cs" />

@@ -4,9 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PatchworkLauncher.Classes
-{
-	class PatchingOrder
-	{
+namespace Patchwork.Utility {
+	internal static class NicheCecilExtensions {
 	}
 }

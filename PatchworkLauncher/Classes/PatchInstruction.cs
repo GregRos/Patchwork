@@ -1,39 +1,30 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Mono.Cecil;
 using Patchwork;
-using Patchwork.Collections;
 
 namespace PatchworkLauncher {
+	internal class PatchInstruction : INotifyPropertyChanged{
+		private bool _isEnabled;
 
-
-	
-
-
-	internal class LauncherState : INotifyPropertyChanged {
-		public Dictionary<string, PatchingManifest> Mods {
+		public PatchingManifest Patch {
 			get;
 		}
 
-		public Dictionary<string,AssemblyDefinition> Targets {
-			get;
-		}
-
-		public LauncherState() {
-			
-		}
-
-		public Settings SavedSettings {
-			get;
-			set;
+		public bool IsEnabled {
+			get {
+				return _isEnabled;
+			}
+			set {
+				_isEnabled = value;
+				OnPropertyChanged();
+			}
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
@@ -41,5 +32,12 @@ namespace PatchworkLauncher {
 		protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null) {
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
+	}
+
+	internal class PatchInstructionSequence {
+		public ObservableCollection<PatchInstruction> Instructions {
+			get;
+		} = new ObservableCollection<PatchInstruction>();
+
 	}
 }

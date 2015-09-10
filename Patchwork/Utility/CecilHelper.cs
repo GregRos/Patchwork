@@ -67,7 +67,8 @@ namespace Patchwork.Utility {
 		public static byte[] SerializeAssembly(this AssemblyDefinition definition) {
 			var ms = new MemoryStream();
 			definition.Write(ms);
-			return ms.ToArray();
+			ms.Flush();
+			return ms.GetBuffer();
 		}
 
 		public static MethodDefinition MaybeResolve(this MethodReference mRef) {
@@ -491,6 +492,16 @@ namespace Patchwork.Utility {
 			//PatchedByAssemblyAttribute(string fullName);
 			targetAssembly.AddCustomAttribute(targetAssembly.MainModule, typeof(PatchedByAssemblyAttribute), yourAssembly.MainModule.FullyQualifiedName, index);
 		}
+
+		public static void SetFullName(this TypeReference type, string newFullName) {
+			var indexOfLastDot = newFullName.LastIndexOf('.');
+
+			var newNs = indexOfLastDot == -1 ? "" : newFullName.Substring(0, indexOfLastDot);
+			var newName = newFullName.Substring(indexOfLastDot + 1);
+			type.Name = newName;
+			type.Namespace = newNs;
+		}
+
 		/// <summary>
 		///     If given a ref to a patching type, returns the type that it patches. Otherwise, returns null.
 		/// </summary>
@@ -498,6 +509,8 @@ namespace Patchwork.Utility {
 		/// <returns></returns>
 		internal static string GetPatchedTypeFullName(this TypeReference typeRef) {
 			var typeActionAttr = typeRef.Resolve().GetCustomAttribute<TypeActionAttribute>();
+			var newTypeAttr = typeActionAttr as NewTypeAttribute;
+			var modTypeAttr = typeActionAttr as ModifiesTypeAttribute;
 			if (typeActionAttr is NewTypeAttribute || typeActionAttr == null) {
 				if (!typeRef.IsNested) {
 					return typeRef.FullName;

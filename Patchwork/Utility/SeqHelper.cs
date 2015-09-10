@@ -15,6 +15,13 @@ namespace Patchwork.Utility {
 			return anyRemoved;
 		}
 
+		public static T TryGet<TKey, T>(this IDictionary<TKey, T> dict, TKey key)
+		where T : class {
+			return dict.ContainsKey(key) ? dict[key] : null;
+		}
+
+
+
 		public static void ForEach<T>(this IEnumerable<T> seq, Action<T> act) {
 			foreach (var item in seq) { act(item); }
 		}

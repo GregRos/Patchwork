@@ -24,6 +24,12 @@ namespace Patchwork.Attributes {
 		/// </summary>
 		public virtual string Name {
 			get;
+			protected set;
+		}
+
+		public virtual string Requirements {
+			get;
+			protected set;
 		}
 
 		/// <summary>
@@ -33,28 +39,31 @@ namespace Patchwork.Attributes {
 			get {
 				return _fileVersion;
 			}
-			set {
+			protected set {
 				_fileVersion = value;
 			}
 		}
 
+		public delegate Assembly LazyAssemblyResolver();
+
 		/// <summary>
 		/// This method is called to determine if this mod can be applied to the target file in its present state.
 		/// </summary>
-		/// <param name="baseFolder">The base folder (usually, the game's main folder)</param>
-		/// <param name="force">An integer that gives the degree of forcing the user wants. Used to override safety features and the like.</param>
+		/// <param name="resolver">Returns the target assembly, loaded in a reflection-only context.</param>
 		/// <param name="message">A text message which is displayed to the user. If null, no message is displayed.</param>
 		/// <returns></returns>
-		public virtual bool CanPatch(DirectoryInfo baseFolder, int force, out string message) {
+		public virtual bool CanPatch(LazyAssemblyResolver resolver, out string message) {
 			message = null;
 			return true;
 		}
 
 		/// <summary>
-		/// This method is called after patching is performed. It can contain post-conditions. If the result of patching is invalid, this method should throw an exception. This will undo the operation.
+		/// This method is called after patching to check if the result is correct.
 		/// </summary>
-		public virtual void AfterPatch(DirectoryInfo baseFolder, int force) {
+		/// <param name="resolver">Returns the target assembly, in a reflection-only context.</param>
+		public virtual void AfterPatch(LazyAssemblyResolver resolver) {
 			
 		}
+
 	}
 }

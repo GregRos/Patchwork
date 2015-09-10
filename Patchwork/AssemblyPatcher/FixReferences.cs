@@ -11,10 +11,10 @@ using Mono.Cecil.Rocks;
 using Patchwork.Attributes;
 using Patchwork.Utility;
 
-namespace Patchwork
-{
-	public partial class AssemblyPatcher
-	{
+namespace Patchwork {
+
+	public partial class AssemblyPatcher {
+
 		/// <summary>
 		/// Fixes a parameter reference 
 		/// </summary>
@@ -75,6 +75,7 @@ namespace Patchwork
 		 * 
 		 * Also, most Fix methods are recursive, especially FixType.
 		 */
+
 		/// <summary>
 		///     Fixes a type reference, possibly replacing a reference to a patching type from your assembly with a reference to
 		///     the type being patched.
@@ -109,7 +110,7 @@ namespace Patchwork
 			 * 
 			 * Plus, we have references to type parameters ofc.
 			 */
-			
+
 			if (yourTypeRef == null) {
 				Log_called_to_fix_null("type");
 				return null;
@@ -117,12 +118,13 @@ namespace Patchwork
 			Log_fixing_reference("type", yourTypeRef);
 
 			TypeReference targetTypeRef;
-			
+
 			var yourTypeDef = yourTypeRef.Resolve();
 			if (yourTypeDef != null && yourTypeDef.IsDisablePatching()) {
 				Log_trying_to_fix_disabled_reference("type", yourTypeRef);
 			}
 			TypeReference targetInnerTypeRef;
+			int index;
 			switch (yourTypeRef.MetadataType) {
 				case MetadataType.Array:
 					//array of the type, e.g. int[]
@@ -142,7 +144,8 @@ namespace Patchwork
 				case MetadataType.GenericInstance:
 					//fully instantiated generic type, like List<int>
 					var asGenericInstanceType = (GenericInstanceType) yourTypeRef;
-					var targetGenArguments = asGenericInstanceType.GenericArguments.Select<TypeReference, TypeReference>(FixTypeReference);
+					var targetGenArguments =
+						asGenericInstanceType.GenericArguments.Select<TypeReference, TypeReference>(FixTypeReference);
 					targetInnerTypeRef = FixTypeReference(asGenericInstanceType.ElementType);
 					targetTypeRef = targetInnerTypeRef.MakeGenericInstanceType(targetGenArguments.ToArray());
 					break;
@@ -152,17 +155,20 @@ namespace Patchwork
 					//the following is dangeorus because it brings about mutual recursion FixMethod ⇔ FixType... 
 					//the 'false' argument makes sure the recursion doesn't become infinite, as it allows for FixMethod
 					//not to fix all the types in the signature. After all, we just need the generic parameters.
-					var targetDeclaringMethod = FixMethodReference(asGenParam.DeclaringMethod, false); 
-					targetTypeRef = targetDeclaringMethod.GenericParameters.Single(x => x.Name == asGenParam.Name);
+					index = asGenParam.DeclaringMethod.GenericParameters.IndexOf(x => x.Name == asGenParam.Name);
+					//we need to Resolve it in order to get a sort-of more "up to date" reference to the method.
+					var targetDeclaringMethod = FixMethodReference(asGenParam.DeclaringMethod, false).Resolve();
+					var imported = TargetAssembly.MainModule.Import(targetDeclaringMethod);
+					targetTypeRef = imported.GenericParameters[index];
 					break;
 				case MetadataType.Var:
 					//type's generic type parameter
 					var declaringType = yourTypeRef.DeclaringType;
-					var index = declaringType.GenericParameters.IndexOf(x => x.Name == yourTypeRef.Name);
+					index = declaringType.GenericParameters.IndexOf(x => x.Name == yourTypeRef.Name);
 					var targetDeclaringType = FixTypeReference(declaringType);
 					targetTypeRef = targetDeclaringType.GenericParameters[index];
 					break;
-				case MetadataType.Sentinel:  //interop: related to the varargs calling convention, "__arglist" in C#.
+				case MetadataType.Sentinel: //interop: related to the varargs calling convention, "__arglist" in C#.
 				case MetadataType.RequiredModifier: //interop: related to marshaling
 				case MetadataType.OptionalModifier: //interop: related to marshaling	
 				case MetadataType.Pinned: //interop: created using the 'fixed' keyword
@@ -177,18 +183,16 @@ namespace Patchwork
 						targetTypeRef = TargetAssembly.MainModule.Import(yourTypeDef);
 					} else {
 						//If the type is from a patching assembly.
-						//note that even if this is a nested type inside another patching type, the patched type name must be the full name always.
-						targetTypeRef = GetPatchedTypeByName(yourTypeDef);
+						targetTypeRef = CurrentMemberCache.Types[yourTypeDef].TargetType;
 					}
 					if (targetTypeRef == null) {
 						throw Errors.Could_not_resolve_reference("type", yourTypeRef);
 					}
-					
 					break;
 			}
 			Log_fixed_reference("type", yourTypeRef, targetTypeRef);
 			targetTypeRef.Module.Assembly.AssertEqual(TargetAssembly);
-			
+
 			return targetTypeRef;
 		}
 
@@ -201,72 +205,18 @@ namespace Patchwork
 		private MethodReference ManualImportMethod(MethodReference yourMethodRef) {
 			//the following is required due to a workaround. 
 			var newRef = yourMethodRef.IsGenericInstance ? yourMethodRef : yourMethodRef.MakeReference();
-			
+
 			foreach (var param in newRef.Parameters) {
-				if (param.ParameterType.IsVarOrMVar()) continue; //also workaround, though I'm not sure if we need this anymore.
+				//if (param.ParameterType.IsVarOrMVar()) continue; //also workaround, though I'm not sure if we need this anymore.
 				param.ParameterType = FixTypeReference(param.ParameterType);
 			}
 			if (!newRef.ReturnType.IsVarOrMVar()) {
-				newRef.ReturnType = FixTypeReference(yourMethodRef.ReturnType);		
+				newRef.ReturnType = FixTypeReference(yourMethodRef.ReturnType);
 			}
-			
+
 			return newRef;
 		}
 
-		
-
-		private static string GetPatchedMemberName(IMemberDefinition yourMemberDef, MemberActionAttribute actionAttribute = null) {
-			string targetMemberName;
-			ModificationScope? dummy;
-			GetMemberModificationInfo(yourMemberDef, out targetMemberName, out dummy, actionAttribute);
-			return targetMemberName;
-		}
-
-		private static ModificationScope GetModificationScope(IMemberDefinition yourMemberDef,
-			MemberActionAttribute actionAttribute = null) {
-			string dummy;
-			ModificationScope? scope;
-			GetMemberModificationInfo(yourMemberDef, out dummy, out scope, actionAttribute);
-			if (!scope.HasValue) {
-				throw new ArgumentException(
-					$"The specified member {yourMemberDef.UserFriendlyNameDef()} has no valid modification scope.");
-			}
-			return scope.Value;
-		}
-
-		private static void GetMemberModificationInfo(IMemberDefinition yourMemberDef, out string patchedMemberName,
-			out ModificationScope? modScope, MemberActionAttribute actionAttribute = null) {
-			actionAttribute = actionAttribute ?? yourMemberDef.GetCustomAttribute<MemberActionAttribute>();
-			var asModifiesAttr = actionAttribute as ModifiesMemberAttribute;
-			var asNewMember = actionAttribute as NewMemberAttribute;
-			var memberName = asModifiesAttr?.MemberName ?? yourMemberDef.Name;
-			var scope = asNewMember != null ? AdvancedModificationScope.NewlyCreated : asModifiesAttr?.Scope;
-			patchedMemberName = memberName;
-			modScope = scope;
-		}
-
-		private T GetPatchedMember<T>(TypeDefinition targetType, T yourMemberDef, MemberActionAttribute actionAttribute = null)
-		where T : MemberReference,IMemberDefinition {
-			var targetMemberName = GetPatchedMemberName(yourMemberDef,actionAttribute);
-			var t = typeof (T);
-			if (t == typeof(MethodDefinition)) {
-				return targetType.GetMethodLike(yourMemberDef as MethodDefinition, targetMemberName) as T;
-			}
-			if (t == typeof(PropertyDefinition)) {
-				return targetType.GetPropertyLike(yourMemberDef as PropertyDefinition, targetMemberName) as T;
-			}
-			if (t == typeof(FieldDefinition)) {
-				return targetType.GetField(targetMemberName) as T;
-			}
-			if (t == typeof (EventDefinition)) {
-				return targetType.GetEvent(targetMemberName) as T;
-			}
-			if (t == typeof (TypeDefinition)) {
-				return GetPatchedTypeByName(yourMemberDef as TypeDefinition) as T;
-			}
-			throw new ArgumentException($"Unknown member definition of type {t}");
-		}
-		
 
 
 		/// <summary>
@@ -276,7 +226,7 @@ namespace Patchwork
 		/// <param name="isntFixTypeCall">This parameter is sort of a hack that lets FixType call FixMethod to fix MVars, without infinite recursion. If set to false, it avoids fixing some types.</param>
 		/// <returns></returns>
 		/// <exception cref="Exception">Method isn't part of a patching type in this assembly...</exception>
-		private MethodReference  FixMethodReference(MethodReference yourMethodRef, bool isntFixTypeCall = true) {
+		private MethodReference FixMethodReference(MethodReference yourMethodRef, bool isntFixTypeCall = true) {
 			//Fixes reference like YourAssembly::PatchingClass::Method to TargetAssembly::PatchedClass::Method
 			if (yourMethodRef == null) {
 				Log_called_to_fix_null("method");
@@ -296,34 +246,27 @@ namespace Patchwork
 			 * 3. As a special case, any method reference (assume non-generic) that has a generic DeclaringType.
 			 */
 			MethodReference targetMethodRef;
-			var memberAlias = yourMethodDef.GetCustomAttribute<MemberAliasAttribute>();
-			var modifiesMember = yourMethodDef.GetCustomAttribute<ModifiesMemberAttribute>();
 			if (yourMethodRef.IsGenericInstance) {
 				var yourGeneric = (GenericInstanceMethod) yourMethodRef;
 				var targetBaseMethod = FixMethodReference(yourGeneric.ElementMethod);
 				var targetGenericInstMethod = new GenericInstanceMethod(targetBaseMethod);
-				
+
 				foreach (var arg in yourGeneric.GenericArguments) {
 					var targetGenericArg = FixTypeReference(arg);
 					targetGenericInstMethod.GenericArguments.Add(targetGenericArg);
 				}
 				targetMethodRef = targetGenericInstMethod;
-				
-			} else {	
+			} else {
 				TypeReference typeToFix = yourMethodRef.DeclaringType;
-				if (memberAlias != null && memberAlias.AliasedMemberDeclaringType != null) {
-					typeToFix = (TypeReference)memberAlias.AliasedMemberDeclaringType;
+				var action = CurrentMemberCache.Methods.TryGet(yourMethodDef);
+				var memberAlias = action?.ActionAttribute as MemberAliasAttribute;
+				if (memberAlias?.AliasedMemberDeclaringType != null) {
+					typeToFix = (TypeReference) memberAlias.AliasedMemberDeclaringType;
 				}
 				var targetType = FixTypeReference(typeToFix);
 				var targetBaseMethodDef = yourMethodRef;
 				if (yourMethodDef.Module.Assembly.IsPatchingAssembly()) {
-					//additional checking
-					string methodName = memberAlias?.AliasedMemberName;
-					methodName = methodName ?? modifiesMember?.MemberName ?? yourMethodRef.Name;
-
-					var targetMethodDef = targetType.Resolve().GetMethodLike(yourMethodRef, methodName);
-					var debugOverloads =
-						targetType.Resolve().Methods.Where(x => x.Name == yourMethodRef.Name).ToArray();
+					var targetMethodDef = action?.TargetMember;
 					if (targetMethodDef == null) {
 						throw Errors.Could_not_resolve_reference("method", yourMethodRef);
 					}
@@ -334,12 +277,11 @@ namespace Patchwork
 				var newMethodRef = targetBaseMethodDef.MakeReference();
 				newMethodRef.DeclaringType = targetType;
 				targetMethodRef = newMethodRef;
+				if (isntFixTypeCall) {
+					targetMethodRef = ManualImportMethod(targetMethodRef);
+				}
 			}
-			
-			if (isntFixTypeCall) {
-				targetMethodRef = ManualImportMethod(targetMethodRef);
-			} 
-			targetMethodRef = TargetAssembly.MainModule.Import(targetMethodRef); //for good measure...
+
 			targetMethodRef.Module.Assembly.AssertEqual(TargetAssembly);
 			Log_fixed_reference("method", yourMethodRef, targetMethodRef);
 			return targetMethodRef;
@@ -348,11 +290,11 @@ namespace Patchwork
 		private FieldReference FixFieldReference(FieldReference yourFieldRef) {
 			if (yourFieldRef == null) {
 				Log_called_to_fix_null("field");
-				return null; 
+				return null;
 			}
 			Log_fixing_reference("field", yourFieldRef);
 			Asserts.AssertTrue(yourFieldRef.DeclaringType != null);
-			
+
 			var yourFieldDef = yourFieldRef.Resolve();
 			if (yourFieldDef.IsDisablePatching()) {
 				Log_trying_to_fix_disabled_reference("field", yourFieldRef);
@@ -382,7 +324,8 @@ namespace Patchwork
 		}
 
 		private void Log_trying_to_fix_disabled_reference(string kind, MemberReference badMemberRef) {
-			Log.Warning("Trying to fix {0} reference to {1}, but it has the DisablePatching attribute.", kind, badMemberRef.UserFriendlyName());
+			Log.Warning("Trying to fix {0} reference to {1}, but it has the DisablePatching attribute.", kind,
+				badMemberRef.UserFriendlyName());
 		}
 
 		private void Log_called_to_fix_null(string kind) {
@@ -394,7 +337,8 @@ namespace Patchwork
 		}
 
 		private void Log_fixed_reference(string kind, MemberReference oldMemberRef, MemberReference fixedMemberRef) {
-			Log.Verbose("Fixed {0} reference: {1} ⇒ {2}", kind, oldMemberRef.UserFriendlyName(),  fixedMemberRef.UserFriendlyName());
+			Log.Verbose("Fixed {0} reference: {1} ⇒ {2}", kind, oldMemberRef.UserFriendlyName(),
+				fixedMemberRef.UserFriendlyName());
 		}
 
 	}

@@ -14,7 +14,8 @@ namespace Patchwork.Attributes {
 		///     Can limit the scope of the modification. Everything is modified by default. Usually used to make
 		///     things public, etc.
 		/// </param>
-		public ModifiesMemberAttribute(string memberName = null, ModificationScope scope = ModificationScope.All) {
+		public ModifiesMemberAttribute(string memberName = null, ModificationScope scope = ModificationScope.All)
+		: base(scope) {
 			MemberName = memberName;
 			Scope = scope;
 		}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -10,9 +11,20 @@ using Mono.Cecil;
 using Patchwork.Attributes;
 using Patchwork.Collections;
 using Patchwork.Utility;
+using Serilog;
 
 namespace Patchwork {
-	public partial class AssemblyPatcher {
+	public class ManifestCreator {
+
+		public ManifestCreator(ILogger log = null, ImplicitImportSetting implicitImports = ImplicitImportSetting.OnlyCompilerGenerated) {
+			ImplicitImports = implicitImports;
+			Log = log ?? Serilog.Log.Logger;
+		}
+
+		public ILogger Log {
+			get;
+		}
+		
 		private SimpleTypeLookup<MemberAction<T>> OrganizeMembers<T>(SimpleTypeLookup<TypeAction> organizedTypes,
 			Func<TypeDefinition, IEnumerable<T>> getMembers, Func<MemberReference, bool> filter) where T : MemberReference, IMemberDefinition {
 
@@ -28,14 +40,14 @@ namespace Patchwork {
 					YourMember = yourMember,
 					ActionAttribute = actionAttr,
 					TypeAction = pair,
-					TargetMember = pair.TargetType == null ? null : GetPatchedMember(pair.TargetType, yourMember)
 				} by actionAttr.GetType();
 
 			return memberSeq.ToSimpleTypeLookup();
 		}
 
 
-		private void ImplicitlyAddNewMethods<T>(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions, MemberAction<T> rootMemberAction,
+		private void ImplicitlyAddNewMethods<T>(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions,
+			MemberAction<T> rootMemberAction,
 			Func<T, IEnumerable<MethodDefinition>> getMethods) where T : IMemberDefinition {
 			var newMethods = getMethods(rootMemberAction.YourMember);
 			var allMethods = new HashSet<MethodDefinition>(methodActions.SelectMany(x => x).Select(x => x.YourMember));
@@ -48,7 +60,6 @@ namespace Patchwork {
 					TargetMember = null
 				});
 			}
-
 		}
 
 		private static Func<MemberReference, bool> CreateMemberFilter(DisablePatchingByNameAttribute attribute) {
@@ -81,7 +92,7 @@ namespace Patchwork {
 			var filter = CreateMemberFilter(multicast);
 
 			var patchAssemblyAttr = yourAssembly.GetCustomAttribute<PatchAssemblyAttribute>();
-			if (patchAssemblyAttr != null) {
+			if (patchAssemblyAttr == null) {
 				throw new PatchDeclerationException(
 					"The assembly MUST have the PatchAssemblyAttribute attribute. Sorry.");
 			}
@@ -127,11 +138,10 @@ namespace Patchwork {
 				from type in allTypesInOrder
 				let typeActionAttr = GetTypeActionAttribute(type)
 				where typeActionAttr != null && Filter(type) && filter(type)
-				orderby type.UserFriendlyName()
+				let patchedTypeName = type.GetPatchedTypeFullName()
 				group new TypeAction() {
 					YourType = type,
 					ActionAttribute = typeActionAttr,
-					TargetType = typeActionAttr is NewTypeAttribute ? null : GetPatchedTypeByName(type)
 				} by typeActionAttr.GetType();
 
 			var types = typesByActionSeq.ToSimpleTypeLookup();
@@ -160,8 +170,6 @@ namespace Patchwork {
 				});
 			}
 
-			
-
 			var patchingManifest = new PatchingManifest() {
 				EventActions = events,
 				FieldActions = fields,
@@ -174,6 +182,7 @@ namespace Patchwork {
 
 			return patchingManifest;
 		}
+
 
 		private static Func<MemberReference, bool> CreateMemberFilter(IEnumerable<DisablePatchingByNameAttribute> attributes) {
 			return member => attributes.Select(CreateMemberFilter).All(f => f(member));
@@ -241,5 +250,31 @@ namespace Patchwork {
 				yield return nestedType;
 			}
 		}
+
+
+
+		/// <summary>
+		///     Gets or sets the implicit imports setting. This influences how members that don't have any Patch attributes are
+		///     treated.
+		/// </summary>
+		/// <value>
+		///     The implicit import setting.
+		/// </value>
+		public ImplicitImportSetting ImplicitImports {
+			get;
+			set;
+		}
+
+		/// <summary>
+		///     If set (default null), a filter that says which types to include. This is a debug option.
+		/// </summary>
+		/// <value>
+		///     The filter.
+		/// </value>
+		[EditorBrowsable(EditorBrowsableState.Never)]
+		public Func<TypeDefinition, bool> Filter {
+			get;
+			set;
+		} = x => true;
 	}
 }
