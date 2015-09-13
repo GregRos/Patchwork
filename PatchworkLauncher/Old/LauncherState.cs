@@ -13,11 +13,6 @@ using Patchwork;
 using Patchwork.Collections;
 
 namespace PatchworkLauncher {
-
-
-	
-
-
 	internal class LauncherState : INotifyPropertyChanged {
 		public Dictionary<string, PatchingManifest> Mods {
 			get;
@@ -25,10 +20,6 @@ namespace PatchworkLauncher {
 
 		public Dictionary<string,AssemblyDefinition> Targets {
 			get;
-		}
-
-		public LauncherState() {
-			
 		}
 
 		public Settings SavedSettings {

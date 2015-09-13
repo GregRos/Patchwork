@@ -54,10 +54,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\Central.cs" />
     <Compile Include="Classes\PatchInstruction.cs" />
-    <Compile Include="Classes\Serialization\PatchInstructionHistory.cs" />
-    <Compile Include="Classes\Serialization\PatchSequenceHistory.cs" />
+    <Compile Include="Classes\Serialization\XmlInstruction.cs" />
+    <Compile Include="GUI\Forms\Central.cs" />
     <Compile Include="GUI\Forms\LogForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -65,7 +64,6 @@
       <DependentUpon>LogForm.cs</DependentUpon>
     </Compile>
     <Compile Include="GUI\Helpers\ColorChannel.cs" />
-    <Compile Include="LauncherState.cs" />
     <Compile Include="GUI\Helpers\ColorExt.cs" />
     <Compile Include="GUI\Forms\guiHome.cs">
       <SubType>Form</SubType>
@@ -79,7 +77,7 @@
     <Compile Include="GUI\Forms\Mods.Designer.cs">
       <DependentUpon>Mods.cs</DependentUpon>
     </Compile>
-    <Compile Include="Settings.cs" />
+    <Compile Include="MiscExtensions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="GUI\Forms\guiHome.resx">
@@ -114,9 +112,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="GUI\Forms\Background.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cecil-0.9.6\Mono.Cecil.csproj">

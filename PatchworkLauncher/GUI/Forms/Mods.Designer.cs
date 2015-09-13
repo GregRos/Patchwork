@@ -28,26 +28,39 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.dataGridView1 = new System.Windows.Forms.DataGridView();
+			this.InstructionsGridView = new System.Windows.Forms.DataGridView();
 			this.button3 = new System.Windows.Forms.Button();
 			this.button1 = new System.Windows.Forms.Button();
 			this.button2 = new System.Windows.Forms.Button();
 			this.button4 = new System.Windows.Forms.Button();
 			this.button5 = new System.Windows.Forms.Button();
 			this.button6 = new System.Windows.Forms.Button();
-			((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+			this.On = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+			this.Name = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.Target = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			this.Requirements = new System.Windows.Forms.DataGridViewTextBoxColumn();
+			((System.ComponentModel.ISupportInitialize)(this.InstructionsGridView)).BeginInit();
 			this.SuspendLayout();
 			// 
-			// dataGridView1
+			// InstructionsGridView
 			// 
-			this.dataGridView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+			this.InstructionsGridView.AllowUserToAddRows = false;
+			this.InstructionsGridView.AllowUserToDeleteRows = false;
+			this.InstructionsGridView.AllowUserToResizeRows = false;
+			this.InstructionsGridView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			this.dataGridView1.Location = new System.Drawing.Point(12, 12);
-			this.dataGridView1.Name = "dataGridView1";
-			this.dataGridView1.Size = new System.Drawing.Size(482, 425);
-			this.dataGridView1.TabIndex = 0;
+			this.InstructionsGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+			this.InstructionsGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.On,
+            this.Name,
+            this.Target,
+            this.Requirements});
+			this.InstructionsGridView.Location = new System.Drawing.Point(12, 12);
+			this.InstructionsGridView.Name = "InstructionsGridView";
+			this.InstructionsGridView.Size = new System.Drawing.Size(482, 425);
+			this.InstructionsGridView.TabIndex = 0;
+			this.InstructionsGridView.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.InstructionsGridView_CellContentClick);
 			// 
 			// button3
 			// 
@@ -126,7 +139,7 @@
 			this.button5.Name = "button5";
 			this.button5.Size = new System.Drawing.Size(111, 34);
 			this.button5.TabIndex = 10;
-			this.button5.Text = "Save && Apply";
+			this.button5.Text = "Save";
 			this.button5.UseVisualStyleBackColor = false;
 			// 
 			// button6
@@ -145,6 +158,41 @@
 			this.button6.Text = "Cancel";
 			this.button6.UseVisualStyleBackColor = false;
 			// 
+			// On
+			// 
+			this.On.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+			this.On.DataPropertyName = "IsEnabled";
+			this.On.HeaderText = "On";
+			this.On.Name = "On";
+			this.On.Width = 27;
+			// 
+			// Name
+			// 
+			this.Name.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+			this.Name.DataPropertyName = "Name";
+			this.Name.HeaderText = "Name";
+			this.Name.Name = "Name";
+			this.Name.ReadOnly = true;
+			this.Name.Width = 60;
+			// 
+			// Target
+			// 
+			this.Target.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+			this.Target.DataPropertyName = "Target";
+			this.Target.HeaderText = "Target";
+			this.Target.Name = "Target";
+			this.Target.ReadOnly = true;
+			this.Target.Width = 63;
+			// 
+			// Requirements
+			// 
+			this.Requirements.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+			this.Requirements.DataPropertyName = "Requirements";
+			this.Requirements.HeaderText = "Requirements";
+			this.Requirements.Name = "Requirements";
+			this.Requirements.ReadOnly = true;
+			this.Requirements.Width = 97;
+			// 
 			// guiMods
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -158,25 +206,29 @@
 			this.Controls.Add(this.button4);
 			this.Controls.Add(this.button1);
 			this.Controls.Add(this.button3);
-			this.Controls.Add(this.dataGridView1);
+			this.Controls.Add(this.InstructionsGridView);
 			this.MaximumSize = new System.Drawing.Size(812, 634);
-			this.Name = "guiMods";
+			base.Name = "guiHome";
 			this.Text = "Patchwork Launcher";
 			this.Load += new System.EventHandler(this.guiMods_Load);
-			((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+			((System.ComponentModel.ISupportInitialize)(this.InstructionsGridView)).EndInit();
 			this.ResumeLayout(false);
 
 		}
 
 		#endregion
 
-		private System.Windows.Forms.DataGridView dataGridView1;
+		private System.Windows.Forms.DataGridView InstructionsGridView;
 		private System.Windows.Forms.Button button3;
 		private System.Windows.Forms.Button button1;
 		private System.Windows.Forms.Button button2;
 		private System.Windows.Forms.Button button4;
 		private System.Windows.Forms.Button button5;
 		private System.Windows.Forms.Button button6;
+		private System.Windows.Forms.DataGridViewCheckBoxColumn On;
+		private System.Windows.Forms.DataGridViewTextBoxColumn Name;
+		private System.Windows.Forms.DataGridViewTextBoxColumn Target;
+		private System.Windows.Forms.DataGridViewTextBoxColumn Requirements;
 	}
 }
 

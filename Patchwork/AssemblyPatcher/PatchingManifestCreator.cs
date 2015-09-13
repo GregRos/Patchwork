@@ -209,7 +209,11 @@ namespace Patchwork {
 
 		private MemberActionAttribute GetMemberActionAttribute(IMemberDefinition provider,
 			TypeActionAttribute typeAttr) {
-			var attr = provider.GetCustomAttribute<MemberActionAttribute>();
+			var attrs = provider.GetCustomAttributes<MemberActionAttribute>().ToList();
+			if (attrs.Count > 1) {
+				throw Errors.Multiple_action_attributes((MemberReference) provider, attrs.ToArray<object>());
+			}
+			var attr = attrs.FirstOrDefault();
 			if (attr != null) {
 				if (attr is ModifiesMemberAttribute && !(typeAttr is ModifiesTypeAttribute)) {
 					throw Errors.Invalid_decleration("ModifiesMember is only legal inside ModifiesType.");

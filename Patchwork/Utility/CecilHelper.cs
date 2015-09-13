@@ -102,11 +102,12 @@ namespace Patchwork.Utility {
 		/// </summary>
 		/// <param name="def">The definition.</param>
 		/// <returns></returns>
-		public static Assembly LoadIntoMemory(this AssemblyDefinition def) {
+		public static Assembly LoadIntoMemory(this AssemblyDefinition def, bool reflectionOnly = false) {
 			var ms = new MemoryStream();
 			def.Write(ms);
 			var arr = ms.ToArray();
-			var assembly = Assembly.Load(arr);
+			
+			var assembly = reflectionOnly ? Assembly.ReflectionOnlyLoad(arr) : Assembly.Load(arr);
 			return assembly;
 		}
 

@@ -9,28 +9,28 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace PatchworkLauncher
-{
-	public partial class guiMods : Form
-	{
-		public guiMods()
-		{
+namespace PatchworkLauncher {
+	public partial class guiMods : Form {
+		public guiMods() {
 			InitializeComponent();
 		}
 
-		private void checkBox1_CheckedChanged(object sender, EventArgs e)
-		{
+		public PatchInstructionSequence Instructions {
+			get;
+			set;
+		}
+
+
+		private void checkBox1_CheckedChanged(object sender, EventArgs e) {
 
 		}
 
-		private void button2_Click(object sender, EventArgs e)
-		{
+		private void button2_Click(object sender, EventArgs e) {
 
 		}
 
-		private void guiMods_Load(object sender, EventArgs e)
-		{
-
+		private void guiMods_Load(object sender, EventArgs e) {
+			InstructionsGridView.DataSource = Instructions.Instructions;
 		}
 
 		protected override void OnPaintBackground(PaintEventArgs e) {
@@ -41,6 +41,11 @@ namespace PatchworkLauncher
 				90F)) {
 				e.Graphics.FillRectangle(brush, this.ClientRectangle);
 			}
+		}
+
+		private void InstructionsGridView_CellContentClick(object sender, DataGridViewCellEventArgs e)
+		{
+
 		}
 	}
 }

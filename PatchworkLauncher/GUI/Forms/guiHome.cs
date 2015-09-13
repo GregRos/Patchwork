@@ -16,18 +16,6 @@ namespace PatchworkLauncher {
 			InitializeComponent();
 		}
 
-		private void checkBox1_CheckedChanged(object sender, EventArgs e) {
-
-		}
-
-		private void button2_Click(object sender, EventArgs e) {
-
-		}
-
-		private void guiHome_Load(object sender, EventArgs e) {
-
-		}
-
 
 
 		protected override void OnPaintBackground(PaintEventArgs e) {
@@ -45,27 +33,24 @@ namespace PatchworkLauncher {
 
 		private const int InvalidateInterval = 100;
 		private long LastInvalidated = -1;
+		private readonly guiMods _mods = new guiMods();
+
 		private void guiHome_Resize(object sender, EventArgs e) {
 			var ms = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
 			if (ms - LastInvalidated > InvalidateInterval) {
 				Invalidate();
 				LastInvalidated = ms;
 			}
-			
-		}
-
-		private void textBox1_TextChanged(object sender, EventArgs e)
-		{
 
 		}
 
-		private void button5_Click(object sender, EventArgs e)
-		{
+		
 
+		private void guiActiveMods_Click(object sender, EventArgs e) {
+		
 		}
 
-		private void button1_Click(object sender, EventArgs e)
-		{
+		private void guiHome_Load(object sender, EventArgs e) {
 
 		}
 	}

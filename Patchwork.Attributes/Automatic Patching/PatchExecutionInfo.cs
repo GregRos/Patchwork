@@ -50,11 +50,9 @@ namespace Patchwork.Attributes {
 		/// This method is called to determine if this mod can be applied to the target file in its present state.
 		/// </summary>
 		/// <param name="resolver">Returns the target assembly, loaded in a reflection-only context.</param>
-		/// <param name="message">A text message which is displayed to the user. If null, no message is displayed.</param>
 		/// <returns></returns>
-		public virtual bool CanPatch(LazyAssemblyResolver resolver, out string message) {
-			message = null;
-			return true;
+		public virtual string CanPatch(LazyAssemblyResolver resolver) {
+			return "";
 		}
 
 		/// <summary>

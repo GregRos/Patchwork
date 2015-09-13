@@ -7,7 +7,7 @@ using Patchwork.Collections;
 
 namespace Patchwork.Utility {
 
-	internal static class SeqHelper {
+	public static class SeqHelper {
 		public static bool RemoveWhere<T>(this ICollection<T> col, Func<T, bool> predicate) {
 			var what = col.Where(predicate).ToList();
 			var anyRemoved = false;

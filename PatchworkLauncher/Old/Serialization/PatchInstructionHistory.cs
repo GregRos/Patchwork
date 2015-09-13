@@ -18,6 +18,11 @@ namespace PatchworkLauncher {
 			set;
 		}
 
+		public string Name {
+			get;
+			set;
+		}
+
 		[XmlAttribute]
 		public bool IsEnabled {
 			get;

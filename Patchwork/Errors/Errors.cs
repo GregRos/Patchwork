@@ -1,10 +1,19 @@
 ﻿using System;
+using System.Linq;
 using Mono.Cecil;
+using Patchwork.Utility;
 
 namespace Patchwork {
 
 
 	internal static class Errors {
+
+		public static PatchDeclerationException Multiple_action_attributes(MemberReference yourMember, object[] attributes) {
+
+			return new PatchDeclerationException($"The member {yourMember.UserFriendlyName()} has more than one action attribute: {attributes.Select(x => x.GetType().Name)}");
+			
+		}
+
 		public static PatchDeclerationException Unknown_action_attribute(object attribute) {
 			return new PatchDeclerationException(String.Format("Unknown member/type action attribute: {0}", attribute.GetType().FullName));	
 		}

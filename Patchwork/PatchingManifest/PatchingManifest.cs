@@ -67,7 +67,7 @@ namespace Patchwork {
 			return cache;
 		}
 
-				private T GetPatchedMember<T>(TypeDefinition targetType, T yourMemberDef, MemberActionAttribute actionAttribute = null)
+		private T GetPatchedMember<T>(TypeDefinition targetType, T yourMemberDef, MemberActionAttribute actionAttribute = null)
 			where T : MemberReference,IMemberDefinition {
 			var targetMemberName = GetPatchedMemberName(yourMemberDef,actionAttribute);
 			var aliased = actionAttribute as MemberAliasAttribute;

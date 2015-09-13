@@ -296,8 +296,11 @@ namespace Patchwork {
 				IntroduceMethods(manifest.MethodActions);
 
 				//+UPDATE METHOD DECLERATIONS
-				//Update method declerations with parameters and return types ]
-				//Don't set custom attributes in this stage.
+				//Update method declerations with parameters and return types
+				//We do this separately, because a method's parameters and return types depend on that method's generic parameters
+				//Don't set custom attributes in this stage though it's possible to do so.
+				//This is to avoid code duplication.
+				//DEPENDENCIES: Type definitions, method definitions
 				UpdateMethodDeclerations(manifest.MethodActions);
 
 				//+IMPORT ASSEMBLY/MODULE CUSTOM ATTRIBUTES
@@ -345,7 +348,7 @@ namespace Patchwork {
 				//so the modifications won't influence this functionality.
 				//Custom attributes are set at this stage.
 				//Also, explicit overrides (what in C# is explicit interface implementation) are specified here.
-				//DEPENDENCIES: Type definitions, method definitions, field definitions
+				//DEPENDENCIES: Type definitions, method definitions, method signature elements, field definitions
 				UpdateMethods(manifest.MethodActions);
 
 				//+ADD PATCHING HISTORY TO ASSEMBLY
