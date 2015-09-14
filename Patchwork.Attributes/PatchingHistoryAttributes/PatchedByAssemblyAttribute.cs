@@ -6,14 +6,19 @@ namespace Patchwork.Attributes {
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 	public class PatchedByAssemblyAttribute : PatchingHistoryAttribute {
-		/// <param name="yourAssemblyFullName">The full name of the assembly according to which this assembly was patched.</param>
-		public PatchedByAssemblyAttribute(string yourAssemblyFullName) {
-			YourAssemblyFullName = yourAssemblyFullName;
+		/// <param name="patchAssembly">The full name of the assembly according to which this assembly was patched.</param>
+		/// <param name="index">The order of the patch in a given patching session.</param>
+		public PatchedByAssemblyAttribute(string patchAssembly, int index) {
+			PatchAssembly = patchAssembly;
+			Index = index;
 		}
 
-		public string YourAssemblyFullName {
+		public string PatchAssembly {
 			get;
-			private set;
+		}
+
+		public int Index {
+			get;
 		}
 	}
 }

@@ -1,18 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Patchwork.Attributes;
 using Patchwork.Utility;
+using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
+using FieldAttributes = Mono.Cecil.FieldAttributes;
+using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
+using MethodAttributes = Mono.Cecil.MethodAttributes;
 
 namespace Patchwork {
 	public partial class AssemblyPatcher {
+		private MethodReference _concat;
+
 		private CustomAttributeArgument CopyCustomAttributeArg(CustomAttributeArgument yourArgument) {
-			
+
 			var type = FixTypeReference(yourArgument.Type);
 			var value = yourArgument.Value;
 			if (value is CustomAttributeArgument) {
@@ -37,6 +41,7 @@ namespace Patchwork {
 		/// </summary>
 		/// <param name="targetMember">The target member.</param>
 		/// <param name="yourMember">Your member, the source of the attributes.</param>
+		/// <param name="filter"></param>
 		private void CopyCustomAttributes(ICustomAttributeProvider targetMember, ICustomAttributeProvider yourMember,
 			Func<CustomAttribute, bool> filter = null) {
 			filter = filter ?? (x => true);
@@ -51,7 +56,9 @@ namespace Patchwork {
 				//attributes from Patchwork.Attributes may be included depending on whether History is enabled.
 				where EmbedHistory || !isFromPatchworkAttributes
 				//attributes specifically designated NeverEmbed should not be embedded.
-				where attrType.CustomAttributes.All(attrOnAttr => attrOnAttr.AttributeType.FullName != typeof (NeverEmbedAttribute).FullName)
+				where
+					attrType.CustomAttributes.All(
+						attrOnAttr => attrOnAttr.AttributeType.FullName != typeof (NeverEmbedAttribute).FullName)
 				//attributes from a patching assembly are only included if they have the NewType attribute
 				where !attrAssembly.IsPatchingAssembly() || attrType.Resolve().HasCustomAttribute<NewTypeAttribute>()
 				//also, apply this custom filter:
@@ -62,12 +69,13 @@ namespace Patchwork {
 				var targetAttr = new CustomAttribute(FixMethodReference(yourAttr.Constructor));
 				targetAttr.ConstructorArguments.AddRange(yourAttr.ConstructorArguments.Select(CopyCustomAttributeArg));
 				var targetFieldArgs =
-					from nArg in targetAttr.Fields
+					from nArg in yourAttr.Fields
 					let arg = CopyCustomAttributeArg(nArg.Argument)
+					
 					select new CustomAttributeNamedArgument(nArg.Name, arg);
 
 				var targetPropArgs =
-					from nArg in targetAttr.Properties
+					from nArg in yourAttr.Properties
 					let arg = CopyCustomAttributeArg(nArg.Argument)
 					select new CustomAttributeNamedArgument(nArg.Name, arg);
 
@@ -80,10 +88,7 @@ namespace Patchwork {
 		private void ModifyProperty(MemberActionAttribute propActionAttr,
 			PropertyDefinition yourProp, PropertyDefinition targetProp) {
 			Log_modifying_member("property", yourProp);
-			ModificationScope scope = GetModificationScope(yourProp, propActionAttr);
-			if (targetProp == null) {
-				throw Errors.Missing_member_in_attribute("property", yourProp, GetPatchedMemberName(yourProp, propActionAttr));
-			}
+			ModificationScope scope = propActionAttr.Scope;
 			var attrFilter = AttrFilter(scope);
 			CopyCustomAttributes(targetProp, yourProp, attrFilter);
 			for (int i = 0; i < yourProp.Parameters.Count; i++) {
@@ -105,10 +110,7 @@ namespace Patchwork {
 		private void ModifyEvent(MemberActionAttribute eventActionAttr,
 			EventDefinition yourEvent, EventDefinition targetEvent) {
 			Log_modifying_member("property", yourEvent);
-			ModificationScope scope = GetModificationScope(yourEvent, eventActionAttr);
-			if (targetEvent == null) {
-				throw Errors.Missing_member_in_attribute("property", yourEvent, GetPatchedMemberName(yourEvent, eventActionAttr));
-			}
+			ModificationScope scope = eventActionAttr.Scope;
 			var attrFilter = AttrFilter(scope);
 			CopyCustomAttributes(targetEvent, yourEvent, attrFilter);
 			if ((scope & ModificationScope.Body) != 0) {
@@ -132,11 +134,7 @@ namespace Patchwork {
 			FieldDefinition yourField, FieldDefinition targetField) {
 			Log_modifying_member("field", yourField);
 			(fieldActionAttr != null).AssertTrue();
-			ModificationScope scope = GetModificationScope(yourField, fieldActionAttr);
-
-			if (targetField == null) {
-				throw Errors.Missing_member_in_attribute("field", yourField, GetPatchedMemberName(yourField, fieldActionAttr));
-			}
+			ModificationScope scope = fieldActionAttr.Scope;
 			if ((scope & ModificationScope.Accessibility) != 0) {
 				targetField.SetAccessibility(yourField.GetAccessbility());
 			}
@@ -161,8 +159,7 @@ namespace Patchwork {
 				? yourMethod.Module.Import((TypeReference) insertAttribute.SourceType)
 				: yourMethod.Module.Import(targetType);
 
-			var importMethod = importSourceType.Resolve().GetMethods(insertAttribute.MethodName,
-				yourMethod.Parameters.Select(x => x.ParameterType), yourMethod.ReturnType).SingleOrDefault();
+			var importMethod = importSourceType.Resolve().GetMethodLike(yourMethod, insertAttribute.MethodName);
 
 			var others =
 				importSourceType.Resolve().Methods.Where(x => x.Name == insertAttribute.MethodName).ToArray();
@@ -178,11 +175,7 @@ namespace Patchwork {
 			Log_modifying_member("method", yourMethod);
 			var insertAttribute = yourMethod.GetCustomAttribute<DuplicatesBodyAttribute>();
 			var bodySource = insertAttribute == null ? yourMethod : GetBodySource(targetType, yourMethod, insertAttribute);
-			ModificationScope scope = GetModificationScope(yourMethod, memberAction);
-			if (targetMethod == null) {
-				throw Errors.Missing_member_in_attribute("method", yourMethod, GetPatchedMemberName(yourMethod, memberAction));
-			}
-
+			ModificationScope scope = memberAction.Scope;
 			if (scope.HasFlag(AdvancedModificationScope.ExplicitOverrides)) {
 				targetMethod.Overrides.Clear();
 				foreach (var explicitOverride in yourMethod.Overrides) {
@@ -233,7 +226,7 @@ namespace Patchwork {
 
 		private void ModifyTypeDecleration(TypeDefinition yourType) {
 			Log_modifying_member("type", yourType);
-			var targetType = GetPatchedTypeByName(yourType);
+			var targetType = CurrentMemberCache.Types[yourType].TargetType;
 			targetType.BaseType = yourType.BaseType == null ? null : FixTypeReference(yourType.BaseType);
 			targetType.Interfaces.AddRange(yourType.Interfaces.Select(FixTypeReference));
 
@@ -255,6 +248,7 @@ namespace Patchwork {
 				OpCodes.Endfilter);
 		}
 
+
 		/// <summary>
 		/// Transfers the method body of yourMethod into the targetMethod, keeping everything neat and tidy, creating new copies of yourMethod's instructions.
 		/// </summary>
@@ -267,7 +261,7 @@ namespace Patchwork {
 			var injectManual = yourMethod.GetCustomAttribute<PatchworkDebugRegisterAttribute>();
 			FieldReference debugFieldRef = null;
 
-			var concat = targetMethod.Module.GetMethod(() => String.Concat("", ""));
+			_concat = _concat ?? targetMethod.Module.GetMethod(() => String.Concat("", ""));
 			var instructionEquiv = new Dictionary<Instruction, Instruction>();
 			targetMethod.Body.InitLocals = yourMethod.Body.Variables.Count > 0;
 
@@ -344,7 +338,7 @@ namespace Patchwork {
 					str += yourInstruction.SequencePoint.StartLine;
 					ilProcesser.Emit(OpCodes.Ldsfld, debugFieldRef);
 					ilProcesser.Emit(OpCodes.Ldstr, str);
-					ilProcesser.Emit(OpCodes.Call, concat);
+					ilProcesser.Emit(OpCodes.Call, _concat);
 					ilProcesser.Emit(OpCodes.Stsfld, debugFieldRef);
 				}
 				instructionEquiv[yourInstruction] = targetInstruction;

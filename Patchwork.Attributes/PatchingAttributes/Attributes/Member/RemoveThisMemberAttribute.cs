@@ -6,5 +6,8 @@ namespace Patchwork.Attributes {
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Constructor)]
 	public class RemoveThisMemberAttribute : MemberActionAttribute {
+		public RemoveThisMemberAttribute()
+			: base(ModificationScope.All) {
+		}
 	}
 }

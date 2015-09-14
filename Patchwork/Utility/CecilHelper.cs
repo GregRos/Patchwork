@@ -67,7 +67,8 @@ namespace Patchwork.Utility {
 		public static byte[] SerializeAssembly(this AssemblyDefinition definition) {
 			var ms = new MemoryStream();
 			definition.Write(ms);
-			return ms.ToArray();
+			ms.Flush();
+			return ms.GetBuffer();
 		}
 
 		public static MethodDefinition MaybeResolve(this MethodReference mRef) {
@@ -101,11 +102,12 @@ namespace Patchwork.Utility {
 		/// </summary>
 		/// <param name="def">The definition.</param>
 		/// <returns></returns>
-		public static Assembly LoadIntoMemory(this AssemblyDefinition def) {
+		public static Assembly LoadIntoMemory(this AssemblyDefinition def, bool reflectionOnly = false) {
 			var ms = new MemoryStream();
 			def.Write(ms);
 			var arr = ms.ToArray();
-			var assembly = Assembly.Load(arr);
+			
+			var assembly = reflectionOnly ? Assembly.ReflectionOnlyLoad(arr) : Assembly.Load(arr);
 			return assembly;
 		}
 
@@ -433,7 +435,7 @@ namespace Patchwork.Utility {
 		/// <typeparam name="T"></typeparam>
 		/// <param name="provider">The provider.</param>
 		/// <returns></returns>
-		internal static IEnumerable<T> GetCustomAttributes<T>(this ICustomAttributeProvider provider) {
+		public static IEnumerable<T> GetCustomAttributes<T>(this ICustomAttributeProvider provider) {
 			//this is a bit more complicated than you'd think. If we try to load the type itself, we'll get an error about dependencies.
 			//loading in a ReflectionOnly context will create problems of their own.
 			//so we're passively reading the attributes using Cecil, without loading anything, until we find the one we want
@@ -447,7 +449,7 @@ namespace Patchwork.Utility {
 		/// <typeparam name="T"></typeparam>
 		/// <param name="provider">The provider.</param>
 		/// <returns></returns>
-		internal static T GetCustomAttribute<T>(this ICustomAttributeProvider provider) {
+		public static T GetCustomAttribute<T>(this ICustomAttributeProvider provider) {
 			return provider.GetCustomAttributes<T>().FirstOrDefault();
 		}
 
@@ -486,11 +488,12 @@ namespace Patchwork.Utility {
 		}
 
 		internal static void AddPatchedByAssemblyAttribute(this AssemblyDefinition targetAssembly,
-			AssemblyDefinition yourAssembly) {
+			AssemblyDefinition yourAssembly, int index) {
 
 			//PatchedByAssemblyAttribute(string fullName);
-			targetAssembly.AddCustomAttribute(targetAssembly.MainModule, typeof(PatchedByAssemblyAttribute), yourAssembly.FullName);
+			targetAssembly.AddCustomAttribute(targetAssembly.MainModule, typeof(PatchedByAssemblyAttribute), yourAssembly.MainModule.FullyQualifiedName, index);
 		}
+
 		/// <summary>
 		///     If given a ref to a patching type, returns the type that it patches. Otherwise, returns null.
 		/// </summary>
@@ -498,6 +501,8 @@ namespace Patchwork.Utility {
 		/// <returns></returns>
 		internal static string GetPatchedTypeFullName(this TypeReference typeRef) {
 			var typeActionAttr = typeRef.Resolve().GetCustomAttribute<TypeActionAttribute>();
+			var newTypeAttr = typeActionAttr as NewTypeAttribute;
+			var modTypeAttr = typeActionAttr as ModifiesTypeAttribute;
 			if (typeActionAttr is NewTypeAttribute || typeActionAttr == null) {
 				if (!typeRef.IsNested) {
 					return typeRef.FullName;
@@ -565,9 +570,11 @@ namespace Patchwork.Utility {
 			return memberRef.FullName;
 		}
 
-		internal static MethodDefinition GetMethodLike(this TypeDefinition type, MethodReference methodRef, string altName = null) {
+		internal static MethodDefinition GetMethodLike(this TypeDefinition type, MethodReference methodRef,
+			string altName = null) {
 			return
-				type.GetMethods(altName ?? methodRef.Name, methodRef.Parameters.Select(x => x.ParameterType), methodRef.ReturnType)
+				type.GetMethods(altName ?? methodRef.Name, methodRef.Parameters.Select(x => x.ParameterType),
+					methodRef.GenericParameters.Count, methodRef.ReturnType)
 					.SingleOrDefault();
 		}
 
@@ -621,7 +628,6 @@ namespace Patchwork.Utility {
 			}
 		}
 
-		
 
 		/// <summary>
 		/// This method only considers the return type of the method if its name is op_Explicit or op_Implicit.
@@ -629,10 +635,11 @@ namespace Patchwork.Utility {
 		/// <param name="type"></param>
 		/// <param name="methodName"></param>
 		/// <param name="similarParams"></param>
+		/// <param name="genericArity"></param>
 		/// <param name="returnType"></param>
 		/// <returns></returns>
 		internal static IEnumerable<MethodDefinition> GetMethods(this TypeDefinition type, string methodName,
-			IEnumerable<TypeReference> similarParams, TypeReference returnType) {
+			IEnumerable<TypeReference> similarParams, int genericArity, TypeReference returnType) {
 			var sameName =
 				from method in type.Methods
 				where method.Name == methodName
@@ -646,9 +653,8 @@ namespace Patchwork.Utility {
 				where similarParams == null
 					|| method.Parameters.Select(x => x.ParameterType).Zip(similarParams, AreTypesEquivForOverloading).All(x => x)
 				where ignoreReturnType || returnType == null || AreTypesEquivForOverloading(method.ReturnType, returnType)
+				where method.GenericParameters.Count == genericArity
 				select method;
-
-
 
 			return sameSig.ToList();
 		}
@@ -670,14 +676,13 @@ namespace Patchwork.Utility {
 			
 			//this isn't really a comprehensive identity test. At some undetermined point in the future it will be fixed.
 			//however, the problem cases are pretty rare.
-			return a.Name == b.Name; // [a.MetadataType == b.MetadataType] this was deleted because apparently the types can match even though the MT is different.
-
+			return a.FullName == b.FullName; // [a.MetadataType == b.MetadataType] this was deleted because apparently the types can match even though the MT is different.
 		}
 
 		private static string UserFriendlyName(this FieldReference fRef) {
 			var declaringType = fRef.DeclaringType.UserFriendlyName();
 			var fieldType = fRef.FieldType.UserFriendlyName();
-			return string.Format("{0} {1}::{2}", fieldType, declaringType, fRef.Name);
+			return $"{fieldType} {declaringType}::{fRef.Name}";
 		}
 
 		public static bool IsVarOrMVar(this TypeReference typeRef) {
@@ -687,7 +692,7 @@ namespace Patchwork.Utility {
 		private static string UserFriendlyName(this PropertyReference fRef) {
 			var declaringType = fRef.DeclaringType.UserFriendlyName();
 			var fieldType = fRef.PropertyType.UserFriendlyName();
-			return string.Format("{0} {1}::{2}", fieldType, declaringType, fRef.Name);
+			return $"{fieldType} {declaringType}::{fRef.Name}";
 		}
 
 		/// <summary>
@@ -701,7 +706,7 @@ namespace Patchwork.Utility {
 			switch (typeRef.MetadataType) {
 				case MetadataType.Array:
 					var asArray = (ArrayType) typeRef;
-					return UserFriendlyName(asArray.ElementType) + string.Format("[{0}]", ",".Replicate(asArray.Rank - 1));
+					return UserFriendlyName(asArray.ElementType) + $"[{",".Replicate(asArray.Rank - 1)}]";
 				case MetadataType.GenericInstance:
 					var asInst = (GenericInstanceType) typeRef;
 					baseType = UserFriendlyName(asInst.ElementType);
@@ -724,13 +729,13 @@ namespace Patchwork.Utility {
 			var returnType = mRef.ReturnType.UserFriendlyName();
 			var paramTypes = mRef.Parameters.Select(x => x.ParameterType.UserFriendlyName()).Join(", ");
 			var declaringType = mRef.DeclaringType.UserFriendlyName();
-			var displayName = string.Format("{0} {1}::{2}", returnType, declaringType, mRef.Name);
+			var displayName = $"{returnType} {declaringType}::{mRef.Name}";
 			if (mRef.IsGenericInstance) {
 				var asGeneric = (GenericInstanceMethod) mRef;
 				var sig = asGeneric.GenericArguments.Select(UserFriendlyName).Join(", ");
-				displayName = string.Format("{0}<{1}>", displayName, sig);
+				displayName = $"{displayName}<{sig}>";
 			}
-			displayName = string.Format("{0}({1})", displayName, paramTypes);
+			displayName = $"{displayName}({paramTypes})";
 			return displayName;
 		}
 

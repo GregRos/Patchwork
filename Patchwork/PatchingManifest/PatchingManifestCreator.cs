@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -9,9 +11,20 @@ using Mono.Cecil;
 using Patchwork.Attributes;
 using Patchwork.Collections;
 using Patchwork.Utility;
+using Serilog;
 
 namespace Patchwork {
-	public partial class AssemblyPatcher {
+	public class ManifestCreator {
+
+		public ManifestCreator(ILogger log = null, ImplicitImportSetting implicitImports = ImplicitImportSetting.OnlyCompilerGenerated) {
+			ImplicitImports = implicitImports;
+			Log = log ?? Serilog.Log.Logger;
+		}
+
+		public ILogger Log {
+			get;
+		}
+		
 		private SimpleTypeLookup<MemberAction<T>> OrganizeMembers<T>(SimpleTypeLookup<TypeAction> organizedTypes,
 			Func<TypeDefinition, IEnumerable<T>> getMembers, Func<MemberReference, bool> filter) where T : MemberReference, IMemberDefinition {
 
@@ -27,14 +40,14 @@ namespace Patchwork {
 					YourMember = yourMember,
 					ActionAttribute = actionAttr,
 					TypeAction = pair,
-					TargetMember = pair.TargetType == null ? null : GetPatchedMember(pair.TargetType, yourMember)
 				} by actionAttr.GetType();
 
 			return memberSeq.ToSimpleTypeLookup();
 		}
 
 
-		private void ImplicitlyAddNewMethods<T>(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions, MemberAction<T> rootMemberAction,
+		private void ImplicitlyAddNewMethods<T>(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions,
+			MemberAction<T> rootMemberAction,
 			Func<T, IEnumerable<MethodDefinition>> getMethods) where T : IMemberDefinition {
 			var newMethods = getMethods(rootMemberAction.YourMember);
 			var allMethods = new HashSet<MethodDefinition>(methodActions.SelectMany(x => x).Select(x => x.YourMember));
@@ -47,7 +60,6 @@ namespace Patchwork {
 					TargetMember = null
 				});
 			}
-
 		}
 
 		private static Func<MemberReference, bool> CreateMemberFilter(DisablePatchingByNameAttribute attribute) {
@@ -79,9 +91,45 @@ namespace Patchwork {
 			var multicast = yourAssembly.GetCustomAttributes<DisablePatchingByNameAttribute>();
 			var filter = CreateMemberFilter(multicast);
 
-			if (!yourAssembly.IsPatchingAssembly()) {
+			var patchAssemblyAttr = yourAssembly.GetCustomAttribute<PatchAssemblyAttribute>();
+			if (patchAssemblyAttr == null) {
 				throw new PatchDeclerationException(
 					"The assembly MUST have the PatchAssemblyAttribute attribute. Sorry.");
+			}
+			var execInfoAttrs =
+				yourAssembly.MainModule.Types.Where(
+					x => x.CustomAttributes.Any(y => y.AttributeType.FullName == typeof (PatchExecutionInfoAttribute).FullName)).ToList
+					();
+			if (execInfoAttrs.Count > 1) {
+				throw new PatchDeclerationException(
+					$"More than one class was found that is decorated with {nameof(PatchExecutionInfoAttribute)}");
+			}
+			var execInfoAttr = execInfoAttrs.FirstOrDefault();
+			
+			PatchExecutionInfo exec = null;
+			if (execInfoAttr != null) {
+				var loadedType = execInfoAttr.Resolve().LoadType();
+				try {
+					exec = (PatchExecutionInfo) Activator.CreateInstance(loadedType);
+				}
+				catch (MissingMethodException ex) {
+					throw new PatchDeclerationException(
+						$"Could not instantiate the {nameof(PatchExecutionInfo)} class for the assembly {yourAssembly.Name.Name}, probably because it has no default constructor.",
+						ex);
+				}
+				catch (TargetInvocationException ex) {
+					throw new PatchDeclerationException(
+						$"Calling the constructor of the assembly's {nameof(PatchExecutionInfo)} class threw an exception.",
+						ex.InnerException);
+				}
+				catch (InvalidCastException) {
+					throw new PatchDeclerationException(
+						$"The class decorated with {nameof(PatchExecutionInfoAttribute)} does not inherit from {nameof(PatchExecutionInfo)}");
+				}
+				catch (Exception ex) {
+					throw new PatchDeclerationException(
+						$"Could not instantiate the {nameof(PatchExecutionInfo)} class due to an exception.", ex);
+				}
 			}
 
 			var allTypesInOrder = GetAllTypesInNestingOrder(yourAssembly.MainModule.Types).ToList();
@@ -90,11 +138,10 @@ namespace Patchwork {
 				from type in allTypesInOrder
 				let typeActionAttr = GetTypeActionAttribute(type)
 				where typeActionAttr != null && Filter(type) && filter(type)
-				orderby type.UserFriendlyName()
+				let patchedTypeName = type.GetPatchedTypeFullName()
 				group new TypeAction() {
 					YourType = type,
 					ActionAttribute = typeActionAttr,
-					TargetType = typeActionAttr is NewTypeAttribute ? null : GetPatchedTypeByName(type)
 				} by typeActionAttr.GetType();
 
 			var types = typesByActionSeq.ToSimpleTypeLookup();
@@ -129,11 +176,13 @@ namespace Patchwork {
 				PropertyActions = properties,
 				MethodActions = methods,
 				TypeActions = types,
-				PatchingAssembly = yourAssembly
+				PatchAssembly = yourAssembly,
+				PatchExecution = exec
 			};
 
 			return patchingManifest;
 		}
+
 
 		private static Func<MemberReference, bool> CreateMemberFilter(IEnumerable<DisablePatchingByNameAttribute> attributes) {
 			return member => attributes.Select(CreateMemberFilter).All(f => f(member));
@@ -160,7 +209,11 @@ namespace Patchwork {
 
 		private MemberActionAttribute GetMemberActionAttribute(IMemberDefinition provider,
 			TypeActionAttribute typeAttr) {
-			var attr = provider.GetCustomAttribute<MemberActionAttribute>();
+			var attrs = provider.GetCustomAttributes<MemberActionAttribute>().ToList();
+			if (attrs.Count > 1) {
+				throw Errors.Multiple_action_attributes((MemberReference) provider, attrs.ToArray<object>());
+			}
+			var attr = attrs.FirstOrDefault();
 			if (attr != null) {
 				if (attr is ModifiesMemberAttribute && !(typeAttr is ModifiesTypeAttribute)) {
 					throw Errors.Invalid_decleration("ModifiesMember is only legal inside ModifiesType.");
@@ -201,5 +254,31 @@ namespace Patchwork {
 				yield return nestedType;
 			}
 		}
+
+
+
+		/// <summary>
+		///     Gets or sets the implicit imports setting. This influences how members that don't have any Patch attributes are
+		///     treated.
+		/// </summary>
+		/// <value>
+		///     The implicit import setting.
+		/// </value>
+		public ImplicitImportSetting ImplicitImports {
+			get;
+			set;
+		}
+
+		/// <summary>
+		///     If set (default null), a filter that says which types to include. This is a debug option.
+		/// </summary>
+		/// <value>
+		///     The filter.
+		/// </value>
+		[EditorBrowsable(EditorBrowsableState.Never)]
+		public Func<TypeDefinition, bool> Filter {
+			get;
+			set;
+		} = x => true;
 	}
 }

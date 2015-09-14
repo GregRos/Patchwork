@@ -7,13 +7,20 @@ using Patchwork.Collections;
 
 namespace Patchwork.Utility {
 
-	internal static class SeqHelper {
+	public static class SeqHelper {
 		public static bool RemoveWhere<T>(this ICollection<T> col, Func<T, bool> predicate) {
 			var what = col.Where(predicate).ToList();
 			var anyRemoved = false;
 			foreach (var item in what) { anyRemoved |= col.Remove(item); }
 			return anyRemoved;
 		}
+
+		public static T TryGet<TKey, T>(this IDictionary<TKey, T> dict, TKey key)
+		where T : class {
+			return dict.ContainsKey(key) ? dict[key] : null;
+		}
+
+
 
 		public static void ForEach<T>(this IEnumerable<T> seq, Action<T> act) {
 			foreach (var item in seq) { act(item); }

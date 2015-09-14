@@ -4,5 +4,12 @@ namespace Patchwork.Attributes {
 	///     on an element.
 	/// </summary>
 	public abstract class MemberActionAttribute : PatchingAttribute {
+		protected MemberActionAttribute(ModificationScope scope) {
+			Scope = scope;
+		}
+
+		public ModificationScope Scope {
+			get;
+		}
 	}
 }

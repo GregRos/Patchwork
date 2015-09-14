@@ -17,10 +17,11 @@ namespace Patchwork
 		/// Creates a new property like the specified property, but doesn't add it anywhere.
 		/// </summary>
 		/// <param name="yourProperty"></param>
+		/// <param name="newName"></param>
 		/// <returns></returns>
-		private PropertyDefinition CopyProperty(PropertyDefinition yourProperty) {
+		private PropertyDefinition CopyProperty(PropertyDefinition yourProperty, string newName) {
 			var targetPropertyType = FixTypeReference(yourProperty.PropertyType);
-			var targetProperty = new PropertyDefinition(yourProperty.Name,
+			var targetProperty = new PropertyDefinition(newName,
 				yourProperty.Attributes,
 				targetPropertyType) {
 					HasThis = yourProperty.HasThis,
@@ -34,7 +35,7 @@ namespace Patchwork
 						Constant = yourParam.Constant,
 						MarshalInfo = CopyMarshalInfo(yourParam.MarshalInfo),
 						//we need to set this because Cecil behaves weirdly when you set Constant (even though Constant returns null if there is no Constant, if you set Constant to null it thinks there is a constant, and its value is null)
-						HasConstant = yourParam.HasConstant	
+						HasConstant = yourParam.HasConstant
 					});
 			}
 
@@ -55,21 +56,16 @@ namespace Patchwork
 			} else {
 				Log_creating_member("property", yourProperty);
 			}
-			var maybeDuplicate = targetType.GetProperty(yourProperty.Name,
-				yourProperty.Parameters.Select(x => x.ParameterType));
+			var newName = newPropAttr.NewMemberName ?? yourProperty.Name;
+			var maybeDuplicate = targetType.GetProperty(newName, yourProperty.Parameters.Select(x => x.ParameterType));
+			
 			if (maybeDuplicate != null) {
 				Log_duplicate_member("property", yourProperty, maybeDuplicate);
-				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
-					Log_overwriting();
-					return maybeDuplicate;
-				}
-				if (newPropAttr.IsImplicit) {
-					Log_failed_to_create();
-					return null;
-				}
-				throw Errors.Duplicate_member("property", yourProperty.FullName, maybeDuplicate.FullName);
+				newName = GetNameAfterCollision(newName);
+				var prevName = newName;
+				Log_name_changed("property", yourProperty, prevName, newName);
 			}
-			var targetProperty = CopyProperty(yourProperty);
+			var targetProperty = CopyProperty(yourProperty, newName);
 			targetType.Properties.Add(targetProperty);
 			return targetProperty;
 		}
@@ -78,35 +74,34 @@ namespace Patchwork
 		/// Creates an event like the specified event, but doesn't add it anywhere.
 		/// </summary>
 		/// <param name="yourEvent"></param>
+		/// <param name="newName"></param>
 		/// <returns></returns>
-		private EventDefinition CopyEvent(EventDefinition yourEvent) {
+		private EventDefinition CopyEvent(EventDefinition yourEvent, string newName) {
 			var targetEventType = FixTypeReference(yourEvent.EventType);
-			var targetEvent = new EventDefinition(yourEvent.Name,
+			var targetEvent = new EventDefinition(newName,
 				yourEvent.Attributes,
 				targetEventType);
 			return targetEvent;
 		}
 
-		private EventDefinition CreateNewEvent(TypeDefinition targetType, EventDefinition yourEvent, NewMemberAttribute newEventAttr) {
+		private EventDefinition CreateNewEvent(TypeDefinition targetType, EventDefinition yourEvent,
+			NewMemberAttribute newEventAttr) {
 			if (newEventAttr.IsImplicit) {
-				Log_implicitly_creating_member("property", yourEvent);
-
+				Log_implicitly_creating_member("event", yourEvent);
 			} else {
-				Log_creating_member("property", yourEvent);
+				Log_creating_member("event", yourEvent);
 			}
-			var maybeDuplicate = targetType.GetEvent(yourEvent.Name);
+			var newName = newEventAttr.NewMemberName ?? yourEvent.Name;
+			var maybeDuplicate = targetType.GetEvent(newName);
+			
 			if (maybeDuplicate != null) {
-				Log_duplicate_member("property", yourEvent, maybeDuplicate);
-				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
-					Log_overwriting();
-					return maybeDuplicate;
-				}
-				if (newEventAttr.IsImplicit) {
-					return null;
-				}
-				throw Errors.Duplicate_member("property", yourEvent.FullName, maybeDuplicate.FullName);
+				var prevName = newName;
+				Log_duplicate_member("event", yourEvent, maybeDuplicate);
+				newName = GetNameAfterCollision(newName);
+				Log_name_changed("event", yourEvent, prevName, newName);
 			}
-			var targetEvent = CopyEvent(yourEvent);
+			
+			var targetEvent = CopyEvent(yourEvent, newName);
 			targetType.Events.Add(targetEvent);
 			return targetEvent;
 		}
@@ -115,19 +110,37 @@ namespace Patchwork
 		/// Creates a tpye like the specified type, but doesn't add it anywhere. However, its DeclaringType is set correctly.
 		/// </summary>
 		/// <param name="yourType"></param>
+		/// <param name="targetNamespace"></param>
+		/// <param name="targetName"></param>
 		/// <returns></returns>
-		private TypeDefinition CopyType(TypeDefinition yourType) {
-			var targetTypeDef = new TypeDefinition(yourType.Namespace, yourType.Name, yourType.Attributes) {
+		private TypeDefinition CopyType(TypeDefinition yourType, string targetNamespace, string targetName) {
+			var targetTypeDef = new TypeDefinition(targetNamespace, targetName, yourType.Attributes) {
 				DeclaringType = yourType.DeclaringType == null ? null : FixTypeReference(yourType.DeclaringType).Resolve(),
 				PackingSize = yourType.PackingSize,
 				ClassSize = yourType.ClassSize,
 			};
+
 			targetTypeDef.SecurityDeclarations.AddRange(yourType.SecurityDeclarations);
 			foreach (var yourTypeParam in yourType.GenericParameters) {
 				var targetTypeParam = new GenericParameter(yourTypeParam.Name, targetTypeDef);
 				targetTypeDef.GenericParameters.Add(targetTypeParam);
 			}
 			return targetTypeDef;
+		}
+
+		private static string GetNameAfterCollision(string original) {
+			return $"{original}_$pw$_{StringHelper.RandomWordString(5)}";
+		}
+		
+		private static void SplitTypeName(string fullName, out string ns, out string typeName) {
+			var lastDot = fullName.LastIndexOf('.');
+			if (lastDot == -1) {
+				ns = "";
+				typeName = fullName;
+			} else {
+				ns = fullName.Substring(0, lastDot);
+				typeName = fullName.Substring(lastDot + 1);
+			}
 		}
 
 		/// <summary>
@@ -137,31 +150,36 @@ namespace Patchwork
 		/// <param name="actionAttribute">The action attribute ordering the creation.</param>
 		/// <returns></returns>
 		/// <exception cref="PatchDeclerationException">Thrown if this member collides with another member, and the error cannot be resolved.</exception>
-		private TypeDefinition CreateNewType(TypeDefinition yourType, NewTypeAttribute actionAttribute, out bool skipInitialization) {
-			
+		private TypeDefinition CreateNewType(TypeDefinition yourType, NewTypeAttribute actionAttribute) {
 			if (actionAttribute.IsImplicit) {
 				Log_implicitly_creating_member("type", yourType);
 			} else {
 				Log_creating_member("type", yourType);
 			}
-			var maybeDuplicate = TargetAssembly.MainModule.GetAllTypes().FirstOrDefault(x => x.FullName == yourType.FullName);
-			if (maybeDuplicate != null) {
-				skipInitialization = true;
-				Log_duplicate_member("type", yourType, maybeDuplicate);
-				if (DebugOptions.HasFlag(DebugFlags.CreationOverwrites)) {
-					Log_overwriting();
-					return maybeDuplicate;
-				}
-				if (actionAttribute.IsImplicit) {
-					Log_failed_to_create();
-					Log.Error("Since this is an implicitly created type, new members will be added to the existing type. Hopefuly, there will be no collisions.");
-					return maybeDuplicate;
-				}
-				throw Errors.Duplicate_member("type", yourType.FullName, maybeDuplicate.FullName);
+
+			string targetNamespace = yourType.Namespace, targetName = yourType.Name;
+			if (actionAttribute.NewTypeName != null) {
+				targetName = actionAttribute.NewTypeName;
 			}
-			var targetTypeDef = CopyType(yourType);
-			Log.Verbose("Created: {0}", targetTypeDef.FullName);
-			skipInitialization = false;
+			if (actionAttribute.NewNamespace != null) {
+				targetNamespace = actionAttribute.NewNamespace;
+			}
+
+			//sometimes, compilers generate short names with dots in them. This terribly confuses Cecil.
+			if (targetName.Contains(".")) {
+				var prevName = targetName;
+				targetName = targetName.Replace('.', '_');
+				Log_name_changed("type", yourType, prevName, targetName);
+			}
+			var maybeDuplicate = TargetAssembly.MainModule.GetType(targetNamespace, targetName);
+			if (maybeDuplicate != null) {
+				var prevName = targetName;
+				Log_duplicate_member("type", yourType, maybeDuplicate);
+				targetName = GetNameAfterCollision(targetName);
+				Log_name_changed("type", yourType, prevName, targetName);
+			}
+			
+			var targetTypeDef = CopyType(yourType, targetNamespace, targetName);
 			if (yourType.DeclaringType != null) {
 				targetTypeDef.DeclaringType.NestedTypes.Add(targetTypeDef);
 			} else {
@@ -171,12 +189,13 @@ namespace Patchwork
 		}
 
 		/// <summary>
-		/// Creates a method like the specified method, but doesn't add it anywhere.
+		/// 
 		/// </summary>
 		/// <param name="yourMethod"></param>
+		/// <param name="targetName"></param>
 		/// <returns></returns>
-		private MethodDefinition CopyAndCreateMethod(TypeDefinition targetType, MethodDefinition yourMethod) {
-			var targetMethod = new MethodDefinition(yourMethod.Name, yourMethod.Attributes, 
+		private MethodDefinition CopyMethod(MethodDefinition yourMethod, string targetName) {
+			var targetMethod = new MethodDefinition(targetName, yourMethod.Attributes,
 				yourMethod.ReturnType) {
 					ImplAttributes = yourMethod.ImplAttributes,
 					SemanticsAttributes = yourMethod.SemanticsAttributes,
@@ -190,46 +209,30 @@ namespace Patchwork
 					ReturnType = yourMethod.ReturnType //<---- this is temporary (setting it again to emphasize)
 				};
 
-			targetType.Methods.Add(targetMethod);
-
 			targetMethod.SecurityDeclarations.AddRange(yourMethod.SecurityDeclarations.Select(x => new SecurityDeclaration(x.Action, x.GetBlob())));
 
-			//First we add the parameters to the method so its signature is correct.
-			//Note that we do not fix the types at this stage. 
-			//This is because FixType calls can end up looking for the method we're adding right now
-			//if any of the parameter types are MVars. The signature has to be similar to yourMethod's signature 
-			//if FixType is to find this definition.
-			//this may seem needlessly complicated and rather risky, and I thought so too, but there really isn't any way around it
-			//or at least, I'm not clever enough to come up with one that doesn't introduce more problems 
-			//(believe me, I've tried all sorts of things)
-
-			foreach (var yourParam in yourMethod.Parameters) {
-				targetMethod.Parameters.Add(new ParameterDefinition(yourParam.ParameterType));
-			}
-			
-			//Note we're not adding any constraints yet because doing that involves FixType calls
-			//also, the T : S constraint involves 2 MVars, so unless we add all the MVars first, FixType calls could never be resolved.
-
-			var genList = new List<GenericParameter>();
 			foreach (var yourTypeParam in yourMethod.GenericParameters) {
 				var targetTypeParam = new GenericParameter(yourTypeParam.Name, targetMethod) {
 					Attributes = yourTypeParam.Attributes //includes non-type constraints
 				};
-				genList.Add(targetTypeParam);
+				targetMethod.GenericParameters.Add(targetTypeParam);
+			}
+			
+			//we do this so we can perform collision detection later on.
+			foreach (var yourParam in yourMethod.Parameters) {
+				targetMethod.Parameters.Add(new ParameterDefinition(yourParam.ParameterType));
 			}
 
-			targetMethod.GenericParameters.AddRange(genList);
-			//NOW we're adding constraints, when the signature is stable and when all MVars have been declared.
+			return targetMethod;
+		}
+
+		private void ModifyMethodDecleration(MethodDefinition yourMethod, MethodDefinition targetMethod) {
 			for (int i = 0; i < targetMethod.GenericParameters.Count; i++) {
 				foreach (var constraint in yourMethod.GenericParameters[i].Constraints) {
 					targetMethod.GenericParameters[i].Constraints.Add(FixTypeReference(constraint));
 				}
 			}
-
-			// note that we don't add the parameters to the method directly, at least not at first.
-			//this is because we're making FixType calls, and again, they can end up looking up targetMethod
-			//changing the signature will just end up with FixType not finding it.
-			var parList = new List<ParameterDefinition>();
+			targetMethod.Parameters.Clear();
 			foreach (var yourParam in yourMethod.Parameters) {
 				var targetParamType = FixTypeReference(yourParam.ParameterType);
 				//we need to set this because Cecil behaves weirdly when you set Constant to `null`
@@ -238,53 +241,40 @@ namespace Patchwork
 					MarshalInfo = CopyMarshalInfo(yourParam.MarshalInfo),
 					HasConstant = yourParam.HasConstant
 				};
-				parList.Add(targetParam);
+				targetMethod.Parameters.Add(targetParam);
 			}
-			//we reset the parameters after we're done with that in as near an atomic operation as possible, and without any FixType calls.
-			targetMethod.Parameters.Clear();
-			targetMethod.Parameters.AddRange(parList);
 
-			//we also fix this guy:
 			targetMethod.ReturnType = FixTypeReference(yourMethod.ReturnType);
-
-			//note that YOU DO NOT do targetMethod.Parameters.AddRangE(yourMethod.Parameters)
-			//ParameterDefinitions are mutable!  and doing this can mutate them...
-			return targetMethod;
 		}
 
 		/// <summary>
 		/// Creates a new method in the target assembly, for the specified type.
 		/// </summary>
-		/// <param name="targetDeclaringType">The type declaring the method in the target assembly.</param>
-		/// <param name="yourMethod">Your method, which describes the method to create..</param>
-		/// <param name="actionAttribute">The action attribute ordering creation.</param>
 		/// <returns></returns>
 		/// <exception cref="PatchDeclerationException">Thrown if this member collides with another member, and the error cannot be resolved.</exception>
-		private MethodDefinition CreateNewMethod(TypeDefinition targetDeclaringType, MethodDefinition yourMethod,
-			NewMemberAttribute actionAttribute) {
+		private MethodDefinition CreateNewMethod(MemberAction<MethodDefinition> memberAction) {
+			var actionAttribute = (NewMemberAttribute)memberAction.ActionAttribute;
+			var yourMethod = memberAction.YourMember;
+			var targetDeclaringType = memberAction.TypeAction.TargetType;
+			var newName = actionAttribute.NewMemberName ?? yourMethod.Name;
 			if (actionAttribute.IsImplicit) {
 				Log_implicitly_creating_member("method", yourMethod);
 			} else {
 				Log_creating_member("method", yourMethod);
 			}
 
-			var maybeDuplicate = targetDeclaringType.GetMethodLike(yourMethod);
+			var maybeDuplicate = targetDeclaringType.GetMethodLike(yourMethod, newName);
 			if (maybeDuplicate != null) {
+				var prevName = newName;
 				Log_duplicate_member("method", yourMethod, maybeDuplicate);
-				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
-					Log_overwriting();
-					//this only okay for controlled testing code.
-					return maybeDuplicate;
-				}
-				if (actionAttribute.IsImplicit) {
-					Log_failed_to_create();
-					return null;
-				}
-				throw Errors.Duplicate_member("type", yourMethod.FullName, maybeDuplicate.FullName);
+				newName = GetNameAfterCollision(newName);
+				Log_name_changed("method", yourMethod, prevName, newName);
 			}
 
-			var method = CopyAndCreateMethod(targetDeclaringType, yourMethod);
-			return method;
+			var targetMethod = CopyMethod(yourMethod, newName);
+			memberAction.TargetMember = targetMethod;
+			targetDeclaringType.Methods.Add(targetMethod);
+			return targetMethod;
 		}
 
 		private void Log_overwriting() {
@@ -299,9 +289,9 @@ namespace Patchwork
 			return info == null ? null : new MarshalInfo(info.NativeType);
 		}
 
-		private FieldDefinition CopyField(FieldDefinition yourField) {
+		private FieldDefinition CopyField(FieldDefinition yourField, string newName) {
 			var targetField =
-				new FieldDefinition(yourField.Name, yourField.Resolve().Attributes, FixTypeReference(yourField.FieldType)) {
+				new FieldDefinition(newName, yourField.Resolve().Attributes, FixTypeReference(yourField.FieldType)) {
 					InitialValue = yourField.InitialValue, //for field RVA
 					Constant = yourField   ,
 					MarshalInfo = CopyMarshalInfo(yourField.MarshalInfo),
@@ -325,20 +315,15 @@ namespace Patchwork
 			} else {
 				Log_creating_member("field", yourField);
 			}
-			var maybeDuplicate = targetDeclaringType.GetField(yourField.Name);
+			var newName = attr.NewMemberName ?? yourField.Name;
+			var maybeDuplicate = targetDeclaringType.GetField(newName);
 			if (maybeDuplicate != null) {
+				var prevName = newName;
 				Log_duplicate_member("field", yourField, maybeDuplicate);
-				if ((DebugOptions & DebugFlags.CreationOverwrites) != 0) {
-					Log_overwriting();
-					return maybeDuplicate;
-				}
-				if (attr.IsImplicit) {
-					Log_failed_to_create();
-					return null;
-				}
-				throw Errors.Duplicate_member("type", yourField.FullName, maybeDuplicate.FullName);
+				newName = GetNameAfterCollision(newName);
+				Log_name_changed("field", yourField, prevName, newName);
 			}
-			var targetField = CopyField(yourField);
+			var targetField = CopyField(yourField, newName);
 			targetDeclaringType.Fields.Add(targetField);
 			return targetField;
 		}
@@ -352,7 +337,11 @@ namespace Patchwork
 		}
 
 		private void Log_duplicate_member(string kind, MemberReference newMember, MemberReference oldMember) {
-			Log.Error("Conflict between {0:l}s: {1:l}, and {2:l}.", kind, newMember.UserFriendlyName(), oldMember.UserFriendlyName());
+			Log.Warning("Conflict between {0:l}s: {1:l}, and {2:l}.", kind, newMember.UserFriendlyName(), oldMember.UserFriendlyName());
+		}
+
+		private void Log_name_changed(string kind, MemberReference newMember, string oldName, string newName) {
+			Log.Warning("The {kind:l} called {type:l} was to be introduced under the name {oldName:l} but will be introduced under the name {newName:l}", kind, newMember, oldName, newName);
 		}
 	}
 }

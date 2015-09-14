@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -17,50 +16,21 @@ namespace Patchwork {
 	///     A class that patches a specific assembly (a target assembly) with your assemblies.
 	/// </summary>
 	public partial class AssemblyPatcher {
+
 		/// <summary>
 		///     Initializes a new instance of the <see cref="AssemblyPatcher" /> class.
 		/// </summary>
 		/// <param name="targetAssembly">The target assembly being patched by this instance.</param>
-		/// <param name="implicitImport">The implicit import setting.</param>
 		/// <param name="log"></param>
-		public AssemblyPatcher(AssemblyDefinition targetAssembly,
-			ImplicitImportSetting implicitImport = ImplicitImportSetting.OnlyCompilerGenerated,
-			ILogger log = null) {
+		public AssemblyPatcher(AssemblyDefinition targetAssembly, ILogger log = null) {
 			TargetAssembly = targetAssembly;
-			ImplicitImports = implicitImport;
 			Log = log ?? Serilog.Log.Logger;
 			Log.Information("Created patcher for assembly: {0:l}", targetAssembly.Name);
-			Filter = x => true;
 		}
 
 		public AssemblyPatcher(string targetAssemblyPath,
-			ImplicitImportSetting implicitImport = ImplicitImportSetting.OnlyCompilerGenerated,
 			ILogger log = null)
-			: this(AssemblyDefinition.ReadAssembly(targetAssemblyPath), implicitImport, log) {
-		}
-
-		/// <summary>
-		///     Special options for debugging purposes. Should not be set from user code.
-		/// </summary>
-		/// <value>
-		///     The debug options.
-		/// </value>
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public DebugFlags DebugOptions {
-			get;
-			set;
-		}
-
-		/// <summary>
-		///     If set (default null), a filter that says which types to include. This is a debug option.
-		/// </summary>
-		/// <value>
-		///     The filter.
-		/// </value>
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		public Func<TypeDefinition, bool> Filter {
-			get;
-			set;
+			: this(AssemblyDefinition.ReadAssembly(targetAssemblyPath), log) {
 		}
 
 		/// <summary>
@@ -77,7 +47,7 @@ namespace Patchwork {
 		public bool UseBackup {
 			get;
 			set;
-		} = true;
+		} = false;
 
 		/// <summary>
 		///     Exposes the target assembly being patched by this instance.
@@ -90,17 +60,10 @@ namespace Patchwork {
 			set;
 		}
 
-		/// <summary>
-		///     Gets or sets the implicit imports setting. This influences how members that don't have any Patch attributes are
-		///     treated.
-		/// </summary>
-		/// <value>
-		///     The implicit import setting.
-		/// </value>
-		public ImplicitImportSetting ImplicitImports {
+		private MemberCache CurrentMemberCache {
 			get;
 			set;
-		}
+		} = new MemberCache();
 
 		/// <summary>
 		///     Gets the log.
@@ -123,7 +86,8 @@ namespace Patchwork {
 			var yourAssembly = AssemblyDefinition.ReadAssembly(path, new ReaderParameters() {
 				ReadSymbols = readSymbols
 			});
-			var manifest = CreateManifest(yourAssembly);
+			var creator = new ManifestCreator();
+			var manifest = creator.CreateManifest(yourAssembly);
 			PatchManifest(manifest);
 		}
 
@@ -143,34 +107,31 @@ namespace Patchwork {
 				});
 		}
 
-		
-
 		private void IntroduceTypes(SimpleTypeLookup<TypeAction> typeActions) {
 			foreach (var newTypeAction in typeActions[typeof (NewTypeAttribute)]) {
-				bool skipInit = false;
-				var newType = CreateNewType(newTypeAction.YourType, (NewTypeAttribute) newTypeAction.ActionAttribute, out skipInit);
+				var newType = CreateNewType(newTypeAction.YourType, (NewTypeAttribute) newTypeAction.ActionAttribute);
 				if (newType == null) {
 					typeActions.Remove(newTypeAction);
 					continue;
 				}
 				newTypeAction.TargetType = newType;
-				if (skipInit) {
-					typeActions.Remove(newTypeAction);
-					newTypeAction.ActionAttribute = new ModifiesTypeAttribute();
-					typeActions.Add(typeof (ModifiesTypeAttribute), newTypeAction);
-				}
 			}
 		}
 
 		private void IntroduceMethods(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions) {
-			foreach (var eventAction in methodActions[typeof (NewMemberAttribute)]) {
-				var newMethod = CreateNewMethod(eventAction.TypeAction.TargetType, eventAction.YourMember, (NewMemberAttribute) eventAction.ActionAttribute);
+			foreach (var methodAction in methodActions[typeof (NewMemberAttribute)]) {
+				var newMethod = CreateNewMethod(methodAction);
 				if (newMethod == null) {
-					methodActions.Remove(eventAction);
-				} else {
-					eventAction.TargetMember = newMethod;
+					methodActions.Remove(methodAction);
+					continue;
 				}
 			}
+		}
+
+		private void UpdateMethodDeclerations(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions) {
+			foreach (var methodAction in methodActions[typeof (NewMemberAttribute)]) {
+				ModifyMethodDecleration(methodAction.YourMember, methodAction.TargetMember);
+			} 
 		}
 
 		private void ClearReplacedTypes(SimpleTypeLookup<TypeAction> typeActions) {
@@ -188,10 +149,9 @@ namespace Patchwork {
 					(NewMemberAttribute) fieldAction.ActionAttribute);
 				if (newField == null) {
 					fieldActions.Remove(fieldAction);
-				} else {
-					fieldAction.TargetMember = newField;
+					continue;
 				}
-				
+				fieldAction.TargetMember = newField;
 			}
 		}
 
@@ -200,9 +160,9 @@ namespace Patchwork {
 				var newProperty = CreateNewProperty(propAction.TypeAction.TargetType, propAction.YourMember, (NewMemberAttribute) propAction.ActionAttribute);
 				if (newProperty == null) {
 					propActions.Remove(propAction);
-				} else {
-					propAction.TargetMember = newProperty;
+					continue;
 				}
+				propAction.TargetMember = newProperty;
 			}
 		}
 
@@ -211,9 +171,9 @@ namespace Patchwork {
 				var newEvent = CreateNewEvent(eventAction.TypeAction.TargetType, eventAction.YourMember, (NewMemberAttribute) eventAction.ActionAttribute);
 				if (newEvent == null) {
 					eventActions.Remove(eventAction);
-				} else {
-					eventAction.TargetMember = newEvent;
+					continue;
 				}
+				eventAction.TargetMember = newEvent;
 			}
 		}
 
@@ -289,24 +249,32 @@ namespace Patchwork {
 			}
 		}
 
+		private int _assemblyHistoryIndex = 0;
+
 		/// <summary>
 		/// Applies the patch described in the given PatchingManifest to the TargetAssembly.
 		/// </summary>
 		/// <param name="manifest">The PatchingManifest. Note that the instance will be populated with additional information (such as newly created types) during execution.</param>
 		public void PatchManifest(PatchingManifest manifest) {
-			/*	The point of this method is to introduce all the patched elements in the correct order,
+			/*	The point of this method is to introduce all the patched elements in the correct order.
+
 			Standard order of business for order between modify/remove/update:
 			1. Remove Xs
 			2. Create new Xs
 			3. Update existing Xs (+ those we just created)
 			 */
-			var targetAssemblyBackup = TargetAssembly.Clone();
+			manifest.Specialize(TargetAssembly);
+			AssemblyDefinition targetAssemblyBackup = null;
+			if (UseBackup) {
+				targetAssemblyBackup = TargetAssembly.Clone();
+			}
+
 			try {
+				CurrentMemberCache = manifest.CreateCache();
 				//+INTRODUCE NEW TYPES
 				//Declare all the new types, in the order of their nesting level (.e.g topmost types, nested types, types nested in those, etc),
 				//But don't set anything that references other things, like BaseType, interfaces, custom attributes, etc.
 				//Type parameters *are* added at this stage, but no constraints are specified.
-				//Remove any methods that need removing.
 				//DEPENDENCIES: None
 				IntroduceTypes(manifest.TypeActions);
 
@@ -315,18 +283,27 @@ namespace Patchwork {
 				//DEPENDENCIES: Probably none
 				RemoveMethods(manifest.MethodActions);
 
-				//+INTRODUCE NEW METHODS
-				//Declare all the new methods, including signatures and type parameters + constraints, but without setting their bodies.
+				//+INTRODUCE NEW METHOD AND METHOD TYPE DEFINITIONS
+				//Declare all the new methods and their type parameters, but do not set nything that references other types,
+				//including return type, parameter types, and type parameter constraints
+				//This is because method type variables must already exist.
 				//This is performed now because types can reference attribute constructors that don't exist until we create them,
-				//but method definitions alone just reference types, and don't need to know about inheritance or constraints.
 				//Don't set custom attributes in this stage.
-				//DEPENDENCIES: Type definitions (for parameters, return types, constraints, ...)
+				//DEPENDENCIES: Type definitions (when introduced to new types)
 				IntroduceMethods(manifest.MethodActions);
+
+				//+UPDATE METHOD DECLERATIONS
+				//Update method declerations with parameters and return types
+				//We do this separately, because a method's parameters and return types depend on that method's generic parameters
+				//Don't set custom attributes in this stage though it's possible to do so.
+				//This is to avoid code duplication.
+				//DEPENDENCIES: Type definitions, method definitions
+				UpdateMethodDeclerations(manifest.MethodActions);
 
 				//+IMPORT ASSEMBLY/MODULE CUSTOM ATTRIBUTES
 				//Add any custom attributes for things that aren't part of the method/type hierarchy, such as assemblies.
 				//DEPENDENCIES: Method definitions, type definitions. (for attribute types and attribute constructors)
-				var patchingAssembly = manifest.PatchingAssembly;
+				var patchingAssembly = manifest.PatchAssembly;
 				//for assmebly:
 				CopyCustomAttributesByImportAttribute(TargetAssembly, patchingAssembly,
 					patchingAssembly.GetCustomAttribute<ImportCustomAttributesAttribute>());
@@ -368,16 +345,18 @@ namespace Patchwork {
 				//so the modifications won't influence this functionality.
 				//Custom attributes are set at this stage.
 				//Also, explicit overrides (what in C# is explicit interface implementation) are specified here.
-				//DEPENDENCIES: Type definitions, method definitions, field definitions
+				//DEPENDENCIES: Type definitions, method definitions, method signature elements, field definitions
 				UpdateMethods(manifest.MethodActions);
 
 				//+ADD PATCHING HISTORY TO ASSEMBLY
 				if (EmbedHistory) {
-					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchingAssembly);	
+					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchAssembly, _assemblyHistoryIndex++);	
 				}
 			}
 			catch {
-				TargetAssembly = targetAssemblyBackup;
+				if (UseBackup) {
+					TargetAssembly = targetAssemblyBackup;	
+				}
 				throw;
 			}
 		}
@@ -404,25 +383,6 @@ namespace Patchwork {
 				PathHelper.GetUserFriendlyPath(path));
 			TargetAssembly.Write(path);
 			Log.Information("Write completed successfuly.");
-		}
-
-		private bool IsNastyType(TypeReference typeRef) {
-			return typeRef.Name.Contains(".") || typeRef.DeclaringType != null && IsNastyType(typeRef.DeclaringType);
-		}
-
-		private TypeDefinition GetPatchedTypeByName(TypeReference typeRef) {
-			if (IsNastyType(typeRef)) {
-				if (typeRef.IsNested) {
-					var declaringType = GetPatchedTypeByName(typeRef.DeclaringType);
-					return declaringType.GetNestedType(typeRef.Name).Resolve();
-				}
-				return TargetAssembly.MainModule.GetType(typeRef.Namespace, typeRef.Name);
-			}
-			var patchedTypeName = typeRef.GetPatchedTypeFullName();
-			if (patchedTypeName == null) {
-				return null;
-			}
-			return TargetAssembly.MainModule.GetType(patchedTypeName);
 		}
 
 	}

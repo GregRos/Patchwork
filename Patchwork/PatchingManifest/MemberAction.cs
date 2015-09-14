@@ -3,19 +3,6 @@ using Patchwork.Attributes;
 
 namespace Patchwork {
 
-	///
-	public class ModuleAction {
-		public ModuleDefinition YourModule {
-			get;
-			set;
-		}
-
-		public AssemblyActionAttribute ActionAttribute {
-			get;
-			set;
-		}
-	}
-
 	/// <summary>
 	/// This used to be an anonymous type, but later I realized I use it often enough that it needs a name.
 	/// </summary>
@@ -42,5 +29,8 @@ namespace Patchwork {
 			get;
 			set;
 		}
+
+		
+
 	}
 }
