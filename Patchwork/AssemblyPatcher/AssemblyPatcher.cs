@@ -21,15 +21,12 @@ namespace Patchwork {
 		///     Initializes a new instance of the <see cref="AssemblyPatcher" /> class.
 		/// </summary>
 		/// <param name="targetAssembly">The target assembly being patched by this instance.</param>
-		/// <param name="implicitImport">The implicit import setting.</param>
 		/// <param name="log"></param>
 		public AssemblyPatcher(AssemblyDefinition targetAssembly, ILogger log = null) {
 			TargetAssembly = targetAssembly;
 			Log = log ?? Serilog.Log.Logger;
 			Log.Information("Created patcher for assembly: {0:l}", targetAssembly.Name);
 		}
-
-
 
 		public AssemblyPatcher(string targetAssemblyPath,
 			ILogger log = null)

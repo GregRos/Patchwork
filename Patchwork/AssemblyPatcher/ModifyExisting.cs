@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Patchwork.Attributes;
@@ -19,7 +16,7 @@ namespace Patchwork {
 		private MethodReference _concat;
 
 		private CustomAttributeArgument CopyCustomAttributeArg(CustomAttributeArgument yourArgument) {
-			
+
 			var type = FixTypeReference(yourArgument.Type);
 			var value = yourArgument.Value;
 			if (value is CustomAttributeArgument) {
@@ -59,7 +56,9 @@ namespace Patchwork {
 				//attributes from Patchwork.Attributes may be included depending on whether History is enabled.
 				where EmbedHistory || !isFromPatchworkAttributes
 				//attributes specifically designated NeverEmbed should not be embedded.
-				where attrType.CustomAttributes.All(attrOnAttr => attrOnAttr.AttributeType.FullName != typeof (NeverEmbedAttribute).FullName)
+				where
+					attrType.CustomAttributes.All(
+						attrOnAttr => attrOnAttr.AttributeType.FullName != typeof (NeverEmbedAttribute).FullName)
 				//attributes from a patching assembly are only included if they have the NewType attribute
 				where !attrAssembly.IsPatchingAssembly() || attrType.Resolve().HasCustomAttribute<NewTypeAttribute>()
 				//also, apply this custom filter:
@@ -70,12 +69,13 @@ namespace Patchwork {
 				var targetAttr = new CustomAttribute(FixMethodReference(yourAttr.Constructor));
 				targetAttr.ConstructorArguments.AddRange(yourAttr.ConstructorArguments.Select(CopyCustomAttributeArg));
 				var targetFieldArgs =
-					from nArg in targetAttr.Fields
+					from nArg in yourAttr.Fields
 					let arg = CopyCustomAttributeArg(nArg.Argument)
+					
 					select new CustomAttributeNamedArgument(nArg.Name, arg);
 
 				var targetPropArgs =
-					from nArg in targetAttr.Properties
+					from nArg in yourAttr.Properties
 					let arg = CopyCustomAttributeArg(nArg.Argument)
 					select new CustomAttributeNamedArgument(nArg.Name, arg);
 
@@ -159,8 +159,7 @@ namespace Patchwork {
 				? yourMethod.Module.Import((TypeReference) insertAttribute.SourceType)
 				: yourMethod.Module.Import(targetType);
 
-			var importMethod = importSourceType.Resolve().GetMethods(insertAttribute.MethodName,
-				yourMethod.Parameters.Select(x => x.ParameterType), yourMethod.ReturnType).SingleOrDefault();
+			var importMethod = importSourceType.Resolve().GetMethodLike(yourMethod, insertAttribute.MethodName);
 
 			var others =
 				importSourceType.Resolve().Methods.Where(x => x.Name == insertAttribute.MethodName).ToArray();

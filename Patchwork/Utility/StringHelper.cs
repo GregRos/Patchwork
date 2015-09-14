@@ -14,6 +14,10 @@ namespace Patchwork.Utility
 			return String.Join(sep, strs);
 		}
 
+		public static bool IsNullOrWhitespace(this string str) {
+			return string.IsNullOrWhiteSpace(str);
+		}
+
 		private static Random _rnd = new Random();
 
 		public static char[] CharsBetween(char start, char end) {

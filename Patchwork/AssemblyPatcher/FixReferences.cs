@@ -303,7 +303,7 @@ namespace Patchwork {
 			var targetBaseFieldDef = yourFieldRef;
 			if (yourFieldDef.Module.Assembly.IsPatchingAssembly()) {
 				//additional checking
-				var targetFieldDef = targetType.Resolve().GetField(yourFieldDef.Name);
+				var targetFieldDef = CurrentMemberCache.Fields.TryGet(yourFieldDef)?.TargetMember;
 				if (targetFieldDef == null) {
 					throw Errors.Could_not_resolve_reference("field", yourFieldRef);
 				}
@@ -312,10 +312,10 @@ namespace Patchwork {
 				//we assume that types that aren't in a patching assembly will never reference types in a patching assembly
 				targetBaseFieldDef = yourFieldRef;
 			}
-			var newMethodRef = targetBaseFieldDef.MakeReference();
-			newMethodRef.DeclaringType = targetType;
-			newMethodRef.FieldType = FixTypeReference(newMethodRef.FieldType);
-			var targetFieldRef = TargetAssembly.MainModule.Import(newMethodRef);
+			var newFieldRef = targetBaseFieldDef.MakeReference();
+			newFieldRef.DeclaringType = targetType;
+			newFieldRef.FieldType = FixTypeReference(newFieldRef.FieldType);
+			var targetFieldRef = TargetAssembly.MainModule.Import(newFieldRef);
 
 			Log_fixed_reference("field", yourFieldRef, targetFieldRef);
 			targetFieldRef.Module.Assembly.AssertEqual(TargetAssembly);

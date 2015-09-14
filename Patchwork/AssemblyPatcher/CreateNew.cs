@@ -56,13 +56,14 @@ namespace Patchwork
 			} else {
 				Log_creating_member("property", yourProperty);
 			}
-			var maybeDuplicate = targetType.GetProperty(yourProperty.Name,
-				yourProperty.Parameters.Select(x => x.ParameterType));
 			var newName = newPropAttr.NewMemberName ?? yourProperty.Name;
+			var maybeDuplicate = targetType.GetProperty(newName, yourProperty.Parameters.Select(x => x.ParameterType));
+			
 			if (maybeDuplicate != null) {
 				Log_duplicate_member("property", yourProperty, maybeDuplicate);
 				newName = GetNameAfterCollision(newName);
-				Log_name_changed("property", yourProperty, newName);
+				var prevName = newName;
+				Log_name_changed("property", yourProperty, prevName, newName);
 			}
 			var targetProperty = CopyProperty(yourProperty, newName);
 			targetType.Properties.Add(targetProperty);
@@ -86,17 +87,18 @@ namespace Patchwork
 		private EventDefinition CreateNewEvent(TypeDefinition targetType, EventDefinition yourEvent,
 			NewMemberAttribute newEventAttr) {
 			if (newEventAttr.IsImplicit) {
-				Log_implicitly_creating_member("property", yourEvent);
+				Log_implicitly_creating_member("event", yourEvent);
 			} else {
-				Log_creating_member("property", yourEvent);
+				Log_creating_member("event", yourEvent);
 			}
 			var newName = newEventAttr.NewMemberName ?? yourEvent.Name;
-			var maybeDuplicate = targetType.GetEvent(yourEvent.Name);
+			var maybeDuplicate = targetType.GetEvent(newName);
 			
 			if (maybeDuplicate != null) {
+				var prevName = newName;
 				Log_duplicate_member("event", yourEvent, maybeDuplicate);
 				newName = GetNameAfterCollision(newName);
-				Log_name_changed("event", yourEvent, newName);
+				Log_name_changed("event", yourEvent, prevName, newName);
 			}
 			
 			var targetEvent = CopyEvent(yourEvent, newName);
@@ -108,10 +110,11 @@ namespace Patchwork
 		/// Creates a tpye like the specified type, but doesn't add it anywhere. However, its DeclaringType is set correctly.
 		/// </summary>
 		/// <param name="yourType"></param>
-		/// <param name="name">The new name of the type.</param>
+		/// <param name="targetNamespace"></param>
+		/// <param name="targetName"></param>
 		/// <returns></returns>
-		private TypeDefinition CopyType(TypeDefinition yourType, string name) {
-			var targetTypeDef = new TypeDefinition(yourType.Namespace, name, yourType.Attributes) {
+		private TypeDefinition CopyType(TypeDefinition yourType, string targetNamespace, string targetName) {
+			var targetTypeDef = new TypeDefinition(targetNamespace, targetName, yourType.Attributes) {
 				DeclaringType = yourType.DeclaringType == null ? null : FixTypeReference(yourType.DeclaringType).Resolve(),
 				PackingSize = yourType.PackingSize,
 				ClassSize = yourType.ClassSize,
@@ -128,6 +131,17 @@ namespace Patchwork
 		private static string GetNameAfterCollision(string original) {
 			return $"{original}_$pw$_{StringHelper.RandomWordString(5)}";
 		}
+		
+		private static void SplitTypeName(string fullName, out string ns, out string typeName) {
+			var lastDot = fullName.LastIndexOf('.');
+			if (lastDot == -1) {
+				ns = "";
+				typeName = fullName;
+			} else {
+				ns = fullName.Substring(0, lastDot);
+				typeName = fullName.Substring(lastDot + 1);
+			}
+		}
 
 		/// <summary>
 		/// Creates a new type in the target assembly, based on yourType.
@@ -141,18 +155,31 @@ namespace Patchwork
 				Log_implicitly_creating_member("type", yourType);
 			} else {
 				Log_creating_member("type", yourType);
-
 			}
-			var newName = actionAttribute.NewTypeName ?? yourType.Name;
-			var maybeDuplicate = TargetAssembly.MainModule.GetType(yourType.Namespace, newName);
+
+			string targetNamespace = yourType.Namespace, targetName = yourType.Name;
+			if (actionAttribute.NewTypeName != null) {
+				targetName = actionAttribute.NewTypeName;
+			}
+			if (actionAttribute.NewNamespace != null) {
+				targetNamespace = actionAttribute.NewNamespace;
+			}
+
+			//sometimes, compilers generate short names with dots in them. This terribly confuses Cecil.
+			if (targetName.Contains(".")) {
+				var prevName = targetName;
+				targetName = targetName.Replace('.', '_');
+				Log_name_changed("type", yourType, prevName, targetName);
+			}
+			var maybeDuplicate = TargetAssembly.MainModule.GetType(targetNamespace, targetName);
 			if (maybeDuplicate != null) {
+				var prevName = targetName;
 				Log_duplicate_member("type", yourType, maybeDuplicate);
-				newName = GetNameAfterCollision(newName);
-				Log_name_changed("type", yourType, newName);
+				targetName = GetNameAfterCollision(targetName);
+				Log_name_changed("type", yourType, prevName, targetName);
 			}
 			
-			var targetTypeDef = CopyType(yourType, newName);
-			Log.Verbose("Created: {0}", targetTypeDef.FullName);
+			var targetTypeDef = CopyType(yourType, targetNamespace, targetName);
 			if (yourType.DeclaringType != null) {
 				targetTypeDef.DeclaringType.NestedTypes.Add(targetTypeDef);
 			} else {
@@ -236,11 +263,12 @@ namespace Patchwork
 				Log_creating_member("method", yourMethod);
 			}
 
-			var maybeDuplicate = targetDeclaringType.GetMethodLike(yourMethod);
+			var maybeDuplicate = targetDeclaringType.GetMethodLike(yourMethod, newName);
 			if (maybeDuplicate != null) {
+				var prevName = newName;
 				Log_duplicate_member("method", yourMethod, maybeDuplicate);
 				newName = GetNameAfterCollision(newName);
-				Log_name_changed("method", yourMethod, newName);
+				Log_name_changed("method", yourMethod, prevName, newName);
 			}
 
 			var targetMethod = CopyMethod(yourMethod, newName);
@@ -288,11 +316,12 @@ namespace Patchwork
 				Log_creating_member("field", yourField);
 			}
 			var newName = attr.NewMemberName ?? yourField.Name;
-			var maybeDuplicate = targetDeclaringType.GetField(yourField.Name);
+			var maybeDuplicate = targetDeclaringType.GetField(newName);
 			if (maybeDuplicate != null) {
+				var prevName = newName;
 				Log_duplicate_member("field", yourField, maybeDuplicate);
 				newName = GetNameAfterCollision(newName);
-				Log_name_changed("field", yourField, newName);
+				Log_name_changed("field", yourField, prevName, newName);
 			}
 			var targetField = CopyField(yourField, newName);
 			targetDeclaringType.Fields.Add(targetField);
@@ -311,8 +340,8 @@ namespace Patchwork
 			Log.Warning("Conflict between {0:l}s: {1:l}, and {2:l}.", kind, newMember.UserFriendlyName(), oldMember.UserFriendlyName());
 		}
 
-		private void Log_name_changed(string kind, MemberReference newMember, string newName) {
-			Log.Warning("The {kind:l} called {oldName:l} will be introduced under the name {newName:l}", kind, newMember, newName);
+		private void Log_name_changed(string kind, MemberReference newMember, string oldName, string newName) {
+			Log.Warning("The {kind:l} called {type:l} was to be introduced under the name {oldName:l} but will be introduced under the name {newName:l}", kind, newMember, oldName, newName);
 		}
 	}
 }

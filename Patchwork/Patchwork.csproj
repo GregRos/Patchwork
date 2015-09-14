@@ -71,12 +71,11 @@
       <Link>Properties\Patchwork.SharedAttributes.cs</Link>
     </Compile>
     <Compile Include="AssemblyPatcher\CreateNew.cs" />
-    <Compile Include="Collections\CachingDictionary.cs" />
     <Compile Include="Collections\MappingCache.cs" />
     <Compile Include="DebugFlags.cs" />
     <Compile Include="AssemblyPatcher\FixReferences.cs" />
     <Compile Include="ImplicitImportSetting.cs" />
-    <Compile Include="AssemblyPatcher\PatchingManifestCreator.cs" />
+    <Compile Include="PatchingManifest\PatchingManifestCreator.cs" />
     <Compile Include="PatchingManifest\MemberAction.cs" />
     <Compile Include="AssemblyPatcher\ModifyExisting.cs" />
     <Compile Include="PatchingManifest\TypeAction.cs" />
