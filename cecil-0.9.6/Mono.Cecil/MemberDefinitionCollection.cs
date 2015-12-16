@@ -29,6 +29,7 @@ namespace Mono.Cecil {
 			this.container = container;
 		}
 
+
 		protected override void OnAdd (T item, int index)
 		{
 			Attach (item);

@@ -51,7 +51,11 @@ namespace Patchwork.Tests.Patch
 			File.Copy(targetPath, newTarget, true);
 			var patcher = new AssemblyPatcher(newTarget, log: Log);
 			var patchPath = typeof(Patchwork.Tests.Patch.TestClass).Assembly.Location;
-			patcher.PatchAssembly(patchPath);
+			var maker = new ManifestCreator();
+			var manifest = maker.CreateManifest(patchPath);
+			patcher.PatchManifest(manifest, null);
+
+	
 
 			patcher.WriteTo(newTarget);
 			Log.Information("Loading assembly into memory...");

@@ -121,7 +121,7 @@ namespace Patchwork {
 			TypeReference targetTypeRef;
 
 			var yourTypeDef = yourTypeRef.Resolve();
-			if (yourTypeDef != null && yourTypeDef.IsDisablePatching()) {
+			if (yourTypeDef != null && yourTypeDef.Module.Assembly.IsPatchingAssembly() && yourTypeDef.IsDisablePatching()) {
 				Log_trying_to_fix_disabled_reference("type", yourTypeRef);
 			}
 			TypeReference targetInnerTypeRef;
@@ -138,6 +138,7 @@ namespace Patchwork {
 				case MetadataType.ByReference:
 					//ByRef type, e.g. int& or in C# "ref int". 
 					//Note that IL allows for variables and fields to have a reference type (C# does not)
+					//These sometimes appear in IL, as they are introduced by the compiler.
 					var yourByRefType = (ByReferenceType) yourTypeRef;
 					targetInnerTypeRef = FixTypeReference(yourByRefType.ElementType);
 					targetTypeRef = targetInnerTypeRef.MakeByReferenceType();
@@ -153,12 +154,14 @@ namespace Patchwork {
 				case MetadataType.MVar:
 					//method's generic type parameter. We find the DeclaringMethod, and find its version in the target assembly.
 					var asGenParam = (GenericParameter) yourTypeRef;
+					
+					index = asGenParam.DeclaringMethod.GenericParameters.IndexOf(x => x.Name == asGenParam.Name);
 					//the following is dangeorus because it brings about mutual recursion FixMethod ⇔ FixType... 
 					//the 'false' argument makes sure the recursion doesn't become infinite, as it allows for FixMethod
 					//not to fix all the types in the signature. After all, we just need the generic parameters.
-					index = asGenParam.DeclaringMethod.GenericParameters.IndexOf(x => x.Name == asGenParam.Name);
+					var methodReference = FixMethodReference(asGenParam.DeclaringMethod, false);
 					//we need to Resolve it in order to get a sort-of more "up to date" reference to the method.
-					var targetDeclaringMethod = FixMethodReference(asGenParam.DeclaringMethod, false).Resolve();
+					var targetDeclaringMethod = methodReference.Resolve();
 					var imported = TargetAssembly.MainModule.Import(targetDeclaringMethod);
 					targetTypeRef = imported.GenericParameters[index];
 					break;
@@ -208,7 +211,6 @@ namespace Patchwork {
 			var newRef = yourMethodRef.IsGenericInstance ? yourMethodRef : yourMethodRef.MakeReference();
 
 			foreach (var param in newRef.Parameters) {
-				//if (param.ParameterType.IsVarOrMVar()) continue; //also workaround, though I'm not sure if we need this anymore.
 				param.ParameterType = FixTypeReference(param.ParameterType);
 			}
 			if (!newRef.ReturnType.IsVarOrMVar()) {

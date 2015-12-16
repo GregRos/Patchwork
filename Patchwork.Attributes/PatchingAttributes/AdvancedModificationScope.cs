@@ -1,11 +1,8 @@
 namespace Patchwork.Attributes {
 	/// <summary>
-	/// Contains advanced modification scopes for internal use.
+	/// Contains secret modification scopes for internal use. They're not part of the ModificationScope enum so that they won't confuse anyone.
 	/// </summary>
 	internal static class AdvancedModificationScope {
-
-		
-
 		/// <summary>
 		/// Specifies that a method's explicitly declared overrides section should be changed. 
 		/// </summary>

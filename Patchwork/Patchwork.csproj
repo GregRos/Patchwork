@@ -65,40 +65,68 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Patchwork.SharedAttributes.cs">
       <Link>Properties\Patchwork.SharedAttributes.cs</Link>
     </Compile>
     <Compile Include="AssemblyPatcher\CreateNew.cs" />
-    <Compile Include="Collections\MappingCache.cs" />
-    <Compile Include="DebugFlags.cs" />
+    <Compile Include="PatchingManifest\PatchInfoProxy.cs" />
+    <Compile Include="Utility\Collections\MappingCache.cs" />
     <Compile Include="AssemblyPatcher\FixReferences.cs" />
     <Compile Include="ImplicitImportSetting.cs" />
-    <Compile Include="PatchingManifest\PatchingManifestCreator.cs" />
+    <Compile Include="Utility\Reflections and Cecil\AssemblyCache.cs" />
+    <Compile Include="Utility\Binding\Bindable.cs" />
+    <Compile Include="Utility\Binding\BindableExt.cs" />
+    <Compile Include="Utility\Binding\Bindables\BindableBase.cs" />
+    <Compile Include="Utility\Binding\Binding.cs" />
+    <Compile Include="Utility\Binding\BindingMode.cs" />
+    <Compile Include="Utility\Binding\Bindables\ComputedBindable.cs" />
+    <Compile Include="Utility\Binding\Bindables\ConstBindable.cs" />
+    <Compile Include="Utility\Binding\Bindables\ConvertingBindable.cs" />
+    <Compile Include="Utility\Binding\Bindables\DispatchingBindable.cs" />
+    <Compile Include="Utility\Binding\Errors.cs" />
+    <Compile Include="Utility\Binding\NotificationModes\AggregateMode.cs" />
+    <Compile Include="Utility\Binding\NotificationModes\EventRaised.cs" />
+    <Compile Include="Utility\Binding\Bindables\LinkingBindable.cs" />
+    <Compile Include="Utility\Binding\NotificationModes\NotificationMode.cs" />
+    <Compile Include="Utility\Binding\Bindables\IBindable.cs" />
+    <Compile Include="Utility\Binding\Bindables\ListBindable.cs" />
+    <Compile Include="Utility\Binding\Bindables\MemberBindable.cs" />
+    <Compile Include="Utility\Binding\NotificationModes\NotifyPropertyChanged.cs" />
+    <Compile Include="Utility\Binding\Validation\ValidationRule.cs" />
+    <Compile Include="Utility\Binding\Bindables\VariableBindable.cs" />
+    <Compile Include="Utility\UI Hooks\IProgressObject.cs" />
+    <Compile Include="Utility\Binding\MemberAccessor.cs" />
+    <Compile Include="Utility\UI Hooks\ProgressList.cs" />
+    <Compile Include="Utility\Collections\ProjectedList.cs" />
+    <Compile Include="Utility\Collections\CastList.cs" />
+    <Compile Include="PatchingManifest\ManifestCreator.cs" />
     <Compile Include="PatchingManifest\MemberAction.cs" />
     <Compile Include="AssemblyPatcher\ModifyExisting.cs" />
     <Compile Include="PatchingManifest\TypeAction.cs" />
-    <Compile Include="Collections\SimpleTypeGroup.cs" />
-    <Compile Include="Collections\SimpleTypeLookup.cs" />
+    <Compile Include="Utility\Collections\SimpleTypeGroup.cs" />
+    <Compile Include="Utility\Collections\SimpleTypeLookup.cs" />
     <Compile Include="Errors\Errors.cs" />
     <Compile Include="Errors\PatchDeclerationException.cs" />
     <Compile Include="Errors\PatchException.cs" />
     <Compile Include="Errors\PatchImportException.cs" />
     <Compile Include="Errors\PatchInternalException.cs" />
     <Compile Include="PatchingManifest\PatchingManifest.cs" />
-    <Compile Include="Utility\Accessibility.cs" />
+    <Compile Include="Utility\Reflections and Cecil\Accessibility.cs" />
     <Compile Include="AssemblyPatcher\AssemblyPatcher.cs" />
     <Compile Include="Utility\Asserts.cs" />
-    <Compile Include="Utility\CecilExtensions.cs" />
-    <Compile Include="Utility\CommonBindingFlags.cs" />
-    <Compile Include="Utility\ExprHelper.cs" />
-    <Compile Include="Utility\LogHelper.cs" />
-    <Compile Include="Utility\PathHelper.cs" />
-    <Compile Include="Utility\CecilHelper.cs" />
-    <Compile Include="Utility\PeVerifyRunner.cs" />
-    <Compile Include="Utility\SeqHelper.cs" />
-    <Compile Include="Utility\StringHelper.cs" />
+    <Compile Include="Utility\Reflections and Cecil\CommonBindingFlags.cs" />
+    <Compile Include="Utility\Reflections and Cecil\ExprHelper.cs" />
+    <Compile Include="Utility\Misc Helpers\LogHelper.cs" />
+    <Compile Include="Utility\Misc Helpers\PathHelper.cs" />
+    <Compile Include="Utility\Reflections and Cecil\CecilHelper.cs" />
+    <Compile Include="Utility\Reflections and Cecil\PeVerifyRunner.cs" />
+    <Compile Include="Utility\UI Hooks\ProgressObject.cs" />
+    <Compile Include="Utility\Reflections and Cecil\ReflectHelper.cs" />
+    <Compile Include="Utility\Misc Helpers\SeqHelper.cs" />
+    <Compile Include="Utility\Misc Helpers\StringHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
@@ -135,6 +163,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

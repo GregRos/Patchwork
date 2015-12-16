@@ -16,7 +16,12 @@ namespace Patchwork.Attributes {
 			get;
 		}
 
-		public DisablePatchingByNameAttribute(string regex, PatchingTarget target = ~PatchingTarget.Type) {
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="regex">A regular expression to match the name of the element to ignore.</param>
+		/// <param name="target">The PatchingTarget this attribute applies to.</param>
+		public DisablePatchingByNameAttribute(string regex, PatchingTarget target = PatchingTarget.Member) {
 			Regex = regex;
 			Target = target;
 

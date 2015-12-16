@@ -7,8 +7,6 @@ namespace Patchwork.Attributes {
 	[AttributeUsage(AttributeTargets.Assembly)]
 	[NeverEmbed]
 	public class PatchAssemblyAttribute : PatchingAttribute {
-		public PatchAssemblyAttribute() {
-			
-		}
+		
 	}
 }

@@ -1,12 +1,30 @@
 ﻿using System;
 using System.Linq;
 using Mono.Cecil;
+using Patchwork.Attributes;
 using Patchwork.Utility;
 
 namespace Patchwork {
 
 
 	internal static class Errors {
+
+		public static PatchDeclerationException No_patch_assembly_attribute(AssemblyDefinition assembly) {
+			return new PatchDeclerationException($"The assembly does not have the {nameof(PatchAssemblyAttribute)} attribute. This means that it is not a patch assembly.");
+		}
+
+		public static PatchDeclerationException More_than_one_PatchInfoAttribute(AssemblyDefinition assembly) {
+			return new PatchDeclerationException(
+					$"More than one class was found that is decorated with {nameof(PatchInfoAttribute)}");
+		}
+
+		public static PatchDeclerationException PatchInfo_doesnt_have_default_ctor(Type type) {
+			return new PatchDeclerationException($"The PatchInfo class {type} does not have a default constructor.");
+		}
+
+		public static PatchDeclerationException PatchInfo_doesnt_implement_interface(Type type) {
+			return new PatchDeclerationException($"The PatchInfo class {type} does not implement the interface {nameof(IPatchInfo)}.");
+		}
 
 		public static PatchDeclerationException Multiple_action_attributes(MemberReference yourMember, object[] attributes) {
 
@@ -15,7 +33,7 @@ namespace Patchwork {
 		}
 
 		public static PatchDeclerationException Unknown_action_attribute(object attribute) {
-			return new PatchDeclerationException(String.Format("Unknown member/type action attribute: {0}", attribute.GetType().FullName));	
+			return new PatchDeclerationException($"Unknown member/type action attribute: {attribute.GetType().FullName}");	
 		}
 
 		public static PatchDeclerationException Invalid_decleration(string format, params object[] args) {
@@ -23,29 +41,20 @@ namespace Patchwork {
 		}
 
 		public static PatchDeclerationException Duplicate_member(string kind, string createFor, string conflictWith) {
-			return new PatchDeclerationException(string.Format("The declared new {0} '{1}' conflicts with existing member '{2}'", kind, createFor, conflictWith));
+			return new PatchDeclerationException(
+				$"The declared new {kind} '{createFor}' conflicts with existing member '{conflictWith}'");
 		}
 
 		public static PatchDeclerationException Invalid_member(string kind, MemberReference memberRef, string identifier, string info)
 		{
 			return new PatchDeclerationException(
-				string.Format(
-				"The attribute on '{1}' refers to '{2}', but that member is invalid in this context. More info: {3}",
-				kind,
-				memberRef.FullName,
-				identifier,
-				info
-				));
+				$"The attribute on '{memberRef.FullName}' refers to '{identifier}', but that member is invalid in this context. More info: {info}");
 		}
 
 		public static PatchDeclerationException Missing_member_in_attribute(string kind, MemberReference memberRef, string identifier) {
-			return new PatchDeclerationException(
-				string.Format(
-				"The attribute on '{1}' refers to '{2}', but that member doesn't exist.", 
-				kind, 
-				memberRef.FullName,
-				identifier
-				));
+			return
+				new PatchDeclerationException(
+					$"The attribute on '{memberRef.FullName}' refers to '{identifier}', but that member doesn't exist.");
 		}
 
 		internal static PatchImportException Feature_not_supported(string format, params object[] args) {
@@ -53,8 +62,8 @@ namespace Patchwork {
 		}
 
 		internal static PatchImportException Could_not_resolve_reference(string kind, MemberReference yourMemberReference) {
-			return new PatchImportException(string.Format(
-				"Could not resolve a {0} reference, most likely because it wasn't imported. Details: {1}", kind, yourMemberReference.FullName));
+			return new PatchImportException(
+				$"Could not resolve a {kind} reference, most likely because it wasn't imported. Details: {yourMemberReference.FullName}");
 		}
 
 		

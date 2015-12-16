@@ -7,8 +7,9 @@ namespace Patchwork.Attributes {
 
 	/// <summary>
 	/// This toggles (or XORs) all the specified decleration attributes in the field. Lets you add/remove things like 'readonly'.
-	/// Must be used with ModifiesMemberAttribute.
+	/// You must still use a <see cref="MemberActionAttribute"/>.
 	/// </summary>
+	[AttributeUsage(AttributeTargets.Field)]
 	public class ToggleFieldAttributes : PatchingAttribute {
 		public FieldAttributes Attributes {
 			get;

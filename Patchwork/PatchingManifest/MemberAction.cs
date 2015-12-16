@@ -1,10 +1,11 @@
+using System.Runtime.Hosting;
 using Mono.Cecil;
 using Patchwork.Attributes;
 
 namespace Patchwork {
 
 	/// <summary>
-	/// This used to be an anonymous type, but later I realized I use it often enough that it needs a name.
+	/// An action to perform on a member.
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
 	public class MemberAction<T>
@@ -29,8 +30,6 @@ namespace Patchwork {
 			get;
 			set;
 		}
-
-		
-
 	}
+
 }

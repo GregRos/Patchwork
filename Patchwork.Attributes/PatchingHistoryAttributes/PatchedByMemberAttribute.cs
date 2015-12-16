@@ -1,16 +1,15 @@
 using System;
-
+using AttrT = System.AttributeTargets;
 namespace Patchwork.Attributes {
 	/// <summary>
 	/// Indicates that this member has been patched by another member in a patching assembly.
 	/// </summary>
-	[AttributeUsage(AttributeTargets.Method | AttributeTargets.Event | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Constructor, AllowMultiple = true)]
+	[AttributeUsage(CommonTargets.Members, AllowMultiple = true, Inherited = false)]
 	public class PatchedByMemberAttribute : PatchingHistoryAttribute {
 		public string YourMemberName {
 			get;
 			private set;
 		}
-
 
 		/// <summary>
 		/// 

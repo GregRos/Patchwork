@@ -3,7 +3,7 @@ using System.Reflection;
 namespace Patchwork.Attributes {
 	/// <summary>
 	/// This toggles (or XORs) all the specified decleration attributes in the type. Lets you add/remove things like 'sealed'.
-	/// Must be used with ModifiesMemberAttribute.
+	/// You must still use a <see cref="TypeActionAttribute"/>.
 	/// Not implemented.
 	/// </summary>
 	internal class ToggleTypeAttributes : PatchingAttribute {

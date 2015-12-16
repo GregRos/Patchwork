@@ -129,8 +129,9 @@ namespace Mono.Cecil {
 			if (type != null)
 				return type;
 
-			if (!module.HasExportedTypes)
+			if (!module.HasExportedTypes) {
 				return null;
+			}
 
 			var exported_types = module.ExportedTypes;
 
@@ -142,7 +143,8 @@ namespace Mono.Cecil {
 				if (exported_type.Namespace != reference.Namespace)
 					continue;
 
-				return exported_type.Resolve ();
+				var s = exported_type.Resolve ();
+				return s;
 			}
 
 			return null;
@@ -150,14 +152,14 @@ namespace Mono.Cecil {
 
 		static TypeDefinition GetTypeDefinition (ModuleDefinition module, TypeReference type)
 		{
-			if (!type.IsNested)
-				return module.GetType (type.Namespace, type.Name);
+			if (!type.IsNested) {
+				var t = module.GetType (type.Namespace, type.Name);
+				return t;
+			}
 
 			var declaring_type = type.DeclaringType.Resolve ();
-			if (declaring_type == null)
-				return null;
 
-			return declaring_type.GetNestedType (type.TypeFullName ());
+			return declaring_type?.GetNestedType (type.TypeFullName ());
 		}
 
 		public virtual FieldDefinition Resolve (FieldReference field)

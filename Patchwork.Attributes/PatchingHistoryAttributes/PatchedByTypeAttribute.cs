@@ -4,7 +4,7 @@ namespace Patchwork.Attributes {
 	/// <summary>
 	/// Indicates that this type has been patched by another type in a patching assembly.
 	/// </summary>
-	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Delegate | AttributeTargets.Enum | AttributeTargets.Struct, AllowMultiple = true)]
+	[AttributeUsage(CommonTargets.Types, AllowMultiple = true, Inherited = false)]
 	public class PatchedByTypeAttribute : PatchingHistoryAttribute {
 
 		public string YourType {

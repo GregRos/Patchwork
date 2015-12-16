@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -16,13 +18,12 @@ namespace Patchwork {
 	///     A class that patches a specific assembly (a target assembly) with your assemblies.
 	/// </summary>
 	public partial class AssemblyPatcher {
-
 		/// <summary>
 		///     Initializes a new instance of the <see cref="AssemblyPatcher" /> class.
 		/// </summary>
 		/// <param name="targetAssembly">The target assembly being patched by this instance.</param>
 		/// <param name="log"></param>
-		public AssemblyPatcher(AssemblyDefinition targetAssembly, ILogger log = null) {
+		private AssemblyPatcher(AssemblyDefinition targetAssembly, ILogger log = null) {
 			TargetAssembly = targetAssembly;
 			Log = log ?? Serilog.Log.Logger;
 			Log.Information("Created patcher for assembly: {0:l}", targetAssembly.Name);
@@ -30,7 +31,8 @@ namespace Patchwork {
 
 		public AssemblyPatcher(string targetAssemblyPath,
 			ILogger log = null)
-			: this(AssemblyDefinition.ReadAssembly(targetAssemblyPath), log) {
+			: this(AssemblyCache.Default.ReadAssembly(targetAssemblyPath), log) {
+			OriginalAssemblyMetadata = TargetAssembly.GetAssemblyMetadataString();
 		}
 
 		/// <summary>
@@ -39,6 +41,10 @@ namespace Patchwork {
 		public bool EmbedHistory {
 			get;
 			set;
+		}
+
+		private string OriginalAssemblyMetadata {
+			get;
 		}
 
 		/// <summary>
@@ -57,7 +63,7 @@ namespace Patchwork {
 		/// </value>
 		public AssemblyDefinition TargetAssembly {
 			get;
-			set;
+			private set;
 		}
 
 		private MemberCache CurrentMemberCache {
@@ -80,15 +86,15 @@ namespace Patchwork {
 		/// Patches the current assembly with the assembly in the specified path.
 		/// </summary>
 		/// <param name="path"></param>
+		/// <param name="o"></param>
 		/// <param name="readSymbols"></param>
-		public void PatchAssembly(string path, bool readSymbols = true) {
+		public void PatchAssembly(string path, ProgressObject o = null,  bool readSymbols = true) {
+			o = new ProgressObject();
 			readSymbols = readSymbols && File.Exists(Path.ChangeExtension(path, "pdb")) || File.Exists(path + ".mdb");
-			var yourAssembly = AssemblyDefinition.ReadAssembly(path, new ReaderParameters() {
-				ReadSymbols = readSymbols
-			});
+			var yourAssembly = AssemblyCache.Default.ReadAssembly(path, readSymbols);
 			var creator = new ManifestCreator();
 			var manifest = creator.CreateManifest(yourAssembly);
-			PatchManifest(manifest);
+			PatchManifest(manifest, o);
 		}
 
 		private void LogFailedToRemove(string memberType, MemberReference memberRef) {
@@ -251,19 +257,26 @@ namespace Patchwork {
 
 		private int _assemblyHistoryIndex = 0;
 
+		private int sum(params int[] xs) => xs.Sum();
+
 		/// <summary>
 		/// Applies the patch described in the given PatchingManifest to the TargetAssembly.
 		/// </summary>
 		/// <param name="manifest">The PatchingManifest. Note that the instance will be populated with additional information (such as newly created types) during execution.</param>
-		public void PatchManifest(PatchingManifest manifest) {
+		/// <param name="o"></param>
+		public void PatchManifest(PatchingManifest manifest, ProgressObject o) {
 			/*	The point of this method is to introduce all the patched elements in the correct order.
-
+			
 			Standard order of business for order between modify/remove/update:
 			1. Remove Xs
 			2. Create new Xs
 			3. Update existing Xs (+ those we just created)
 			 */
+			o = o ?? new ProgressObject();
 			manifest.Specialize(TargetAssembly);
+			o.TaskTitle.Value = $"{manifest.PatchAssembly.Name.Name}";
+			o.Current.Value = 0;
+			o.Total.Value = 11;
 			AssemblyDefinition targetAssemblyBackup = null;
 			if (UseBackup) {
 				targetAssemblyBackup = TargetAssembly.Clone();
@@ -276,12 +289,16 @@ namespace Patchwork {
 				//But don't set anything that references other things, like BaseType, interfaces, custom attributes, etc.
 				//Type parameters *are* added at this stage, but no constraints are specified.
 				//DEPENDENCIES: None
+				o.TaskText.Value = "Introducing Types";
 				IntroduceTypes(manifest.TypeActions);
-
+				o.Current.Value++;
+				
 				//+REMOVE EXISTING METHODS
 				//Remove any methods that need removing.
 				//DEPENDENCIES: Probably none
+				o.TaskText.Value = "Removing Methods";
 				RemoveMethods(manifest.MethodActions);
+				o.Current.Value++;
 
 				//+INTRODUCE NEW METHOD AND METHOD TYPE DEFINITIONS
 				//Declare all the new methods and their type parameters, but do not set nything that references other types,
@@ -290,7 +307,9 @@ namespace Patchwork {
 				//This is performed now because types can reference attribute constructors that don't exist until we create them,
 				//Don't set custom attributes in this stage.
 				//DEPENDENCIES: Type definitions (when introduced to new types)
+				o.TaskText.Value = "Introducing Methods";
 				IntroduceMethods(manifest.MethodActions);
+				o.Current.Value++;
 
 				//+UPDATE METHOD DECLERATIONS
 				//Update method declerations with parameters and return types
@@ -298,46 +317,60 @@ namespace Patchwork {
 				//Don't set custom attributes in this stage though it's possible to do so.
 				//This is to avoid code duplication.
 				//DEPENDENCIES: Type definitions, method definitions
+				o.TaskText.Value = "Updating Type Declerations";
 				UpdateMethodDeclerations(manifest.MethodActions);
+				o.Current.Value++;
 
 				//+IMPORT ASSEMBLY/MODULE CUSTOM ATTRIBUTES
 				//Add any custom attributes for things that aren't part of the method/type hierarchy, such as assemblies.
 				//DEPENDENCIES: Method definitions, type definitions. (for attribute types and attribute constructors)
+				o.TaskText.Value = "Importing Assembly/Module Attributes";
 				var patchingAssembly = manifest.PatchAssembly;
+
 				//for assmebly:
 				CopyCustomAttributesByImportAttribute(TargetAssembly, patchingAssembly,
 					patchingAssembly.GetCustomAttribute<ImportCustomAttributesAttribute>());
+
 				//for module:
 				CopyCustomAttributesByImportAttribute(TargetAssembly.MainModule, patchingAssembly.MainModule,
 					patchingAssembly.MainModule.GetCustomAttribute<ImportCustomAttributesAttribute>());
+				o.Current.Value++;
 
 				//+UPDATE TYPE DEFINITIONS
 				//Set the type information we didn't set in (1), according to the same order, including custom attributes.
 				//When/if modifying type inheritance is allowed, this process will occur at this stage.
 				//DEPENDENCIES: Type definitions (obviously), method definitions (for attribute constructors)
+				o.TaskText.Value = "Updating Type Definitions";
 				UpdateTypes(manifest.TypeActions);
+				o.Current.Value++;
 
 				//+FIELDS
 				//remove/define/modify fields. This is where most enum processing happens. Custom attributes are set at this stage.
 				//DEPENDENCIES: Type definitions, method definitions (for attribute constructors)
+				o.TaskText.Value = "Processing Fields";
 				ClearReplacedTypes(manifest.TypeActions);
 				RemoveFields(manifest.FieldActions);
 				IntroduceFields(manifest.FieldActions);
 				UpdateFields(manifest.FieldActions);
+				o.Current.Value++;
 
 				//+PROPERTIES
 				//Remove/define/modify properties. This doesn't change anything about methods. Custom attributes are set at this stage.
 				//DEPENDENCIES: Type definitions, method definitions (attribute constructors, getter/setters)
+				o.TaskText.Value = "Processing Properties";
 				RemoveProperties(manifest.PropertyActions);
 				IntroduceProperties(manifest.PropertyActions);
 				UpdateProperties(manifest.PropertyActions);
+				o.Current.Value++;
 
 				//+EVENTS
 				//Remove/define/modify events. This doesn't change anything about methods. Custom attributes are set at this stage.
 				//DEPENENCIES: Type definitions, method definitions (attribute constructors, add/remove/invoke handlers)
+				o.TaskText.Value = "Introducing Events";
 				RemoveEvents(manifest.EventActions);
 				IntroduceEvents(manifest.EventActions);
 				UpdateEvents(manifest.EventActions);
+				o.Current.Value++;
 
 				//+FINALIZE METHODS, GENERATE METHOD BODIES
 				//Fill/modify the bodies of all remaining methods, and also modify accessibility/attributes of existing ones.
@@ -346,12 +379,16 @@ namespace Patchwork {
 				//Custom attributes are set at this stage.
 				//Also, explicit overrides (what in C# is explicit interface implementation) are specified here.
 				//DEPENDENCIES: Type definitions, method definitions, method signature elements, field definitions
+				o.TaskText.Value = "Updating Method Bodies";
 				UpdateMethods(manifest.MethodActions);
+				o.Current.Value++;
 
 				//+ADD PATCHING HISTORY TO ASSEMBLY
+				o.TaskText.Value = "Updating History";
 				if (EmbedHistory) {
-					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchAssembly, _assemblyHistoryIndex++);	
+					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchAssembly, _assemblyHistoryIndex++, OriginalAssemblyMetadata);	
 				}
+				o.Current.Value++;
 			}
 			catch {
 				if (UseBackup) {
@@ -361,18 +398,19 @@ namespace Patchwork {
 			}
 		}
 
-		/// <summary>
-		/// This method runs the PEVerify command-line tool on the patched assembly. It does this by first writing it to a temporary file.<br/>
-		///PEVerify is a tool that verifies IL. It goes over it and looks for various issues.<br/>
-		///Some of the errors it reports are relatively harmless but others mean the assembly cannot be loaded.<br/>
-		///Ideally, it should report no errors.<br/>
-		///This operation returns an extended and user-friendly form of the output, translating metadata tokens into user-readable names.
-		/// </summary>
-		/// <param name="switches">Command line switches supplied to PEVerify. </param>
+		///  <summary>
+		///  This method runs the PEVerify command-line tool on the patched assembly. It does this by first writing it to a temporary file.<br/>
+		/// PEVerify is a tool that verifies IL. It goes over it and looks for various issues.<br/>
+		/// Some of the errors it reports are relatively harmless but others mean the assembly cannot be loaded.<br/>
+		/// Ideally, it should report no errors.<br/>
+		/// This operation returns an extended and user-friendly form of the output, translating metadata tokens into user-readable names.
+		///  </summary>
+		/// <param name="targetFolder"></param>
 		/// <param name="ignoreErrors">A list of error numbers to ignore. Errors usually appear in hexadecimal format.</param>
+		/// <param name="switches">Command line switches supplied to PEVerify. </param>
 		/// <returns></returns>
-		public string RunPeVerify(string switches = PeVerifyRunner.DefaultPeVerifySwitches, IEnumerable<long> ignoreErrors = null) {
-			return PeVerifyRunner.RunPeVerify(TargetAssembly, switches, ignoreErrors);
+		public string RunPeVerify(string targetFolder, IEnumerable<long> ignoreErrors = null, string switches = PeVerifyRunner.DefaultPeVerifySwitches) {
+			return PeVerifyRunner.RunPeVerify(TargetAssembly, targetFolder,switches, ignoreErrors);
 		}
 
 		public void WriteTo(string path) {

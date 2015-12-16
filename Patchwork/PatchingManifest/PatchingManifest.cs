@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,16 +9,17 @@ using Mono.Cecil;
 using Patchwork.Attributes;
 using Patchwork.Collections;
 using Patchwork.Utility;
+using Serilog;
 
 namespace Patchwork {
-	public class PatchingManifest {
+	public class PatchingManifest : IDisposable {
 
 		public AssemblyDefinition PatchAssembly {
 			get;
 			internal set;
 		}
 
-		public PatchExecutionInfo PatchExecution {
+		public PatchInfoProxy PatchInfo {
 			get;
 			internal set;
 		}
@@ -73,7 +76,7 @@ namespace Patchwork {
 			var aliased = actionAttribute as MemberAliasAttribute;
 			if (aliased != null) {
 				var asAliased = aliased;
-				targetType = ((TypeReference) asAliased.AliasedMemberDeclaringType).Resolve();
+				targetType = targetType.Module.MetadataResolver.Resolve((TypeReference) asAliased.AliasedMemberDeclaringType);
 			}
 			var t = typeof (T);
 			if (t == typeof(MethodDefinition)) {
@@ -115,12 +118,44 @@ namespace Patchwork {
 			}
 		}
 
-		public void Specialize(AssemblyDefinition assemblyDef) {
+		internal void Specialize(AssemblyDefinition assemblyDef) {
+			var someResolver = PatchAssembly.MainModule.AssemblyResolver;
+			if (someResolver == null) {
+				throw new ArgumentException("The specified patch assembly could not be specialized because its AssemblyResolver wasn't a BaseAssemblyResolver. This means Cecil has changed.");
+			}
+			var resolver = (BaseAssemblyResolver) someResolver;
+			resolver.ClearExtraResolvers();
+			try {
+				resolver.ForceClearCache();
+			}
+			catch (Exception ex) {
+				Log.Error(ex, "Failed to ForceClearCache of an assembly resolver due to an exception.");
+				//ForceClearCache isn't really required. It's only relevant when we try to Specialize the same AssemblyDefinition multiple times.
+				//And this shouldn't really happen, unless we're debugging.
+			}
+			//we need this special resolver because we want the patch assembly to resolve the assembly being patched, even if its version is different.
+			//We also want to resolve assemblies in the same folder as the patched assembly. While AddSearchDirectory would be sufficient for this,
+			//We want resolving the target assembly (the one that's being modified) to be prioritized over the original.
+			resolver.RegisterSpecialResolveFailureHandler((sender, name) => {
+				if (name.Name == assemblyDef.Name.Name) {
+					return assemblyDef;
+				}
+				var path = Path.Combine(assemblyDef.MainModule.FullyQualifiedName, "..", $"{name.Name}.dll");
+				return File.Exists(path) ? AssemblyCache.Default.ReadAssembly(path) : null;
+			});
+
 			SpecializeTypes(TypeActions, assemblyDef);
 			SpecializeMembers(EventActions, assemblyDef);
 			SpecializeMembers(MethodActions, assemblyDef);
 			SpecializeMembers(FieldActions, assemblyDef);
 			SpecializeMembers(PropertyActions, assemblyDef);
+		}
+
+		/// <summary>
+		/// Disposes of the AppDomain hosting the PatchInfo instance. This needs to be called so the AppDomain can be unloaded.
+		/// </summary>
+		public void Dispose() {
+			PatchInfo?.Dispose();
 		}
 	}
 }

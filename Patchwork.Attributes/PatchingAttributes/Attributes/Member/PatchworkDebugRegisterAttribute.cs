@@ -1,7 +1,10 @@
-﻿namespace Patchwork.Attributes {
+﻿using System;
+
+namespace Patchwork.Attributes {
 	/// <summary>
 	/// This attribute enables limited debugging capability. You can specify a string field that contains the lines executed, from the beginning of the method.
 	/// </summary>
+	[AttributeUsage(AttributeTargets.Method, Inherited = false)]
 	public class PatchworkDebugRegisterAttribute : PatchingAttribute {
 		public string DebugFieldName {
 			get;
