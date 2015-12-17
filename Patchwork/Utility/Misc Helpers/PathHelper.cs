@@ -15,7 +15,7 @@ namespace Patchwork.Utility {
 			if (Path.IsPathRooted(relativePath)) {
 				return relativePath;
 			}
-			var result = Path.Combine(_executingAssemblyPath, "..", relativePath);
+			var result = Path.Combine(Environment.CurrentDirectory, relativePath);
 			var full = Path.GetFullPath(result);
 			return full;
 		}

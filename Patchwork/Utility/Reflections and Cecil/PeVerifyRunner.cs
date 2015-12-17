@@ -22,7 +22,8 @@ namespace Patchwork.Utility {
 			
 			var tempPath = Path.Combine(folderLocation, Guid.NewGuid().ToString());
 			try {
-				var callingAssembly = Path.Combine(Assembly.GetExecutingAssembly().Location, "..", "PEVerify");
+				var dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+				var callingAssembly = Path.Combine(dir, "PEVerify");
 				targetAssembly.Write(tempPath);
 				var info = new ProcessStartInfo() {
 					UseShellExecute = false,

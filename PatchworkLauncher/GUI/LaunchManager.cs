@@ -127,18 +127,17 @@ namespace PatchworkLauncher {
 		}
 
 		public IBindable<LaunchManagerState> State { get; } = Bindable.Variable(LaunchManagerState.Idle);
-		private const string _pathHistoryXml = "history.pw.xml";
-		private const string _pathSettings = "instructions.pw.xml";
-		private const string _pathGameInfoAssembly = "app.dll";
-		private const string _pathLogFile = "log.txt";
+		private const string _pathHistoryXml = "./history.pw.xml";
+		private const string _pathSettings = "./instructions.pw.xml";
+		private const string _pathGameInfoAssembly = "./app.dll";
+		private const string _pathLogFile = "./log.txt";
 		private static readonly XmlSerializer _historySerializer = new XmlSerializer(typeof(XmlHistory));
 		private static readonly XmlSerializer _instructionSerializer = new XmlSerializer(typeof (XmlSettings));
+	
 
 		public async Task<XmlHistory> Command_Patch() {
 			var progObj = new ProgressObject();
 			try {
-
-
 				using (var logForm = new LogForm(progObj)) {
 					logForm.Show();
 					State.Value = LaunchManagerState.IsPatching;
@@ -476,7 +475,9 @@ namespace PatchworkLauncher {
 				var patchCount = patchesForFile.Count();
 				po.TaskTitle.Value = $"Patching {appInfo.AppName}";
 				po.TaskText.Value = Path.GetFileName(patchesForFile.Key);
-				var localAssemblyName = Path.Combine(patchesForFile.Key, "..", attributesAssemblyName);
+				var dir = Path.GetDirectoryName (patchesForFile.Key);
+
+				var localAssemblyName = Path.Combine (dir, attributesAssemblyName);
 				var copy = true;
 				fileProgress.TaskTitle.Value = "Patching File";
 				fileProgress.TaskText.Value = "Copying Attributes Assembly";

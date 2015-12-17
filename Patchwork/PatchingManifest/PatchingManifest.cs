@@ -145,7 +145,9 @@ namespace Patchwork {
 				if (name.Name == assemblyDef.Name.Name) {
 					return assemblyDef;
 				}
-				var path = Path.Combine(assemblyDef.MainModule.FullyQualifiedName, "..", $"{name.Name}.dll");
+				var dir = Path.GetDirectoryName(assemblyDef.MainModule.FullyQualifiedName);
+
+				var path = Path.Combine(dir, $"{name.Name}.dll");
 				return File.Exists(path) ? AssemblyCache.Default.ReadAssembly(path) : null;
 			});
 
