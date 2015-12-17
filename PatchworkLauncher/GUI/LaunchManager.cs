@@ -310,11 +310,17 @@ namespace PatchworkLauncher {
 			errorString += objectsThatFailed.IsNullOrWhitespace() ? "" : $"Object(s) that failed: {objectsThatFailed}\r\n";
 			errorString += message.IsNullOrWhitespace() ? "" : $"{message}\r\n";
 			Logger.Error(ex, errorString);
+			if (ex != null) {
+				throw new Exception("", ex);
+			}
 			return MessageBox.Show(errorString, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
 		}
 
 		private static AppInfoFactory LoadAppInfoFactory() {
 			Assembly gameInfoAssembly = null;
+			if (!File.Exists(PathHelper.GetAbsolutePath(_pathGameInfoAssembly))) {
+				throw new FileNotFoundException($"The AppInfo assembly file was not found.",_pathGameInfoAssembly);
+			}
 			gameInfoAssembly = Assembly.LoadFile(PathHelper.GetAbsolutePath(_pathGameInfoAssembly));
 
 			var gameInfoFactories =
@@ -348,10 +354,13 @@ namespace PatchworkLauncher {
 		public guiHome Command_Start() {
 			//TODO: Refactor this into a constructor?
 			try {
-				var gameInfoFactory = LoadAppInfoFactory();
-				File.Delete(_pathLogFile);
+				if (File.Exists(_pathLogFile)) {
+					File.Delete(_pathLogFile);
+				}
 				Logger =
 					new LoggerConfiguration().WriteTo.File(_pathLogFile, LogEventLevel.Debug).MinimumLevel.Debug().CreateLogger();
+				var gameInfoFactory = LoadAppInfoFactory();
+			
 				XmlSettings settings = new XmlSettings();
 				XmlHistory history = new XmlHistory();;
 				try {
