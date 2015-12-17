@@ -60,5 +60,10 @@ namespace PatchworkLauncher {
 		private void guiChangeFolder_Click(object sender, EventArgs e) {
 			Manager.Command_ChangeFolder();
 		}
+
+		private void guiTestRun_Click(object sender, EventArgs e)
+		{
+			Manager.Command_TestRun();
+		}
 	}
 }

@@ -29,7 +29,7 @@ namespace Patchwork.Utility {
 					FileName = callingAssembly,
 					RedirectStandardOutput = true,
 					CreateNoWindow = true,
-					Arguments = $"{switches} /ignore={ignoreErrors.Select(x => x.ToString("X")).Join(",")} {tempPath}"
+					Arguments = $"{switches} /ignore={ignoreErrors.Select(x => x.ToString("X")).Join(",")} \"{tempPath}\""
 				};
 				using (var process = Process.Start(info)) {
 					ret=  process.StandardOutput.ReadToEnd().Replace(tempPath, targetAssembly.Name.Name);

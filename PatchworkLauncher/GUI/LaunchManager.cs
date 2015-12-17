@@ -134,34 +134,41 @@ namespace PatchworkLauncher {
 		private static readonly XmlSerializer _historySerializer = new XmlSerializer(typeof(XmlHistory));
 		private static readonly XmlSerializer _instructionSerializer = new XmlSerializer(typeof (XmlSettings));
 
-		public async void Command_Launch_Modded() {
-			XmlHistory history = null;
+		public async Task<XmlHistory> Command_Patch() {
 			var progObj = new ProgressObject();
+			try {
 
-			using (var logForm = new LogForm(progObj) {
-				
-			}) {
-				logForm.Show();
-				State.Value = LaunchManagerState.IsPatching;
-				try {
-					history = await Task.Run(() => ApplyInstructions(progObj));
-				}
-				catch (Exception ex) {
-					Command_Display_Error("Patching the game", ex:ex);
-					State.Value = LaunchManagerState.Idle;
-					return;
-				}
-				finally {
-					if (DebugOptions.Default.OpenLogAfterPatch) {
-						Process.Start(_pathLogFile);
+
+				using (var logForm = new LogForm(progObj)) {
+					logForm.Show();
+					State.Value = LaunchManagerState.IsPatching;
+					XmlHistory history = null;
+					try {
+						history = await Task.Run(() => ApplyInstructions(progObj));
 					}
+					catch (Exception ex) {
+						Command_Display_Error("Patching the game", ex: ex);
+						State.Value = LaunchManagerState.Idle;
+						return new XmlHistory();
+					}
+					finally {
+						if (DebugOptions.Default.OpenLogAfterPatch) {
+							Process.Start(_pathLogFile);
+						}
+					}
+					_historySerializer.Serialize(history, _pathHistoryXml);
+					logForm.Close();
+					return history;
 				}
-
-
-				_historySerializer.Serialize(history, _pathHistoryXml);
-				logForm.Close();
 			}
+			finally {
+				State.Value = LaunchManagerState.Idle;
+			}
+		}
+
+		public async void Command_Launch_Modded() {
 			Action<IBindable<LaunchManagerState>> p = null;
+			var history = await Command_Patch();
 			p = v => {
 				if (v.Value == LaunchManagerState.Idle) {
 					PatchingHelper.RestorePatchedFiles(AppInfo, history.Files);
@@ -208,7 +215,8 @@ namespace PatchworkLauncher {
 			}
 			var process = new Process() {
 				StartInfo = {
-					FileName = AppInfo.Executable.FullName
+					FileName = AppInfo.Executable.FullName,
+					WorkingDirectory = Path.GetDirectoryName(AppInfo.Executable.FullName)
 				},
 				EnableRaisingEvents = true
 			};
@@ -284,6 +292,7 @@ namespace PatchworkLauncher {
 		}
 
 		private DialogResult Command_Display_Error(string tryingToDoWhat, string objectsThatFailed = null, Exception ex = null, string message = null) {
+			//TODO: Better error dialog
 			var errorType = "";
 			if (ex is PatchException) {
 				errorType = "A patch was invalid, incompatible, or caused an error.";
@@ -337,7 +346,7 @@ namespace PatchworkLauncher {
 		}
 
 		public guiHome Command_Start() {
-
+			//TODO: Refactor this into a constructor?
 			try {
 				var gameInfoFactory = LoadAppInfoFactory();
 				File.Delete(_pathLogFile);
@@ -421,7 +430,17 @@ namespace PatchworkLauncher {
 			}
 		}
 
+		public async void Command_TestRun() {
+			DebugOptions.Default.OpenLogAfterPatch = true;
+			var history = await Command_Patch();
+			PatchingHelper.RestorePatchedFiles(AppInfo, history.Files);
+
+		}
+
 		private XmlHistory ApplyInstructions(ProgressObject po) {
+			//TODO: Use a different progress tracking system and make the entire patching operation more recoverable and fault-tolerant.
+			//TODO: Refactor this method.
+
 			var seq = Instructions;
 			var appInfo = AppInfo;
 			var logger = Logger;
