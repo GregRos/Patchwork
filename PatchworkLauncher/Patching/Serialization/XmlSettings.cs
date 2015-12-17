@@ -7,18 +7,9 @@ using Patchwork.Attributes;
 using Patchwork.Utility;
 
 namespace PatchworkLauncher {
-	public class XmlPrefs {
-		public bool AlwaysPatch {
-			get;
-		} = false;
 
-		public bool DontRunProgram {
-			get;
-		} = false;
-	}
 
 	[XmlInclude(typeof(XmlInstruction))]
-	[XmlInclude(typeof(XmlPrefs))]
 	public class XmlSettings {
 		[XmlArrayItem("Instruction")]
 		public List<XmlInstruction> Instructions {

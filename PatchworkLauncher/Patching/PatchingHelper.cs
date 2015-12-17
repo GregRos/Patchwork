@@ -11,13 +11,13 @@ using Serilog;
 
 namespace PatchworkLauncher {
 
-	public class PatchingHelper {
+	internal class PatchingHelper {
 
-		private static string GetBackupForOriginal(string path) {
+		public static string GetBackupForOriginal(string path) {
 			return PathHelper.ChangeExtension(path, ext => $"{ext}.pw.original");
 		}
 
-		private static string GetBackupForModified(string path) {
+		public static string GetBackupForModified(string path) {
 			return PathHelper.ChangeExtension(path, ext => $"{ext}.pw.modified");
 		}
 
@@ -33,8 +33,8 @@ namespace PatchworkLauncher {
 			}
 			throw new Exception($"Something is really really wrong here. Tried {timesToTry} file names and all of them are taken...");
 		}
-		
-		private static bool SwitchFilesSafely(string takeFileFromPath, string putItHere, string putExistingIn) {
+
+		public static bool SwitchFilesSafely(string takeFileFromPath, string putItHere, string putExistingIn) {
 			if (!File.Exists(takeFileFromPath)) {
 				return false;
 			}
@@ -93,97 +93,6 @@ namespace PatchworkLauncher {
 			foreach (var file in seq) {
 				RestorePatchedFile(file.TargetPath);
 			}
-		}
-
-		public static XmlHistory ApplyInstructions(
-			AppInfo appInfo, IEnumerable<PatchInstruction> seq, ILogger logger, ProgressObject po, bool alwaysPatch) {
-		    var byFile =
-		        from file in seq
-		        where file.IsEnabled
-		        let target = file.Patch.PatchInfo.GetTargetFile(appInfo)
-				group file by target.FullName;
-			byFile = byFile.ToList();
-			var fileProgress = new ProgressObject();
-			po.Child.Value = fileProgress;
-			var patchProgress = new ProgressObject();
-			fileProgress.Child.Value = patchProgress;
-			var myAttributesAssembly = typeof (Patchwork.Attributes.AppInfo).Assembly;
-			var attributesAssemblyName = Path.GetFileName(myAttributesAssembly.Location);
-			var history = new List<XmlFileHistory>();
-			po.TaskTitle.Value = "Patching Game";
-			po.TaskText.Value = appInfo.AppName;
-			po.Total.Value = byFile.Count();
-			
-			
-			
-			foreach (var patchesForFile in byFile) {
-				var patchCount = patchesForFile.Count();
-				po.TaskTitle.Value = $"Patching {appInfo.AppName}";
-				po.TaskText.Value = Path.GetFileName(patchesForFile.Key);
-				var localAssemblyName = Path.Combine(patchesForFile.Key, "..", attributesAssemblyName);
-				var copy = true;
-				fileProgress.TaskTitle.Value = "Patching File";
-				fileProgress.TaskText.Value = "Copying Attributes Assembly";
-				fileProgress.Total.Value = 2 + patchCount;
-				if (File.Exists(localAssemblyName)) {
-					try {
-						var localAssembly = AssemblyCache.Default.ReadAssembly(localAssemblyName);
-						if (localAssembly.GetAssemblyMetadataString() == myAttributesAssembly.GetAssemblyMetadataString()) {
-							copy = false;
-						}
-					}
-					catch {
-						//if reading the assembly failed for any reason, just ignore...
-					}
-				}
-				if (copy) {
-					File.Copy(myAttributesAssembly.Location, localAssemblyName, true);
-				}
-				fileProgress.Current.Value++;
-				
-				var backupModified = GetBackupForModified(patchesForFile.Key);
-				var backupOrig = GetBackupForOriginal(patchesForFile.Key);
-				fileProgress.TaskText.Value = "Applying Patch";
-				
-				if (!DoesFileMatchPatchList(backupModified, patchesForFile.Key, patchesForFile) || alwaysPatch) {
-					var patcher = new AssemblyPatcher(patchesForFile.Key, logger) {
-						EmbedHistory = true
-					};
-					
-					foreach (var patch in patchesForFile) {
-						patcher.PatchManifest(patch.Patch, patchProgress);
-						fileProgress.Current.Value++;
-					}
-					patchProgress.TaskText.Value = "";
-					patchProgress.TaskTitle.Value = "";
-					
-					if (Environment.OSVersion.Platform == PlatformID.Win32NT) {
-						fileProgress.TaskText.Value = "Running PEVerify...";
-						try {
-							logger.Information(patcher.RunPeVerify(Path.GetDirectoryName(patchesForFile.Key),appInfo.IgnorePEVerifyErrors));
-						}
-						catch (Exception ex) {
-							logger.Error(ex, "Failed to run PEVerify on the assembly.");
-						}
-					}
-					fileProgress.Current.Value++;
-					fileProgress.TaskText.Value = "Writing Assembly";
-					patcher.WriteTo(backupModified);
-				} else {
-					fileProgress.Current.Value += patchCount;
-				}
-				
-				SwitchFilesSafely(backupModified, patchesForFile.Key, backupOrig);
-				history.Add(new XmlFileHistory() {
-					TargetPath = patchesForFile.Key,
-					PatchHistory = patchesForFile.Select(patch => new XmlPatchHistory(patch.PatchLocation)).ToList(),
-				});
-				AssemblyCache.Default.Clear();
-				po.Current.Value++;
-			}
-			return new XmlHistory() {
-				Files = history
-			};
 		}
 
 		public static void RestorePatchedFile(string file) {

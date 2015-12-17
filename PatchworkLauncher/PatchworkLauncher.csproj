@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GUI\Helpers\DisposingBindingList.cs" />
+    <Compile Include="Patching\DebugOptions.cs" />
     <Compile Include="Patching\PatchingHelper.cs" />
     <Compile Include="Patching\PatchInstruction.cs" />
     <Compile Include="Patching\PatchInstructionSequence.cs" />

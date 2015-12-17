@@ -37,6 +37,7 @@
 			this.guiPwVersion = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.guiGameIcon = new System.Windows.Forms.PictureBox();
+			this.guiChangeFolder = new System.Windows.Forms.Button();
 			((System.ComponentModel.ISupportInitialize)(this.guiGameIcon)).BeginInit();
 			this.SuspendLayout();
 			// 
@@ -45,7 +46,7 @@
 			this.guiGameName.AutoSize = true;
 			this.guiGameName.BackColor = System.Drawing.Color.Transparent;
 			this.guiGameName.Font = new System.Drawing.Font("Century", 27.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.guiGameName.Location = new System.Drawing.Point(55, 17);
+			this.guiGameName.Location = new System.Drawing.Point(64, 6);
 			this.guiGameName.Name = "guiGameName";
 			this.guiGameName.Size = new System.Drawing.Size(331, 44);
 			this.guiGameName.TabIndex = 0;
@@ -58,7 +59,7 @@
 			this.guiGameVersion.BackColor = System.Drawing.Color.Transparent;
 			this.guiGameVersion.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.guiGameVersion.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-			this.guiGameVersion.Location = new System.Drawing.Point(531, 38);
+			this.guiGameVersion.Location = new System.Drawing.Point(461, 27);
 			this.guiGameVersion.Name = "guiGameVersion";
 			this.guiGameVersion.RightToLeft = System.Windows.Forms.RightToLeft.No;
 			this.guiGameVersion.Size = new System.Drawing.Size(70, 18);
@@ -75,10 +76,10 @@
 			this.guiLaunchWithMods.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
 			this.guiLaunchWithMods.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
 			this.guiLaunchWithMods.Font = new System.Drawing.Font("Georgia", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.guiLaunchWithMods.Location = new System.Drawing.Point(21, 60);
+			this.guiLaunchWithMods.Location = new System.Drawing.Point(21, 50);
 			this.guiLaunchWithMods.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
 			this.guiLaunchWithMods.Name = "guiLaunchWithMods";
-			this.guiLaunchWithMods.Size = new System.Drawing.Size(592, 74);
+			this.guiLaunchWithMods.Size = new System.Drawing.Size(526, 74);
 			this.guiLaunchWithMods.TabIndex = 3;
 			this.guiLaunchWithMods.Text = "Launch with Mods";
 			this.guiLaunchWithMods.UseVisualStyleBackColor = false;
@@ -93,10 +94,10 @@
 			this.guiLaunchNoMods.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
 			this.guiLaunchNoMods.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
 			this.guiLaunchNoMods.Font = new System.Drawing.Font("Georgia", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.guiLaunchNoMods.Location = new System.Drawing.Point(21, 142);
+			this.guiLaunchNoMods.Location = new System.Drawing.Point(21, 132);
 			this.guiLaunchNoMods.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
 			this.guiLaunchNoMods.Name = "guiLaunchNoMods";
-			this.guiLaunchNoMods.Size = new System.Drawing.Size(592, 63);
+			this.guiLaunchNoMods.Size = new System.Drawing.Size(526, 63);
 			this.guiLaunchNoMods.TabIndex = 4;
 			this.guiLaunchNoMods.Text = "Launch without Mods";
 			this.guiLaunchNoMods.UseVisualStyleBackColor = false;
@@ -110,7 +111,7 @@
 			this.guiActiveMods.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
 			this.guiActiveMods.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
 			this.guiActiveMods.Font = new System.Drawing.Font("Georgia", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.guiActiveMods.Location = new System.Drawing.Point(472, 213);
+			this.guiActiveMods.Location = new System.Drawing.Point(406, 203);
 			this.guiActiveMods.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
 			this.guiActiveMods.Name = "guiActiveMods";
 			this.guiActiveMods.Size = new System.Drawing.Size(141, 36);
@@ -126,7 +127,7 @@
 			this.guiPwVersion.BackColor = System.Drawing.Color.Transparent;
 			this.guiPwVersion.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.guiPwVersion.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-			this.guiPwVersion.Location = new System.Drawing.Point(204, 213);
+			this.guiPwVersion.Location = new System.Drawing.Point(204, 243);
 			this.guiPwVersion.Name = "guiPwVersion";
 			this.guiPwVersion.RightToLeft = System.Windows.Forms.RightToLeft.No;
 			this.guiPwVersion.Size = new System.Drawing.Size(35, 18);
@@ -141,7 +142,7 @@
 			this.label2.BackColor = System.Drawing.Color.Transparent;
 			this.label2.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.label2.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-			this.label2.Location = new System.Drawing.Point(18, 213);
+			this.label2.Location = new System.Drawing.Point(18, 243);
 			this.label2.Name = "label2";
 			this.label2.RightToLeft = System.Windows.Forms.RightToLeft.No;
 			this.label2.Size = new System.Drawing.Size(180, 18);
@@ -153,11 +154,28 @@
 			// guiGameIcon
 			// 
 			this.guiGameIcon.InitialImage = null;
-			this.guiGameIcon.Location = new System.Drawing.Point(21, 23);
+			this.guiGameIcon.Location = new System.Drawing.Point(21, 12);
 			this.guiGameIcon.Name = "guiGameIcon";
 			this.guiGameIcon.Size = new System.Drawing.Size(37, 33);
 			this.guiGameIcon.TabIndex = 8;
 			this.guiGameIcon.TabStop = false;
+			// 
+			// guiChangeFolder
+			// 
+			this.guiChangeFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.guiChangeFolder.BackColor = System.Drawing.SystemColors.Control;
+			this.guiChangeFolder.FlatAppearance.BorderColor = System.Drawing.Color.Black;
+			this.guiChangeFolder.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
+			this.guiChangeFolder.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
+			this.guiChangeFolder.Font = new System.Drawing.Font("Georgia", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.guiChangeFolder.Location = new System.Drawing.Point(21, 203);
+			this.guiChangeFolder.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+			this.guiChangeFolder.Name = "guiChangeFolder";
+			this.guiChangeFolder.Size = new System.Drawing.Size(160, 36);
+			this.guiChangeFolder.TabIndex = 9;
+			this.guiChangeFolder.Text = "Change Game Folder";
+			this.guiChangeFolder.UseVisualStyleBackColor = false;
+			this.guiChangeFolder.Click += new System.EventHandler(this.guiChangeFolder_Click);
 			// 
 			// guiHome
 			// 
@@ -165,7 +183,8 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.Linen;
 			this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-			this.ClientSize = new System.Drawing.Size(633, 258);
+			this.ClientSize = new System.Drawing.Size(567, 270);
+			this.Controls.Add(this.guiChangeFolder);
 			this.Controls.Add(this.guiGameIcon);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.guiPwVersion);
@@ -198,6 +217,7 @@
 		private System.Windows.Forms.Label guiPwVersion;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.PictureBox guiGameIcon;
+		private System.Windows.Forms.Button guiChangeFolder;
 	}
 }
 

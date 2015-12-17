@@ -73,6 +73,8 @@ namespace PatchworkLauncher {
 
 		private const string _modFolder = "Mods";
 
+		private const bool _copyToModFolder = false;
+
 		private readonly OpenFileDialog _openModDialog = new OpenFileDialog() {
 			Filter = "Patchwork Mod Files (*.pw.dll)|*.pw.dll|DLL files (*.dll)|*.dll|All files (*.*)|*.*",
 			CheckFileExists = true,
@@ -82,7 +84,8 @@ namespace PatchworkLauncher {
 			FilterIndex = 0,
 			SupportMultiDottedExtensions = true,
 			AutoUpgradeEnabled = true,
-			InitialDirectory = PathHelper.GetAbsolutePath("")
+			InitialDirectory = PathHelper.GetAbsolutePath(""),
+			RestoreDirectory = false,
 		};
 
 		public int Command_MovePatch(int index, int offset) {
@@ -132,14 +135,29 @@ namespace PatchworkLauncher {
 		private static readonly XmlSerializer _instructionSerializer = new XmlSerializer(typeof (XmlSettings));
 
 		public async void Command_Launch_Modded() {
-			XmlHistory history;
+			XmlHistory history = null;
 			var progObj = new ProgressObject();
+
 			using (var logForm = new LogForm(progObj) {
 				
 			}) {
 				logForm.Show();
 				State.Value = LaunchManagerState.IsPatching;
-				history = await Task.Run(() => PatchingHelper.ApplyInstructions(AppInfo, Instructions, Logger, progObj, false));
+				try {
+					history = await Task.Run(() => ApplyInstructions(progObj));
+				}
+				catch (Exception ex) {
+					Command_Display_Error("Patching the game", ex:ex);
+					State.Value = LaunchManagerState.Idle;
+					return;
+				}
+				finally {
+					if (DebugOptions.Default.OpenLogAfterPatch) {
+						Process.Start(_pathLogFile);
+					}
+				}
+
+
 				_historySerializer.Serialize(history, _pathHistoryXml);
 				logForm.Close();
 			}
@@ -151,14 +169,16 @@ namespace PatchworkLauncher {
 				}
 			};
 			State.HasChanged += p;
-			if (false) {
-				State.Value = LaunchManagerState.Idle;
-			} else {
-				Command_Launch();
+			Command_Launch();
+		}
+
+		public void Command_ChangeFolder() {
+			if (Command_SetGameFolder_Dialog()) {
+				Command_ExitApplication();
 			}
 		}
 
-		public bool Command_SetGameFolder_Dialog() {
+		private bool Command_SetGameFolder_Dialog() {
 			bool wasHomeDisabled = false;
 			try {
 				using (var input = new guiInputGameFolder()) {
@@ -182,6 +202,10 @@ namespace PatchworkLauncher {
 		}
 
 		public void Command_Launch() {
+			if (DebugOptions.Default.DontRunProgram) {
+				State.Value = LaunchManagerState.Idle;
+				return;
+			}
 			var process = new Process() {
 				StartInfo = {
 					FileName = AppInfo.Executable.FullName
@@ -215,7 +239,7 @@ namespace PatchworkLauncher {
 		public PatchInstruction Command_Direct_AddPatch(string path, bool isEnabled) {
 			var targetPath = path;
 			var fileName = Path.GetFileName(path);
-			targetPath = Path.Combine(_modFolder, fileName);
+			
 			bool hadToCopy = false;
 			PatchingManifest manifest = null;
 			try {
@@ -224,18 +248,19 @@ namespace PatchworkLauncher {
 				var absoluteFolder = PathHelper.GetAbsolutePath(folder);
 				var modsPath = PathHelper.GetAbsolutePath(_modFolder);
 				
-				if (!modsPath.Equals(absoluteFolder, StringComparison.InvariantCultureIgnoreCase)) {
+				if (!DebugOptions.Default.DontCopyFiles && !modsPath.Equals(absoluteFolder, StringComparison.InvariantCultureIgnoreCase)) {
+					targetPath = Path.Combine(_modFolder, fileName);
 					File.Copy(path, targetPath, true);
 					hadToCopy = true;
 				}
-				manifest = ManifestMaker.CreateManifest(targetPath);
+				manifest = ManifestMaker.CreateManifest(PathHelper.GetAbsolutePath(targetPath));
 				if (manifest.PatchInfo == null) {
 					throw new PatchDeclerationException("The patch did not have a PatchInfo class.");
 				}
 				var patchInstruction = new PatchInstruction() {
 					IsEnabled = isEnabled,
 					Patch = manifest,
-					PatchLocation = targetPath,
+					PatchLocation = PathHelper.GetRelativePath(targetPath),
 					AppInfo = AppInfo,
 					PatchOriginalLocation = path
 				};
@@ -312,6 +337,7 @@ namespace PatchworkLauncher {
 		}
 
 		public guiHome Command_Start() {
+
 			try {
 				var gameInfoFactory = LoadAppInfoFactory();
 				File.Delete(_pathLogFile);
@@ -395,5 +421,103 @@ namespace PatchworkLauncher {
 			}
 		}
 
+		private XmlHistory ApplyInstructions(ProgressObject po) {
+			var seq = Instructions;
+			var appInfo = AppInfo;
+			var logger = Logger;
+			var byFile =
+				from file in seq
+				where file.IsEnabled
+				let target = file.Patch.PatchInfo.GetTargetFile(appInfo)
+				group file by target.FullName;
+			byFile = byFile.ToList();
+			var fileProgress = new ProgressObject();
+			po.Child.Value = fileProgress;
+			var patchProgress = new ProgressObject();
+			fileProgress.Child.Value = patchProgress;
+			var myAttributesAssembly = typeof (Patchwork.Attributes.AppInfo).Assembly;
+			var attributesAssemblyName = Path.GetFileName(myAttributesAssembly.Location);
+			var history = new List<XmlFileHistory>();
+			po.TaskTitle.Value = "Patching Game";
+			po.TaskText.Value = appInfo.AppName;
+			po.Total.Value = byFile.Count();
+			
+			
+			
+			foreach (var patchesForFile in byFile) {
+				var patchCount = patchesForFile.Count();
+				po.TaskTitle.Value = $"Patching {appInfo.AppName}";
+				po.TaskText.Value = Path.GetFileName(patchesForFile.Key);
+				var localAssemblyName = Path.Combine(patchesForFile.Key, "..", attributesAssemblyName);
+				var copy = true;
+				fileProgress.TaskTitle.Value = "Patching File";
+				fileProgress.TaskText.Value = "Copying Attributes Assembly";
+				fileProgress.Total.Value = 2 + patchCount;
+				if (File.Exists(localAssemblyName)) {
+					try {
+						var localAssembly = AssemblyCache.Default.ReadAssembly(localAssemblyName);
+						if (localAssembly.GetAssemblyMetadataString() == myAttributesAssembly.GetAssemblyMetadataString()) {
+							copy = false;
+						}
+					}
+					catch {
+						//if reading the assembly failed for any reason, just ignore...
+					}
+				}
+				if (copy) {
+					File.Copy(myAttributesAssembly.Location, localAssemblyName, true);
+				}
+				fileProgress.Current.Value++;
+				
+				var backupModified = PatchingHelper.GetBackupForModified(patchesForFile.Key);
+				var backupOrig = PatchingHelper.GetBackupForOriginal(patchesForFile.Key);
+				fileProgress.TaskText.Value = "Applying Patch";
+				
+				if (!PatchingHelper.DoesFileMatchPatchList(backupModified, patchesForFile.Key, patchesForFile) || DebugOptions.Default.AlwaysPatch) {
+					var patcher = new AssemblyPatcher(patchesForFile.Key, logger) {
+						EmbedHistory = true
+					};
+					
+					foreach (var patch in patchesForFile) {
+						try {
+							patcher.PatchManifest(patch.Patch, patchProgress);
+						}
+						catch (PatchException ex) {
+							Command_Display_Error("Patch a game file", patch.Name, ex);
+							throw;
+						}
+						fileProgress.Current.Value++;
+					}
+					patchProgress.TaskText.Value = "";
+					patchProgress.TaskTitle.Value = "";
+					
+					if (Environment.OSVersion.Platform == PlatformID.Win32NT) {
+						fileProgress.TaskText.Value = "Running PEVerify...";
+						try {
+							logger.Information(patcher.RunPeVerify(Path.GetDirectoryName(patchesForFile.Key),appInfo.IgnorePEVerifyErrors));
+						}
+						catch (Exception ex) {
+							logger.Error(ex, "Failed to run PEVerify on the assembly.");
+						}
+					}
+					fileProgress.Current.Value++;
+					fileProgress.TaskText.Value = "Writing Assembly";
+					patcher.WriteTo(backupModified);
+				} else {
+					fileProgress.Current.Value += patchCount;
+				}
+				
+				PatchingHelper.SwitchFilesSafely(backupModified, patchesForFile.Key, backupOrig);
+				history.Add(new XmlFileHistory() {
+					TargetPath = patchesForFile.Key,
+					PatchHistory = patchesForFile.Select(patch => new XmlPatchHistory(patch.PatchLocation)).ToList(),
+				});
+				AssemblyCache.Default.Clear();
+				po.Current.Value++;
+			}
+			return new XmlHistory() {
+				Files = history
+			};
+		}
 	}
 }

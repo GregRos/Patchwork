@@ -52,6 +52,27 @@ namespace Patchwork.Utility {
 			}
 		}
 
+		public static string CommonNameForMemberDef<T>()
+			where T : IMemberDefinition {
+			var t = typeof (T);
+			if (t == typeof (FieldDefinition)) {
+				return "field";
+			}
+			if (t == typeof (MethodDefinition)) {
+				return "method";
+			}
+			if (t == typeof (TypeDefinition)) {
+				return "type";
+			}
+			if (t == typeof (PropertyDefinition)) {
+				return "property";
+			}
+			if (t == typeof (EventDefinition)) {
+				return "event";
+			}
+			return "unknown";
+		}
+
 		private static IDictionary<BaseAssemblyResolver, IList<AssemblyResolveEventHandler>> _resolveDictionary =
 			new Dictionary<BaseAssemblyResolver, IList<AssemblyResolveEventHandler>>();
 

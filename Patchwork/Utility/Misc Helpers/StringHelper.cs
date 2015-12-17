@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using static System.Math;
 namespace Patchwork.Utility
 {
 	public static class StringHelper {
@@ -12,6 +12,18 @@ namespace Patchwork.Utility
 
 		public static string Join(this IEnumerable<string> strs, string sep = "") {
 			return String.Join(sep, strs);
+		}
+
+		public static string FindLongestCommonSubstring(string a, string b, bool caseInsensitive = false) {
+			var commonString = "";
+			for (int i = 0; i < Min(a.Length, b.Length); i++) {
+				var comparisonMode =caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+				if (!String.Equals(a[i].ToString(), b[i].ToString(), comparisonMode)) {
+					return commonString;
+				}
+				commonString += a[i];
+			}
+			return commonString;
 		}
 
 		public static bool IsNullOrWhitespace(this string str) {

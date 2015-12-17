@@ -10,21 +10,19 @@ using Mono.Cecil;
 using Patchwork.Attributes;
 using Patchwork.Utility;
 
-namespace PatchworkLauncher
-{
-	static class Program
-	{
+namespace PatchworkLauncher {
+	static class Program {
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
 		[STAThread]
-		static void Main()
-		{
+		static void Main() {
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 			LaunchManager.Instance.Command_Start();
 			Application.Run();
-			
+
 		}
 	}
+
 }

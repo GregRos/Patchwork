@@ -79,7 +79,7 @@ namespace Patchwork {
 				} else if (member is TypeReference) {
 					return notNotMatch || !attribute.Target.HasFlag(PatchingTarget.Type);
 				} else {
-					throw new PatchInternalException($"Unknown member type: {member.GetType()}");
+					throw new ArgumentException($"Unknown member type: {member.GetType()}");
 				}
 			};
 			return memberFilter;

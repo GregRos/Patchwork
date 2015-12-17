@@ -115,6 +115,11 @@ namespace Patchwork {
 			where T : MemberReference,IMemberDefinition  {
 			foreach (var item in lookup[typeof (ModifiesMemberAttribute), typeof (MemberAliasAttribute)]) {
 				item.TargetMember = GetPatchedMember(item.TypeAction.TargetType, item.YourMember, item.ActionAttribute);
+				
+				if (item.TargetMember == null) {
+					var memberName = GetPatchedMemberName(item.YourMember, item.ActionAttribute);
+					throw Errors.Missing_member_in_attribute(CecilHelper.CommonNameForMemberDef<T>(), item.YourMember, memberName);
+				} 
 			}
 		}
 

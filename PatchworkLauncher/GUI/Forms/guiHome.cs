@@ -15,9 +15,9 @@ namespace PatchworkLauncher {
 
 	public partial class guiHome : Form {
 
-		public LaunchManager Manager
-		{
-			get; private set;
+		public LaunchManager Manager {
+			get;
+			private set;
 		}
 
 		public guiHome(LaunchManager manager) {
@@ -42,7 +42,7 @@ namespace PatchworkLauncher {
 			this.Bind(x => x.Enabled).Binding = isEnabled.ToBinding(BindingMode.IntoTarget);
 			isEnabled.HasChanged += x => {
 				if (x.Value) {
-					Invoke((Action)(() => this.Focus()));
+					Invoke((Action) (() => this.Focus()));
 				}
 			};
 		}
@@ -51,13 +51,14 @@ namespace PatchworkLauncher {
 			Manager.Command_Launch_Modded();
 		}
 
-		private void guiPreferences_Click(object sender, EventArgs e) {
-			Manager.Command_SetGameFolder_Dialog();
+
+
+		private void label2_Click(object sender, EventArgs e) {
+
 		}
 
-		private void label2_Click(object sender, EventArgs e)
-		{
-
+		private void guiChangeFolder_Click(object sender, EventArgs e) {
+			Manager.Command_ChangeFolder();
 		}
 	}
 }

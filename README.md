@@ -1,17 +1,19 @@
 # Patchwork<a href="https://gitter.im/GregRos/Patchwork"><img style="float: right" src="https://badges.gitter.im/Join%20Chat.svg"/></a>
 **License:** [MIT License](http://opensource.org/licenses/MIT) 
 
-**Latest Version:** 0.6.0
+**Latest Version:** 0.8.0
 
-**Patchwork** is a library for integrating your own code into existing .NET assemblies ("patching" them). It allows you to edit, create, or replace things such as types, properties, and methods in a simple, straight-forward, and declarative way, using attributes.
+**Patchwork** is a framework for integrating your own code into existing .NET assemblies ("patching" them). It allows you to edit, create, or replace things such as types, properties, and methods in a simple, straight-forward, and declarative way, using attributes.
 
-The library lets you basically rewrite entire programs, such as games, according to your whims (as long as they're written in a .NET language of course). Little in the code is beyond your control, and you can write it all using the same tools as the original developers. 
+The framework lets you basically rewrite entire programs, such as games, according to your whims (as long as they're written in a .NET language of course). Little in the code is beyond your control, and you can write it all using the same tools as the original developers. 
 
 You write code in C# or another language, and that code is injected into the target assembly according to your patching declarations. It is minimally transformed, fixing references to such things as types and methods, so that it remains valid at the point of injection.
 
-The library was written with game modding in mind, specifically, for [Pillars of Eternity](http://eternity.obsidian.net/), though you can use it for any purpose. It is based, in principle, on the [IE modding framework](https://bitbucket.org/Bester/poe-modding-framework) for Pillars of Eternity, though it doesn't share any code with it at this point.
+The framework was written with game modding in mind, specifically, for [Pillars of Eternity](http://eternity.obsidian.net/), though you can use it for any purpose. It is based, in principle, on the [IE modding framework](https://bitbucket.org/Bester/poe-modding-framework) for Pillars of Eternity, though it doesn't share any code with it at this point.
 
-The library is mostly documented, including the non-public members. I'd welcome any help you could give in improving it, as there is a lot that could be done.
+The framework is partially documented, including the non-public members. I'd welcome any help you could give in improving it, as there is a lot that could be done.
+
+As of version 0.8.0, the framework has a launcher that allows automatic patching by the end-user.
 
 ## Moddable Games
 Like I said above, the library was written with game modding in mind. In general, you can mod two kinds of games with it: i
@@ -26,9 +28,9 @@ Luckily, the majority of popular Unity titles do primarily use .NET.
 Modding in this case is somewhat more limited, as you can only mod the game logic in the scripts, but from experience, you still have vastly more power than typical official modding tools would give you.
 
 ## Usage Guide
-You need to know some C# or another .NET language, depending on the scope of your modifications, and have a decent IDE.
+You need to know some C# or another .NET language, depending on the scope of your modifications, and have a decent IDE. 
 
-You can reference this library from NuGet or you can just add this source to your project. Personally I'd recommend adding the source, as the library is still in its early stages, doesn't have complete error reporting, and you may also encounter bugs when using the more advanced features.
+<s>You can reference this framework from NuGet</s> or you can just add this source to your project. Personally I'd recommend adding the source, as the framework is still in its early stages, doesn't have complete error reporting, and you may also encounter bugs when using the more advanced features.
 
 Patchwork consists of two assemblies, `Patchwork` and `Patchwork.Attributes`.
 
@@ -38,7 +40,6 @@ The `Patchwork` assembly is the one that actually does the patching.
 
 ### Finding what to Patch
 Before you start patching, you need to find what you want to patch first. This involves decompiling the target assembly. See *Recommended Decompilers* below for more information. 
-
 
 Also, take note of the target framework version of the assembly, as for the most reliable results you'd want your patch to be built against the same framework version.
 
@@ -108,6 +109,49 @@ A very extensive example of modifying an assembly using Patchwork (and modding a
 [Here](https://github.com/serilog/serilog/wiki/Configuration-Basics) is a simple tutorial on what you need to do to configure this log. As this library evolves, you won't have to deal with configuring the log yourself.
 
 Only completely unexpected or obviously fatal errors throw an exception. 
+
+## Patchwork Launcher
+As of version 0.8.0, Patchwork includes a launcher that allows patching by the end-user. It's written for game modding.
+
+Each launcher executable is meant to work with one game. To work with a game, someone must write an `app.dll` assembly (as described below) and put it in the launcher directory. The launcher loads it on startup and uses it to get information about the game. The launcher should be distributed with this file.
+
+The launcher allows users to manage patches for the chosen game, as well as change the order in which they are applied. It keeps the original game files on disk and switches them with modded files when the user launches the game. It only patches the files when necessary. It stays in the background, and once the game is exited, the launcher switches to the original files once more. 
+
+Once it starts up, the launcher also checks the state of the files and fixes them if necessary, in case it was terminated unexpectedly.
+
+The launcher is supposed to work on Mono and is written in Windows Forms for that purpose, but it will take a while until it works correctly there.
+
+### Patch Format
+The recommended extension for patch assemblies is `pw.dll`.
+
+In order for a patch assembly to work with the launcher, it must define a class with the following requirements. Note that it creates a dependency on the `Patchwork.Attributes` assembly.
+
+1. It implements `Patchwork.Attributes.IPatchInfo`
+2. It is decorated with `Patchwork.Attributes.PatchInfoAttribute`.
+3. It has a default constructor.
+
+There must be only one such class in the assembly.
+
+This class is dynamically instantiated by the launcher and is used to provide information about the patch and aid in patching. That is, unlike the rest of the code in the assembly, the code is actually executed by the framework.
+
+The class should not contain any references to any types not found in the GAC or in `Patchwork.Attributes`.
+
+It is instantiated in a separate AppDomain from the rest of the application, and this AppDomain is unloaded if the user removes it from the patch list.
+
+The `PatchInfo` is needed to tell the launcher what file to patch. The class can find the file based on the operating system and other information.
+
+### app.dll
+This file is required for the launcher to work correctly with a game. It's an assembly (the name doesn't matter) containing a type that:
+
+1. Inherits from `Patchwork.Attributes.AppInfoFactory`.
+2. Is decorated with `Patchwork.Attributes.AppInfoFactoryAttribute`.
+3. Has a default constructor.
+
+This type has a `CreateInfo` method that returns an `Pathcwork.Attributes.AppInfo` object which provides information about the game.
+
+There must be only one such class in the assembly.
+
+This class is instantiated during runtime, in the same AppDomain as the original application. The launcher can't start if the file is invalid or not found.
 
 ## Available Attributes
 These attributes are located in the `Patchwork.Attributes` namespace. Note that this isn't necessarily a full list.
@@ -195,7 +239,7 @@ However, you can choose to put `NewMember` on the property, in which case the ac
 
 This also applies to the property's accessibility. In the IL, only get/set methods have accessibility, so if you want to modify it you have to put the attribute on the accessor, possibly on both.
 
-You might need to use the explicit name of the property accessor to modify it (if your property is named differently). Accessor names are normally `get_PROPERTY` and `set_PROPERTY`.
+You might need to use the explicit name of the property accessor to modify it (if your property is named differently). Accessor names are normally `get_{Property}` and `set_{Property}`.
 
 Pretty much *the only* time you'd want to use `ModifiesMember` attribute on a property itself is when you want to create a brand new accessor for the property. In this case, the property data must be modified. You'll still put the `NewMember` attribute on the new accessor.  
 

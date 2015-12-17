@@ -48,13 +48,13 @@ namespace Patchwork {
 		public static PatchDeclerationException Invalid_member(string kind, MemberReference memberRef, string identifier, string info)
 		{
 			return new PatchDeclerationException(
-				$"The attribute on '{memberRef.FullName}' refers to '{identifier}', but that member is invalid in this context. More info: {info}");
+				$"The attribute on the {kind} '{memberRef.FullName}' refers to '{identifier}', but that member is invalid in this context. More info: {info}");
 		}
 
 		public static PatchDeclerationException Missing_member_in_attribute(string kind, MemberReference memberRef, string identifier) {
 			return
 				new PatchDeclerationException(
-					$"The attribute on '{memberRef.FullName}' refers to '{identifier}', but that member doesn't exist.");
+					$"The attribute on the {kind} called '{memberRef.FullName}' refers to '{identifier}', but that member doesn't exist in this context (possibly overload resolution failure).");
 		}
 
 		internal static PatchImportException Feature_not_supported(string format, params object[] args) {
