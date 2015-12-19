@@ -15,5 +15,10 @@ namespace PatchworkLauncher {
 			get;
 			set;
 		} = new List<XmlFileHistory>();
+
+		public bool Success {
+			get;
+			set;
+		}
 	}
 }

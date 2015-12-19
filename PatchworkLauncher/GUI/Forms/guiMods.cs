@@ -33,7 +33,7 @@ namespace PatchworkLauncher {
 		}
 
 		private void guiAdd_Click(object sender, EventArgs e) {
-			LaunchManager.Instance.Command_Dialog_AddPatch(this);
+			Manager.Command_Dialog_AddPatch(this);
 		}
 
 		private void guiRemove_Click(object sender, EventArgs e) {

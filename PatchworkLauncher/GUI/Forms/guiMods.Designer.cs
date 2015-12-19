@@ -28,7 +28,6 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(guiMods));
 			this.guiInstructionsGridView = new System.Windows.Forms.DataGridView();
 			this.guiOn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
 			this.guiName = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -210,7 +209,6 @@
 			this.Controls.Add(this.guiMoveDown);
 			this.Controls.Add(this.guiMoveUp);
 			this.Controls.Add(this.guiInstructionsGridView);
-			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Name = "guiMods";
 			this.Text = "Patchwork Launcher";
 			this.Load += new System.EventHandler(this.guiMods_Load);

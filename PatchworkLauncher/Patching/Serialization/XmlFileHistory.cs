@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Serialization;
 
 namespace PatchworkLauncher {
@@ -14,6 +15,13 @@ namespace PatchworkLauncher {
 		public string TargetPath {
 			get;
 			set;
+		}
+
+		public static XmlFileHistory FromInstrGroup(PatchGroup group) {
+			return new XmlFileHistory() {
+				PatchHistory = group.Instructions.Select(XmlPatchHistory.FromInstruction).ToList(),
+				TargetPath = group.TargetPath
+			};
 		}
 
 	}

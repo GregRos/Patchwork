@@ -26,7 +26,7 @@ namespace PatchworkLauncher {
 		}
 
 		private void guiActiveMods_Click(object sender, EventArgs e) {
-			LaunchManager.Instance.Command_OpenMods();
+			Manager.Command_OpenMods();
 		}
 
 		private void guiLaunchNoMods_Click(object sender, EventArgs e) {

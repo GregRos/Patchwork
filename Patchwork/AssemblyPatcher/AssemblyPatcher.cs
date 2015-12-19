@@ -409,8 +409,8 @@ namespace Patchwork {
 		/// <param name="ignoreErrors">A list of error numbers to ignore. Errors usually appear in hexadecimal format.</param>
 		/// <param name="switches">Command line switches supplied to PEVerify. </param>
 		/// <returns></returns>
-		public string RunPeVerify(string targetFolder, IEnumerable<long> ignoreErrors = null, string switches = PeVerifyRunner.DefaultPeVerifySwitches) {
-			return PeVerifyRunner.RunPeVerify(TargetAssembly, targetFolder,switches, ignoreErrors);
+		public PEVerifyOutput RunPeVerify(PEVerifyInput input) {
+			return PeVerifyRunner.RunPeVerify(TargetAssembly, input);
 		}
 
 		public void WriteTo(string path) {

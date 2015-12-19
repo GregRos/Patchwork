@@ -4,6 +4,9 @@ using System.IO;
 using Mono.Cecil;
 
 namespace Patchwork.Utility {
+	/// <summary>
+	/// An AssemblyDefinition loader that doesn't load an assembly if it's in the cache.
+	/// </summary>
 	public class AssemblyCache {
 
 		public static readonly AssemblyCache Default = new AssemblyCache();

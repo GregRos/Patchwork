@@ -21,5 +21,6 @@ namespace Patchwork {
 
 		protected PatchException(string message) : base(message) {
 		}
+
 	}
 }

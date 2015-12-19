@@ -26,6 +26,6 @@ namespace Patchwork.Utility.Binding {
 		/// </summary>
 		TwoWay = IntoTarget | FromTarget,
 
-		TwoWayPrioritizeTarget = 0x4
+		TwoWayPrioritizeTarget = IntoTarget | FromTarget | 0x4
 	}
 }

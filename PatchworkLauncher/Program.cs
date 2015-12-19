@@ -17,9 +17,11 @@ namespace PatchworkLauncher {
 		/// </summary>
 		[STAThread]
 		static void Main() {
+			
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-			LaunchManager.Instance.Command_Start();
+			var manager = new LaunchManager();
+			manager.Command_Start();
 			Application.Run();
 
 		}

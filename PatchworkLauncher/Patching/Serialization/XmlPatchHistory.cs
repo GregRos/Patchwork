@@ -12,5 +12,9 @@ namespace PatchworkLauncher {
 			get;
 			set;
 		} = "";
+
+		public static XmlPatchHistory FromInstruction(PatchInstruction instr) {
+			return new XmlPatchHistory(instr.PatchLocation);
+		}
 	}
 }

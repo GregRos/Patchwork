@@ -323,7 +323,7 @@ namespace Patchwork {
 					targetOperand = yourOperand;
 				}
 
-				var targetInstruction = CecilHelper.CreateInstruction(yourInstruction.OpCode, targetOperand);
+				var targetInstruction = Hacks.CreateInstruction(yourInstruction.OpCode, targetOperand);
 				targetInstruction.OpCode = targetOpcode;
 				targetInstruction.Operand = targetOperand;
 				targetInstruction.SequencePoint = yourInstruction.SequencePoint;

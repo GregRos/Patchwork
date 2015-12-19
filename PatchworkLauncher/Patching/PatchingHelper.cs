@@ -34,6 +34,8 @@ namespace PatchworkLauncher {
 			throw new Exception($"Something is really really wrong here. Tried {timesToTry} file names and all of them are taken...");
 		}
 
+
+
 		public static bool SwitchFilesSafely(string takeFileFromPath, string putItHere, string putExistingIn) {
 			if (!File.Exists(takeFileFromPath)) {
 				return false;
@@ -147,7 +149,43 @@ namespace PatchworkLauncher {
 			var patchCheck = configPatchMetadata.SequenceEqual(patchMetas);
 			return patchCheck && pwCheck && origCheck;
 		}
-		
+
+		public static AppInfoFactory LoadAppInfoFactory(string assembly) {
+			Assembly gameInfoAssembly = null;
+			var absolutePath = PathHelper.GetAbsolutePath(assembly);
+			if (!File.Exists(absolutePath)) {
+				throw new FileNotFoundException($"The AppInfo assembly file was not found.", assembly);
+			}
+			gameInfoAssembly = Assembly.LoadFile(absolutePath);
+
+			var gameInfoFactories =
+				from type in gameInfoAssembly.GetTypes()
+				where type.GetCustomAttribute<AppInfoFactoryAttribute>() != null
+				select type;
+
+			var factories = gameInfoFactories.ToList();
+
+			if (factories.Count == 0) {
+				throw new ArgumentException(
+					$"The AppInfo assembly did not have a class decorated with {nameof(AppInfoFactoryAttribute)}");
+			}
+			if (factories.Count > 1) {
+				throw new ArgumentException(
+					$"The AppInfo assembly had more than one class decorated with {nameof(AppInfoFactoryAttribute)}");
+			}
+
+			var gameInfoFactoryType = factories[0];
+			if (!typeof (AppInfoFactory).IsAssignableFrom(gameInfoFactoryType)) {
+				throw new ArgumentException($"The AppInfoFactory class does not inherit from {nameof(AppInfoFactory)}");
+			}
+			var ctor = gameInfoFactoryType.GetConstructorEx(CommonBindingFlags.Everything, new Type[] {
+			});
+			if (ctor == null) {
+				throw new ArgumentException($"The AppInfo class did not have a default constructor.");
+			}
+			var gameInfoFactory = (AppInfoFactory) ctor.Invoke(null);
+			return gameInfoFactory;
+		}
 	}
 
 }

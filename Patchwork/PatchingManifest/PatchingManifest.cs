@@ -118,7 +118,7 @@ namespace Patchwork {
 				
 				if (item.TargetMember == null) {
 					var memberName = GetPatchedMemberName(item.YourMember, item.ActionAttribute);
-					throw Errors.Missing_member_in_attribute(CecilHelper.CommonNameForMemberDef<T>(), item.YourMember, memberName);
+					throw Errors.Missing_member_in_attribute(DisplayNameHelper.CommonNameForMemberDef<T>(), item.YourMember, memberName);
 				} 
 			}
 		}
