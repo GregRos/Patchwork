@@ -11,13 +11,22 @@ namespace Patchwork.Utility {
 	public static class PathHelper {
 		private static readonly string _executingAssemblyPath  = Assembly.GetExecutingAssembly().Location;
 		private static readonly bool _isWindows = Environment.OSVersion.VersionString.Contains("Windows");
-		public static string GetAbsolutePath(string relativePath) {
+
+		public static string GetAbsolutePath(string relativeTo, string relativePath) {
 			if (Path.IsPathRooted(relativePath)) {
 				return relativePath;
 			}
-			var result = Path.Combine(Environment.CurrentDirectory, relativePath);
+			var result = Path.Combine(relativeTo, relativePath);
 			var full = Path.GetFullPath(result);
 			return full;
+		}
+
+		public static string GetAbsolutePathFromAssembly(string relPath) {
+			return GetAbsolutePath(Path.GetDirectoryName(_executingAssemblyPath), relPath);
+		}
+
+		public static string GetAbsolutePath(string relativePath) {
+			return GetAbsolutePath (Environment.CurrentDirectory, relativePath);
 		}
 
 		public static bool IsCaseSensitive {

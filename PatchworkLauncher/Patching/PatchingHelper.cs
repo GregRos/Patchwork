@@ -152,7 +152,7 @@ namespace PatchworkLauncher {
 
 		public static AppInfoFactory LoadAppInfoFactory(string assembly) {
 			Assembly gameInfoAssembly = null;
-			var absolutePath = PathHelper.GetAbsolutePath(assembly);
+			var absolutePath = PathHelper.GetAbsolutePathFromAssembly(assembly);
 			if (!File.Exists(absolutePath)) {
 				throw new FileNotFoundException($"The AppInfo assembly file was not found.", assembly);
 			}

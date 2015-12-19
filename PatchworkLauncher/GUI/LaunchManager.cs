@@ -53,6 +53,8 @@ namespace PatchworkLauncher {
 		private static readonly XmlSerializer _instructionSerializer = new XmlSerializer(typeof (XmlSettings));
 
 		public LaunchManager() {
+			//the following is needed on linux... the current directory must be the Mono executable, which is bad.
+			Environment.CurrentDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
 			//TODO: Refactor this into a constructor?
 			try {
 				if (File.Exists(_pathLogFile)) {
