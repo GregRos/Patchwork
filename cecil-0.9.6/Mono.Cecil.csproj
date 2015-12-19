@@ -5,12 +5,25 @@
     <ProjectGuid>{D68133BD-1E63-496E-9EDE-4FBDBF77B486}</ProjectGuid>
     <RootNamespace>Mono.Cecil</RootNamespace>
     <AssemblyName>Mono.Cecil</AssemblyName>
+    <Configuration Condition=" '$(Configuration)' == '' ">winphone_Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'winphone_Debug'">
     <DefineConstants>TRACE;DEBUG;NET_3_5;NET_4_0</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'net_4_5_Debug'">
     <DefineConstants>TRACE;DEBUG;NET_3_5;NET_4_0;NET_4_5;</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'winphone_Debug|AnyCPU' ">
+    <Optimize>false</Optimize>
+    <OutputPath>bin\winphone_Debug</OutputPath>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'net_4_5_Debug|AnyCPU' ">
+    <Optimize>false</Optimize>
+    <OutputPath>bin\net_4_5_Debug</OutputPath>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFrameworkVersion)' != 'v2.0' ">
     <Reference Include="System.Core" />
