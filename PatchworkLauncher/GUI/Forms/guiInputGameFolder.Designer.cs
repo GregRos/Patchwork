@@ -33,6 +33,7 @@
 			this.button1 = new System.Windows.Forms.Button();
 			this.guiOkay = new System.Windows.Forms.Button();
 			this.guiCancel = new System.Windows.Forms.Button();
+			this.guiWarningText = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// guiLocationTextBox
@@ -94,6 +95,17 @@
 			this.guiCancel.UseVisualStyleBackColor = true;
 			this.guiCancel.Click += new System.EventHandler(this.guiCancel_Click);
 			// 
+			// guiWarningText
+			// 
+			this.guiWarningText.AutoSize = true;
+			this.guiWarningText.Font = new System.Drawing.Font("Century", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.guiWarningText.ForeColor = System.Drawing.Color.Red;
+			this.guiWarningText.Location = new System.Drawing.Point(12, 67);
+			this.guiWarningText.Name = "guiWarningText";
+			this.guiWarningText.Size = new System.Drawing.Size(105, 18);
+			this.guiWarningText.TabIndex = 5;
+			this.guiWarningText.Text = "Warning Text";
+			// 
 			// guiInputGameFolder
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -101,6 +113,7 @@
 			this.BackColor = System.Drawing.Color.Linen;
 			this.ClientSize = new System.Drawing.Size(597, 123);
 			this.ControlBox = false;
+			this.Controls.Add(this.guiWarningText);
 			this.Controls.Add(this.guiCancel);
 			this.Controls.Add(this.guiOkay);
 			this.Controls.Add(this.button1);
@@ -125,5 +138,6 @@
 		private System.Windows.Forms.Button button1;
 		private System.Windows.Forms.Button guiOkay;
 		private System.Windows.Forms.Button guiCancel;
+		private System.Windows.Forms.Label guiWarningText;
 	}
 }

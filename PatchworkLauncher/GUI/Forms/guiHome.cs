@@ -11,6 +11,7 @@ using Mono.Cecil.Cil;
 using Patchwork.Attributes;
 using Patchwork.Utility.Binding;
 
+
 namespace PatchworkLauncher {
 
 	public partial class guiHome : Form {
@@ -34,6 +35,7 @@ namespace PatchworkLauncher {
 		}
 
 		private void guiHome_Load(object sender, EventArgs e) {
+			this.Icon = Manager.IconSmall;
 			guiGameIcon.Image = Manager.ProgramIcon;
 			guiPwVersion.Text = PatchworkVersion.Version;
 			guiGameName.Text = Manager.AppInfo.AppName;

@@ -52,9 +52,25 @@ namespace PatchworkLauncher {
 		private static readonly XmlSerializer _historySerializer = new XmlSerializer(typeof (XmlHistory));
 		private static readonly XmlSerializer _instructionSerializer = new XmlSerializer(typeof (XmlSettings));
 
+		private DialogResult Command_Display_Warning(string text) {
+			return MessageBox.Show(text, "Warning!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+		}
+
+		public Icon IconSmall {
+			get;
+			private set;
+		}
+
+		public Icon IconMed {
+			get;
+			private set;
+		}
+
 		public LaunchManager() {
 			//the following is needed on linux... the current directory must be the Mono executable, which is bad.
 			Environment.CurrentDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
+			IconSmall = new Icon("IconSmall.ico");
+			IconMed = new Icon("IconBig.ico");
 			//TODO: Refactor this into a constructor?
 			try {
 				if (File.Exists(_pathLogFile)) {
@@ -81,14 +97,21 @@ namespace PatchworkLauncher {
 				catch (Exception ex) {
 					Command_Display_Error("Read settings file", _pathSettings, ex, "Patch list and other settings will be reset.");
 				}
-
-				if (settings.BaseFolder.IsNullOrWhitespace()) {
-					if (!Command_SetGameFolder_Dialog()) {
+				string folderDialogReason = null;
+				if (settings.BaseFolder == null) {
+					folderDialogReason = "(no game folder has been specified)";
+				} else if (!Directory.Exists(settings.BaseFolder)) {
+					folderDialogReason = "(the previous game folder does not exist)";
+				}
+				if (folderDialogReason != null) {
+					if (!Command_SetGameFolder_Dialog(folderDialogReason)) {
 						Command_ExitApplication();
 					}
 				} else {
 					BaseFolder = settings.BaseFolder;
 				}
+				
+				
 				AppInfo = gameInfoFactory.CreateInfo(new DirectoryInfo(BaseFolder));
 				var icon = Icon.ExtractAssociatedIcon(AppInfo.Executable.FullName) ?? _home.Icon;
 				ProgramIcon = icon.ToBitmap();
@@ -106,8 +129,12 @@ namespace PatchworkLauncher {
 				if (patchList.Length > 0) {
 					Command_Display_Error("Load patches on startup.", patchList);
 				}
-
-				PatchingHelper.RestorePatchedFiles(AppInfo, history.Files);
+				try {
+					PatchingHelper.RestorePatchedFiles(AppInfo, history.Files);
+				}
+				catch (Exception ex) {
+					Command_Display_Error("Restore files", ex: ex);
+				}
 				//File.Delete(_pathHistoryXml);
 				_home = new guiHome(this);
 				_home.Closed += (sender, args) => Command_ExitApplication();
@@ -255,7 +282,7 @@ namespace PatchworkLauncher {
 		}
 
 		public void Command_ChangeFolder() {
-			if (Command_SetGameFolder_Dialog()) {
+			if (Command_SetGameFolder_Dialog("")) {
 				Command_ExitApplication();
 			}
 		}
@@ -388,10 +415,10 @@ namespace PatchworkLauncher {
 			Command_Display_Error(tryingToDoWhat, objectsThatFailed, ex.InnerException);
 		}
 
-		private bool Command_SetGameFolder_Dialog() {
+		private bool Command_SetGameFolder_Dialog(string warning) {
 			var wasHomeDisabled = false;
 			try {
-				using (var input = new guiInputGameFolder()) {
+				using (var input = new guiInputGameFolder(warning)) {
 					if (_home?.Visible == true) {
 						_home.Enabled = false;
 						wasHomeDisabled = true;
