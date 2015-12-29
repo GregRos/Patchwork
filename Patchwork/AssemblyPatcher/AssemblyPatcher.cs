@@ -405,9 +405,6 @@ namespace Patchwork {
 		/// Ideally, it should report no errors.<br/>
 		/// This operation returns an extended and user-friendly form of the output, translating metadata tokens into user-readable names.
 		///  </summary>
-		/// <param name="targetFolder"></param>
-		/// <param name="ignoreErrors">A list of error numbers to ignore. Errors usually appear in hexadecimal format.</param>
-		/// <param name="switches">Command line switches supplied to PEVerify. </param>
 		/// <returns></returns>
 		public PEVerifyOutput RunPeVerify(PEVerifyInput input) {
 			return PeVerifyRunner.RunPeVerify(TargetAssembly, input);

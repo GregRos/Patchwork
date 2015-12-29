@@ -116,6 +116,11 @@ namespace Patchwork {
 			return Info.GetTargetFile(app);
 		}
 
+		public string CanPatch(AppInfo app) {
+			CheckDisposed();
+			return Info.CanPatch(app);
+		}
+
 		public string PatchVersion {
 			get {
 				CheckDisposed();

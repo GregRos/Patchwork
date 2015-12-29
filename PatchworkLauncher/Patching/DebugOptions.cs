@@ -25,9 +25,13 @@ namespace PatchworkLauncher {
 			get;
 			set;
 		}
+
+
+		public static DebugOptions Default = new DebugOptions();
+
 		
 
-		public static DebugOptions Default = new DebugOptions() {
+		private static DebugOptions _debugEnable = new DebugOptions() {
 			AlwaysPatch = true,
 			DontCopyFiles = true,
 			DontRunProgram = false

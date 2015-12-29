@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Patchwork.Utility;
+using PatchworkLauncher.Properties;
 
 namespace PatchworkLauncher {
 	public partial class guiMods : Form {
@@ -23,6 +24,7 @@ namespace PatchworkLauncher {
 		}
 
 		private void guiMods_Load(object sender, EventArgs e) {
+			Icon = Icon.FromHandle(Resources.IconSmall.GetHicon());
 			guiInstructionsGridView.AutoGenerateColumns = false;
 			guiInstructionsGridView.DataSource = Manager.Instructions;
 		}

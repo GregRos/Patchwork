@@ -34,7 +34,7 @@ namespace Patchwork.Utility {
 				return _isWindows;
 			}
 		}
-
+		///http://stackoverflow.com/questions/275689/how-to-get-relative-path-from-absolute-path
 		/// <summary>
 		/// Creates a relative path from one file or folder to another.
 		/// </summary>

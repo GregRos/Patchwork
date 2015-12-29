@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using Mono.Cecil.Cil;
 using Patchwork.Attributes;
 using Patchwork.Utility.Binding;
+using PatchworkLauncher.Properties;
 
 
 namespace PatchworkLauncher {
@@ -35,7 +36,7 @@ namespace PatchworkLauncher {
 		}
 
 		private void guiHome_Load(object sender, EventArgs e) {
-			this.Icon = Manager.IconSmall;
+			Icon = Icon.FromHandle(Resources.IconSmall.GetHicon());
 			guiGameIcon.Image = Manager.ProgramIcon;
 			guiPwVersion.Text = PatchworkVersion.Version;
 			guiGameName.Text = Manager.AppInfo.AppName;

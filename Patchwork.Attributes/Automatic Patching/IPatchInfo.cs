@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace Patchwork.Attributes {
@@ -11,6 +12,13 @@ namespace Patchwork.Attributes {
 		/// <param name="app"></param>
 		/// <returns></returns>
 		FileInfo GetTargetFile(AppInfo app);
+
+		/// <summary>
+		/// Determines if this patch can be applied to the specified application. If so, returns 'null'. Otherwise, returns a string that describes the problem.
+		/// </summary>
+		/// <param name="app"></param>
+		/// <returns></returns>
+		string CanPatch(AppInfo app);
 
 		/// <summary>
 		/// Returns the version of the patch.

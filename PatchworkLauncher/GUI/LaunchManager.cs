@@ -56,21 +56,9 @@ namespace PatchworkLauncher {
 			return MessageBox.Show(text, "Warning!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 		}
 
-		public Icon IconSmall {
-			get;
-			private set;
-		}
-
-		public Icon IconMed {
-			get;
-			private set;
-		}
-
 		public LaunchManager() {
 			//the following is needed on linux... the current directory must be the Mono executable, which is bad.
 			Environment.CurrentDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
-			IconSmall = new Icon("IconSmall.ico");
-			IconMed = new Icon("IconBig.ico");
 			//TODO: Refactor this into a constructor?
 			try {
 				if (File.Exists(_pathLogFile)) {
@@ -466,6 +454,10 @@ namespace PatchworkLauncher {
 
 			foreach (var instr in instrs) {
 				try {
+					var canPatch = instr.Patch.PatchInfo.CanPatch(AppInfo);
+					if (canPatch != null) {
+						throw new PatchExecutionException(canPatch);
+					}
 					var targetFile = instr.Patch.PatchInfo.GetTargetFile(AppInfo).FullName;
 					if (dict.ContainsKey(targetFile)) {
 						dict[targetFile].Add(instr);
