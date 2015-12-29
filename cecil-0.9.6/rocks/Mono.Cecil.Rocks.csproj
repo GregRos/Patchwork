@@ -25,6 +25,7 @@
     <Optimize>false</Optimize>
     <OutputPath>bin\net_4_5_Debug</OutputPath>
     <WarningLevel>4</WarningLevel>
+    <DefineConstants>DEBUG;TRACE;;NET_3_5;NET_4_0;NET_4_5;;INSIDE_ROCKS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\ProjectInfo.cs" />

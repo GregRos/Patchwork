@@ -7,6 +7,9 @@
     <AssemblyName>Mono.Cecil.Pdb</AssemblyName>
     <NoWarn>0649</NoWarn>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'net_4_5_Debug'">
+    <DefineConstants>DEBUG;TRACE;;NET_3_5;NET_4_0;NET_4_5;</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Mono.Cecil.csproj">
       <Project>{D68133BD-1E63-496E-9EDE-4FBDBF77B486}</Project>
