@@ -71,7 +71,12 @@ namespace Patchwork.Utility {
 			var assemblyResolver = read.MainModule.AssemblyResolver as BaseAssemblyResolver;
 			//Cecil doesn't add the assembly's original directory as a search path by default.
 			var dir = Path.GetDirectoryName(path);
-			assemblyResolver?.AddSearchDirectory(PathHelper.GetAbsolutePath(dir));
+			assemblyResolver.RegisterSpecialResolveFailureHandler ((sender, name) => {
+				var localDir = Path.GetDirectoryName (path);
+
+				var localPath = Path.Combine (dir, $"{name.Name}.dll");
+				return File.Exists (localPath) ? AssemblyCache.Default.ReadAssembly (localPath) : null;
+			});
 
 			var entry = new AssemblyCacheEntry() {
 				Assembly = read,
