@@ -23,7 +23,6 @@ namespace PatchworkLauncher {
 			var manager = new LaunchManager();
 			manager.Command_Start();
 			Application.Run();
-
 		}
 	}
 

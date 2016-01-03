@@ -33,7 +33,8 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <WarningLevel>2</WarningLevel>
+    <DocumentationFile>bin\Release\Patchwork.Attributes.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'PrepareEnvironment|AnyCPU'">
     <OutputPath>bin\PrepareEnvironment\</OutputPath>
@@ -104,7 +105,11 @@
   <ItemGroup>
     <None Include="Patchwork.Attributes.nuspec" />
   </ItemGroup>
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="AfterBuild" Condition="'$(Configuration)' == 'Release'">
+    <Exec ContinueOnError="false" WorkingDirectory="$(OutDir)" Command="&quot;$(SolutionDir).nuget\nuget.exe&quot; pack &quot;$(ProjectPath)&quot; -Exclude &quot;*.nlp&quot; -NonInteractive -Verbosity detailed -NoDefaultExcludes -Properties Configuration=&quot;$(Configuration)&quot;;Platform=&quot;$(Platform)&quot;" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

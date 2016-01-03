@@ -56,6 +56,24 @@ namespace PatchworkLauncher {
 			return MessageBox.Show(text, "Warning!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 		}
 
+		private class DefaultGameInfoFactory : AppInfoFactory  {
+
+			/// <summary>
+			/// Constructs a new instance of <see cref="AppInfo"/>.
+			/// </summary>
+			/// <param name="folderInfo">The primary folder of the application from which other information is deduced.</param>
+			/// <returns></returns>
+			public override AppInfo CreateInfo(DirectoryInfo folderInfo) {
+				return new AppInfo() {
+					AppName = "No app.dll file found",
+					AppVersion = "?",
+					BaseDirectory = folderInfo,
+					Executable = null,
+					IgnorePEVerifyErrors = null
+				};
+			}
+		}
+
 		public LaunchManager() {
 			//the following is needed on linux... the current directory must be the Mono executable, which is bad.
 			Environment.CurrentDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
@@ -66,7 +84,14 @@ namespace PatchworkLauncher {
 				}
 				Logger =
 					new LoggerConfiguration().WriteTo.File(_pathLogFile, LogEventLevel.Debug).MinimumLevel.Debug().CreateLogger();
-				var gameInfoFactory = PatchingHelper.LoadAppInfoFactory(_pathGameInfoAssembly);
+				AppInfoFactory gameInfoFactory;
+
+				if (!File.Exists(_pathGameInfoAssembly)) {
+					gameInfoFactory = new DefaultGameInfoFactory();
+				} else {
+					gameInfoFactory = PatchingHelper.LoadAppInfoFactory(_pathGameInfoAssembly);
+				}
+				
 
 				var settings = new XmlSettings();
 				var history = new XmlHistory();
@@ -99,9 +124,9 @@ namespace PatchworkLauncher {
 					BaseFolder = settings.BaseFolder;
 				}
 				
-				
+				_home = new guiHome(this);
 				AppInfo = gameInfoFactory.CreateInfo(new DirectoryInfo(BaseFolder));
-				var icon = Icon.ExtractAssociatedIcon(AppInfo.Executable.FullName) ?? _home.Icon;
+				var icon = AppInfo.Executable == null ? _home.Icon : Icon.ExtractAssociatedIcon(AppInfo.Executable.FullName) ?? _home.Icon;
 				ProgramIcon = icon.ToBitmap();
 				Instructions = new DisposingBindingList<PatchInstruction>();
 				var instructions = new List<XmlInstruction>();
@@ -124,7 +149,7 @@ namespace PatchworkLauncher {
 					Command_Display_Error("Restore files", ex: ex);
 				}
 				//File.Delete(_pathHistoryXml);
-				_home = new guiHome(this);
+				
 				_home.Closed += (sender, args) => Command_ExitApplication();
 				_icon = new NotifyIcon {
 					Icon = _home.Icon,

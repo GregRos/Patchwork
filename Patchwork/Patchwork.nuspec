@@ -6,15 +6,15 @@
     <title>$title$</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
-    <iconUrl></iconUrl>
+    <iconUrl>https://raw.githubusercontent.com/GregRos/Patchwork/master/Icon.png</iconUrl>
     <licenseUrl>https://github.com/GregRos/Patchwork/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/GregRos/Patchwork</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
 	  <summary>A framework for modifying decleratively modifying assemblies.</summary>
     <description>$description$</description>
-    <releaseNotes>First release</releaseNotes>
-    <copyright>Copyright 2015</copyright>
-    <tags>CIL IL injection post-build cecil assembly patch modification</tags>
+    <releaseNotes>Bringing the package up to date with the latest codebase</releaseNotes>
+    <copyright>Copyright $author$ 2015</copyright>
+    <tags>CIL IL injection post-build cecil assembly patch modification patchwork patching framework</tags>
 	<dependencies>
 		<dependency id="Serilog" version="1.5.9"/>
 		<dependency id="Mono.Cecil" version="0.9.6.1"/>
