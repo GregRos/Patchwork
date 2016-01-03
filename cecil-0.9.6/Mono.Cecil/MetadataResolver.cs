@@ -102,11 +102,24 @@ namespace Mono.Cecil {
 
 			switch (scope.MetadataScopeType) {
 			case MetadataScopeType.AssemblyNameReference:
-				var assembly = assembly_resolver.Resolve ((AssemblyNameReference) scope);
+				var asNameRef = (AssemblyNameReference)scope;
+				var assembly = assembly_resolver.Resolve ((AssemblyNameReference)scope);
 				if (assembly == null)
 					return null;
 
-				return GetType (assembly.MainModule, type);
+				var r = GetType (assembly.MainModule, type);
+
+				//! THE FOLLOWING CODE WAS ADDED FOR PATCHWORK!
+				if (r == null) {
+					if (asNameRef.Name == "mscorlib") {
+						var altAssembly = assembly_resolver.Resolve ("System.Core");
+						var r2 = GetType (altAssembly.MainModule, type);
+						return r2;
+					}
+					int fasdf = 4;
+				}
+				//! END ADDITION
+				return r;
 			case MetadataScopeType.ModuleDefinition:
 				return GetType ((ModuleDefinition) scope, type);
 			case MetadataScopeType.ModuleReference:
