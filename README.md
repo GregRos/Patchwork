@@ -175,23 +175,28 @@ Restricted form of the last attribute. Modifies just the accessibility to be ide
 
 Provided for convenience.
 
-### NewMember
-Introduce this as a new member to the patched type.
+### NewMember(altName)
+Introduce this as a new member to the patched type. If you specify `altName`, the member will be introduced under this name instead.
+
+If the member collides with an existing member, its name will be suffixed with `_$pw$_RANDOM`, e.g. `_$pw$_dfRff`.  A warning will be emitted.
 
 ### DuplicatesBody(methodName, declaringType)
 Put this on a method marked with NewMember or ModifiesMember to insert the body of another method into it. Optionally, you can provide the type that declares the method; otherwise, it defaults to the type being modified.
 You can use it to call original members in the modified type, as it takes the body from the original assembly.
 
-### NewType
+### NewType(altName, altNamespace)
 Put this attribute on a type to denote it is a new type that will be introduced into the assembly.
 
-The name of the type will be the same as it is in your assembly, including namespaces and so forth. You cannot change this name.
+The name of the type will normally be the same as it is in your assembly, including namespaces and so forth. However, `altName` and `altNamespace` allow you to specify an alternative name/namespace.
+
+In case of a collision, the type name will be suffixed with `_$pw$_RANDOM`, e.g. `_$pw$_dffERr`. A warning will be emitted.
 
 You can create any kind of type you like, whether interface, struct, or class. You can have inheritance, generic type parameters, put constraints on those parameters, etc. Anything goes.
 
 You don't need to use creation attributes on any of your type's members, except for other types. They will be considered to have the `NewMember` attribute. 
 
 You can put `ModifiesType` on a nested type inside a `NewType`, but not `ModifiesMember`. 
+
 
 ### RemoveThisMember
 
@@ -222,6 +227,17 @@ For example, the register can contain the following after an exception is thrown
 
 If the catch clause was at line 251, then line 47 is the one that threw the exception.
 
+This is a hack, but it can be quite useful.
+
+### ToggleFieldAttributes(fieldAttributes)
+This custom attribute toggles (XORs) the intrinsic deceleration attributes of the patched field with the input attributes. It must be used with an action attribute, such as `ModifiesMember`.
+
+This attribute allows you to change accessibility, as well as more arcane things. Using it incautiously can cause runtime errors.
+
+### ToggleMethodAttributes(methodAttributes)
+This custom attribute toggles (XORs) the intrinsic deceleration attributes of the patched method with the input attributes. It must be used with an action attribute, such as `ModifiesMember`.
+
+This attribute allows you to change accessibility, add/remove the `sealed` qualifier, and perform other, more arcane tasks. Using it incautiously can cause runtime errors.
 
 ## Modifying Specific Elements
 
@@ -291,8 +307,7 @@ In this section I'll list the limitations of the library, in terms of the code t
 
 ### Members
 2. You can't add new constructors or finalizers to existing types.
-3. Existing declarations can only be modified in limited ways. For example, you can't un-seal a sealed class, change type parameters and their constraints, etc. New members can still be sealed or unsealed, etc, as you prefer.
-4. You can't add new members with the same name as existing members. This can sometimes be an issue for compiler-generated members that are implicitly created, the names of which are generated automatically and cannot be changed. However, it doesn't come up very often at all. 
+3. Existing declarations can only be modified in limited ways. For example, you can't un-seal a sealed class, change type parameters and their constraints, etc. New members can still be sealed or unsealed, etc, as you prefer. 
 3. Field initializers don't work in modifying types, except for const fields. This is unlikely to be fixed anytime soon, as it requires pretty tricky IL injection.
 
 ### Language Features
@@ -301,7 +316,7 @@ In this section I'll list the limitations of the library, in terms of the code t
 
 
 ### Other .NET Languages
-This library is for transforming IL, not transforming source code, so it doesn't actually care what language you write in. As long as you put attributes on things that are recognizable in the IL as properties, methods, and classes, it will work correctly.
+This library is for transforming IL, not transforming source code, so it doesn't actually care what language you write in. As long as you put attributes on things that are recognizable in the IL as properties, methods, and classes, it will probably work correctly.
 
 That said, you could experience more problems if you write in languages other than C#, simply because they can be compiled to very different IL, and the different input could reveal flaws I never encountered during testing. 
 
