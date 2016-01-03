@@ -1,4 +1,4 @@
-# Patchwork<a href="https://gitter.im/GregRos/Patchwork"><img style="float: right" src="https://badges.gitter.im/Join%20Chat.svg"/></a>
+# Patchwork
 **License:** [MIT License](http://opensource.org/licenses/MIT) 
 
 **Latest Version:** 0.8.0
@@ -239,6 +239,25 @@ This custom attribute toggles (XORs) the intrinsic deceleration attributes of th
 
 This attribute allows you to change accessibility, add/remove the `sealed` qualifier, and perform other, more arcane tasks. Using it incautiously can cause runtime errors.
 
+## Naming Conventions
+It is best practice to follow certain naming conventions when writing your patch assembly.
+
+You should prefix each code element according to the action the framework is expected to perform on it. That way, you will be able to tell what sort of member it is just by glancing at the name, and your code will be more readable to others.
+
+| Function                                                   | Form            | Related Attribute            |
+|---------------------------------------------------------   |-----------------|------------------------------|
+| Modification of `Name` type/member from the original assembly | `mod_Name`        | `ModifiesType`, `ModifiesMember` |
+| Duplicate of `Name` in the modified type                  | `orig_Name`       | `DuplicatesBody`               |
+| Duplicate of `Name` in type `Type` in the original assembly | `orig_Type_Name` | `DuplicatesBody`               |
+| Alias of `Name` in type `Type`                              | `alias_Type_Name` | `MemberAlias`                  |
+| New type or member                                      | (none)          | `NewMember`, `NewType`           
+
+For instance constructors, use the name `ctor` and for static ones use `cctor`. 
+
+(none) means that you should not prefix the name with anything.
+
+
+
 ## Modifying Specific Elements
 
 ### About Overloading
@@ -298,6 +317,29 @@ These are regular methods with different actual names. The names are `[INTERFACE
 
 The dots are actually part of the name of the method, just like the dot in `.ctor` is. IL doesn't follow C# naming rules.
 
+## Patching History
+You can enable embedding history into patched assemblies by setting `EmbedHistory = true` in the `AssemblyPatcher`.
+
+This causes Patchwork to attach history attributes to things it patches in the target assembly, and also to attach the patching attributes, such as `ModifiesMember`, (except for `PatchAssembly` and a few others) to the members they modified. This makes it possible to examine an assembly and determine what operations were performed on it.
+
+Embedding history attributes causes a dependency on `Patchwork.Attributes`.
+
+Patching history is used by the launcher.
+
+The following are the patching history attributes:
+
+### PatchingHistoryAttribute
+Abstract parent of all history attributes.
+
+### PatchedByAssemblyAttribute
+Contains information about the patch assembly, the original assembly (before patching was performed), and the Patchwork assembly that performed patching.
+
+### PatchedByMemberAttribute
+Indicates the member in the patch assembly that contained the patching instruction to patch this member.
+
+### PatchedByTypeAttribute
+Indicates the type in the patch assembly that contained the patching instruction to patch this type.
+
 ## Limitations
 In this section I'll list the limitations of the library, in terms of the code that it can deal with at this stage, and what it *can't* allow you to do. This section will be updated as more features get worked in.
 
@@ -321,6 +363,8 @@ This library is for transforming IL, not transforming source code, so it doesn't
 That said, you could experience more problems if you write in languages other than C#, simply because they can be compiled to very different IL, and the different input could reveal flaws I never encountered during testing. 
 
 However, don't take this as me discouraging you from using other languages. 
+
+
 
 ## Recommended Decompilers
 I've tried a number of decompilers. 

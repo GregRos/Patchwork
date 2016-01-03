@@ -49,7 +49,7 @@ namespace Patchwork {
 				from attr in yourMember.CustomAttributes
 				let attrType = attr.AttributeType.Resolve()
 				let attrAssembly = attrType.Module.Assembly
-				let isFromPatchworkAttributes = attrType.Module.Assembly.FullName == typeof (PatchworkVersion).Assembly.FullName
+				let isFromPatchworkAttributes = attrType.Module.Assembly.FullName == typeof (PatchworkInfo).Assembly.FullName
 				let isFromPatchworkOther = attrType.Module.Assembly.FullName == typeof (AssemblyPatcher).Assembly.FullName
 				//attributes that are in Patchwork but not Patchwork.Attributes are never included
 				where !isFromPatchworkOther

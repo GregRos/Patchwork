@@ -5,4 +5,4 @@
 
 [assembly: AssemblyTitle("Patchwork")]
 
-[assembly: AssemblyDescription("A library for modifying assemblies. This assembly performs the modifications.")]
+[assembly: AssemblyDescription("a" + "b")]

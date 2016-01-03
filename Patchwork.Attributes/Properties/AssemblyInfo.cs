@@ -9,5 +9,5 @@ using Patchwork.Attributes;
 
 [assembly: Guid("03f1fae8-17bb-4c76-9665-cad79916a0ad")]
 [assembly: AssemblyTitle("Patchwork.Attributes")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription(PatchworkInfo.PatchworkAttributesDescription)]
 [assembly: InternalsVisibleTo("Patchwork")]

@@ -38,7 +38,7 @@ namespace PatchworkLauncher {
 		private void guiHome_Load(object sender, EventArgs e) {
 			Icon = Icon.FromHandle(Resources.IconSmall.GetHicon());
 			guiGameIcon.Image = Manager.ProgramIcon;
-			guiPwVersion.Text = PatchworkVersion.Version;
+			guiPwVersion.Text = PatchworkInfo.Version;
 			guiGameName.Text = Manager.AppInfo.AppName;
 			guiGameVersion.Text = Manager.AppInfo.AppVersion;
 			var isEnabled = Manager.State.Convert(x => x == LaunchManagerState.Idle);

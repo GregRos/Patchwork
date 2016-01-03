@@ -163,6 +163,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Patchwork.nuspec" />
     <None Include="PEVerify">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
