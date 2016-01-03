@@ -27,7 +27,9 @@ namespace PatchworkLauncher {
 		}
 
 
-		public static DebugOptions Default = new DebugOptions();
+		public static DebugOptions Default = new DebugOptions() {
+			AlwaysPatch = true
+		};
 
 		
 
