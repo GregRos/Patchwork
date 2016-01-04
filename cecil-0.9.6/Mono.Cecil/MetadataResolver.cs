@@ -108,17 +108,6 @@ namespace Mono.Cecil {
 					return null;
 
 				var r = GetType (assembly.MainModule, type);
-
-				//! THE FOLLOWING CODE WAS ADDED FOR PATCHWORK!
-				if (r == null) {
-					if (asNameRef.Name == "mscorlib") {
-						var altAssembly = assembly_resolver.Resolve ("System.Core");
-						var r2 = GetType (altAssembly.MainModule, type);
-						return r2;
-					}
-					int fasdf = 4;
-				}
-				//! END ADDITION
 				return r;
 			case MetadataScopeType.ModuleDefinition:
 				return GetType ((ModuleDefinition) scope, type);

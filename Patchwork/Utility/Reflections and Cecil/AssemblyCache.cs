@@ -4,12 +4,21 @@ using System.IO;
 using Mono.Cecil;
 
 namespace Patchwork.Utility {
+
+	public class ExpandedAssemblyResolver : DefaultAssemblyResolver {
+		public new void RegisterAssembly(AssemblyDefinition assemblyDef) {
+			base.RegisterAssembly(assemblyDef);
+		}
+	}
+
 	/// <summary>
 	/// An AssemblyDefinition loader that doesn't load an assembly if it's in the cache.
 	/// </summary>
 	public class AssemblyCache {
 
 		public static readonly AssemblyCache Default = new AssemblyCache();
+
+		
 
 		private class FileMetadata {
 
@@ -65,13 +74,17 @@ namespace Patchwork.Utility {
 					return _cache[path].Assembly;
 				}
 			}
-			var read = AssemblyDefinition.ReadAssembly(path, new ReaderParameters() {
+			var defAssemblyResolver = new ExpandedAssemblyResolver();
+			defAssemblyResolver.AddSearchDirectory(Path.GetDirectoryName(path));
+			var rdrParams = new ReaderParameters() {
+				AssemblyResolver = defAssemblyResolver,
 				ReadSymbols = readSymbols
-			});
+			};
+			var read = AssemblyDefinition.ReadAssembly(path, rdrParams);
 			var assemblyResolver = read.MainModule.AssemblyResolver as BaseAssemblyResolver;
 			//Cecil doesn't add the assembly's original directory as a search path by default.
 			var dir = Path.GetDirectoryName(path);
-			assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(path));
+			
 
 			var entry = new AssemblyCacheEntry() {
 				Assembly = read,

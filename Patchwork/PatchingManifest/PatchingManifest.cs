@@ -128,8 +128,7 @@ namespace Patchwork {
 			if (someResolver == null) {
 				throw new ArgumentException("The specified patch assembly could not be specialized because its AssemblyResolver wasn't a BaseAssemblyResolver. This means Cecil has changed.");
 			}
-			var resolver = (BaseAssemblyResolver) someResolver;
-			resolver.ClearExtraResolvers();
+			var resolver = (ExpandedAssemblyResolver) someResolver;
 			try {
 				resolver.ForceClearCache();
 			}
@@ -141,16 +140,8 @@ namespace Patchwork {
 			//we need this special resolver because we want the patch assembly to resolve the assembly being patched, even if its version is different.
 			//We also want to resolve assemblies in the same folder as the patched assembly. While AddSearchDirectory would be sufficient for this,
 			//We want resolving the target assembly (the one that's being modified) to be prioritized over the original.
-			resolver.RegisterSpecialResolveFailureHandler((sender, name) => {
-				if (name.Name == assemblyDef.Name.Name) {
-					return assemblyDef;
-				}
-				var dir = Path.GetDirectoryName(assemblyDef.MainModule.FullyQualifiedName);
-
-				var path = Path.Combine(dir, $"{name.Name}.dll");
-				return File.Exists(path) ? AssemblyCache.Default.ReadAssembly(path) : null;
-			});
-
+			resolver.RegisterAssembly(assemblyDef);
+			resolver.AddSearchDirectory(Path.GetDirectoryName(assemblyDef.MainModule.FullyQualifiedName));
 			SpecializeTypes(TypeActions, assemblyDef);
 			SpecializeMembers(EventActions, assemblyDef);
 			SpecializeMembers(MethodActions, assemblyDef);
