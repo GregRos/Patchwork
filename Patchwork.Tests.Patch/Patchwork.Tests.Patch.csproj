@@ -82,6 +82,10 @@
       <Project>{63e6915c-7ea4-4d76-ab28-0d7191eea626}</Project>
       <Name>Mono.Cecil.Pdb</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Patchwork.Engine\Patchwork.Engine.csproj">
+      <Project>{565c269a-f5eb-4bbe-86e5-75c8d4e1cdf7}</Project>
+      <Name>Patchwork.Engine</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Patchwork.Tests.Target\Patchwork.Tests.Target.csproj">
       <Project>{551dcd0a-63f9-49bb-943c-ee470fa38afd}</Project>
       <Name>Patchwork.Tests.Target</Name>

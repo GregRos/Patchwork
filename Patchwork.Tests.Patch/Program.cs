@@ -4,10 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Patchwork.Tests.Target;
-using Patchwork.Utility;
 using Serilog;
 using Serilog.Events;
-
+using Patchwork;
 namespace Patchwork.Tests.Patch
 {
 	class Program
