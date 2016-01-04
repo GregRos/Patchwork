@@ -20,6 +20,7 @@ namespace PatchworkLauncher {
 		}
 
 		private void LogForm_Load(object sender, EventArgs e) {
+			guiPanel.FlowDirection = FlowDirection.TopDown;
 			guiPanel.Controls.Clear();
 			Func<ProgressObject, Control> progressTemplate = (ProgressObject po) => {
 				var topLabel = new Label() {
@@ -47,9 +48,9 @@ namespace PatchworkLauncher {
 				progBar.Value = po.Current.Value;
 				var flowThing = new FlowLayoutPanel() {
 					FlowDirection = FlowDirection.TopDown,
-					Dock = DockStyle.Fill,
 					Margin = new Padding(10, 5, 10, 5),
-					AutoSize = true,
+					Width = guiPanel.Width - 30
+
 				};
 				flowThing.Controls.AddRange(new[] {
 					(Control) topLabel,

@@ -38,6 +38,7 @@ namespace PatchworkLauncher {
 		private void guiHome_Load(object sender, EventArgs e) {
 			
 			guiGameIcon.Image = Manager.ProgramIcon;
+			guiGameIcon.Refresh ();
 			guiPwVersion.Text = PatchworkInfo.Version;
 			guiGameName.Text = Manager.AppInfo.AppName;
 			guiGameVersion.Text = Manager.AppInfo.AppVersion;

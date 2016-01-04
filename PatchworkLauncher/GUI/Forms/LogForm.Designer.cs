@@ -39,7 +39,7 @@
 			this.guiPanel.Location = new System.Drawing.Point(0, 0);
 			this.guiPanel.Margin = new System.Windows.Forms.Padding(5);
 			this.guiPanel.Name = "guiPanel";
-			this.guiPanel.Size = new System.Drawing.Size(454, 277);
+			this.guiPanel.Size = new System.Drawing.Size(450, 350);
 			this.guiPanel.TabIndex = 0;
 			this.guiPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.guiPanel_Paint);
 			// 
@@ -48,7 +48,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.Linen;
-			this.ClientSize = new System.Drawing.Size(454, 277);
+			this.ClientSize = new System.Drawing.Size(450, 350);
 			this.ControlBox = false;
 			this.Controls.Add(this.guiPanel);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
