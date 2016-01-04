@@ -49,7 +49,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>IconBig.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Publish|AnyCPU'">
     <DebugSymbols>false</DebugSymbols>
@@ -93,8 +94,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Patchwork.SharedAttributes.cs">
+      <Link>Properties\Patchwork.SharedAttributes.cs</Link>
+    </Compile>
     <Compile Include="GUI\Helpers\DisposingBindingList.cs" />
-    <Compile Include="Patching\DebugOptions.cs" />
     <Compile Include="Patching\PatchingHelper.cs" />
     <Compile Include="Patching\PatchingProcessException.cs" />
     <Compile Include="Patching\PatchInstruction.cs" />
@@ -140,7 +143,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -166,18 +168,19 @@
       <Project>{47dcbaf7-f2e6-486c-8887-fa41c271b74e}</Project>
       <Name>Patchwork.Attributes</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Patchwork\Patchwork.csproj">
+    <ProjectReference Include="..\Patchwork.Engine\Patchwork.Engine.csproj">
       <Project>{565c269a-f5eb-4bbe-86e5-75c8d4e1cdf7}</Project>
-      <Name>Patchwork</Name>
+      <Name>Patchwork.Engine</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="IconBig.ico" />
-    <None Include="Resources\IconTiny.png" />
     <None Include="Resources\IconSmall.png" />
     <None Include="Resources\IconMed.png" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="GUI\Forms\guiHome.resx">
+      <DependentUpon>guiHome.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GUI\Forms\LogForm.resx">
       <DependentUpon>LogForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -198,17 +201,29 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="preferences.pw.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == 'Publish'">
-    <PostBuildEvent>
-      del *.pdb
-      del *.xml REM to make it simpler to archive releases
-    </PostBuildEvent>
-  </PropertyGroup>
+  <Target Name="AfterBuild">
+    <ItemGroup>
+      <FilesToDelete Include="$(OutDir)*.pdb" />
+      <FilesToDelete Include="$(OutDir)*.xml" />
+    </ItemGroup>
+    <!-- This cleans the garbage out of the Publish release folder...
+    -->
+    <Delete Files="@(FilesToDelete)" ContinueOnError="false" Condition="'$(Configuration)' == 'Publish'" />
+    <!-- This copies OAC to the PW launcher folder. This is good because it's supposed to be distributed with the launcher. 
+         PWL is supposed to be dependent on OAC in the solution configuration.
+    -->
+    <Copy SourceFiles="$(ProjectDir)..\OpenAssemblyCreator\$(OutputPath)OpenAssemblyCreator.exe" DestinationFolder="$(OutDir)" ContinueOnError="false" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

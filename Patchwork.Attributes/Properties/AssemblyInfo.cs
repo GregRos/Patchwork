@@ -9,5 +9,5 @@ using Patchwork.Attributes;
 
 [assembly: Guid("03f1fae8-17bb-4c76-9665-cad79916a0ad")]
 [assembly: AssemblyTitle("Patchwork.Attributes")]
-[assembly: AssemblyDescription(PatchworkInfo.PatchworkAttributesDescription)]
-[assembly: InternalsVisibleTo("Patchwork")]
+[assembly: AssemblyDescription((string) @"This library contains the patching attributes for the Patchwork assembly modification framework. You must reference this library from your patch assembly.")]
+[assembly: InternalsVisibleTo("Patchwork.Engine")]

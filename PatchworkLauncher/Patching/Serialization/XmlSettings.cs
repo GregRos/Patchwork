@@ -9,7 +9,27 @@ using Patchwork.Utility;
 namespace PatchworkLauncher {
 
 
+	[XmlRoot("Preferences")]
+	public class XmlPreferences {
+		public bool AlwaysPatch {
+			get;
+			set;
+		} = false;
+
+		public bool DontCopyFiles {
+			get;
+			set;
+		}
+
+		public bool OpenLogAfterPatch {
+			get;
+			set;
+		}
+	}
+
+
 	[XmlInclude(typeof(XmlInstruction))]
+	[XmlRoot("Settings")]
 	public class XmlSettings {
 		[XmlArrayItem("Instruction")]
 		public List<XmlInstruction> Instructions {

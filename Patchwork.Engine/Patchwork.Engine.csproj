@@ -2,17 +2,17 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{565C269A-F5EB-4BBE-86E5-75C8D4E1CDF7}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Patchwork</RootNamespace>
-    <AssemblyName>Patchwork</AssemblyName>
+    <AssemblyName>Patchwork.Engine</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -28,26 +28,12 @@
     </DocumentationFile>
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'FIRSTRUN|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\FIRSTRUN\</OutputPath>
-    <DefineConstants>DEBUG;FIRSTRUN</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'PrepareEnvironment|x86'">
-    <OutputPath>bin\x86\PrepareEnvironment\</OutputPath>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Publish|x86'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Publish|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Publish\</OutputPath>
+    <OutputPath>bin\Publish\</OutputPath>
     <DefineConstants>
     </DefineConstants>
     <DocumentationFile>
@@ -58,7 +44,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>
@@ -69,7 +55,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>bin\Release\Patchwork.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Patchwork.Engine.xml</DocumentationFile>
     <Optimize>true</Optimize>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <WarningLevel>2</WarningLevel>
@@ -179,7 +165,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Patchwork.nuspec" />
+    <None Include="Patchwork.Engine.nuspec" />
     <Content Include="PEVerify">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

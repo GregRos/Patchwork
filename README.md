@@ -1,7 +1,7 @@
 # Patchwork
 **License:** [MIT License](http://opensource.org/licenses/MIT) 
 
-**Latest Version:** 0.8.0
+**Latest Version:** 0.9
 
 **Patchwork** is a framework for integrating your own code into existing .NET assemblies ("patching" them). It allows you to edit, create, or replace things such as types, properties, and methods in a simple, straight-forward, and declarative way, using attributes.
 
@@ -9,11 +9,9 @@ The framework lets you basically rewrite entire programs, such as games, accordi
 
 You write code in C# or another language, and that code is injected into the target assembly according to your patching declarations. It is minimally transformed, fixing references to such things as types and methods, so that it remains valid at the point of injection.
 
-The framework was written with game modding in mind, specifically, for [Pillars of Eternity](http://eternity.obsidian.net/), though you can use it for any purpose. It is based, in principle, on the [IE modding framework](https://bitbucket.org/Bester/poe-modding-framework) for Pillars of Eternity, though it doesn't share any code with it at this point.
+The framework was written with game modding in mind, but can be used for any purpose.
 
-The framework is partially documented, including the non-public members. I'd welcome any help you could give in improving it, as there is a lot that could be done.
-
-As of version 0.8.0, the framework has a launcher that allows automatic patching by the end-user.
+The framework is mostly documented, including the non-public members.
 
 ## Moddable Games
 Like I said above, the library was written with game modding in mind. In general, you can mod two kinds of games with it: i
@@ -27,32 +25,78 @@ Luckily, the majority of popular Unity titles do primarily use .NET.
 
 Modding in this case is somewhat more limited, as you can only mod the game logic in the scripts, but from experience, you still have vastly more power than typical official modding tools would give you.
 
-## Usage Guide
-You need to know some C# or another .NET language, depending on the scope of your modifications, and have a decent IDE. 
+## Components 
+The framework consists of several separate components. 
 
-<s>You can reference this framework from NuGet</s> or you can just add this source to your project. Personally I'd recommend adding the source, as the framework is still in its early stages, doesn't have complete error reporting, and you may also encounter bugs when using the more advanced features.
+### PatchworkLauncher (PWL)
+This is the end-user patching GUI. Users use this program to apply your modifications to their games or applications. It is most convenient to download it from the [Releases](https://github.com/GregRos/Patchwork/releases) section.
 
-Patchwork consists of two assemblies, `Patchwork` and `Patchwork.Attributes`.
+You also use this program to test your patch assembly for yourself. 
 
+#### OpenAssemblyCreator (OAC)
+This is a command-line tool packaged with PWL. It allows you to create an open assembly to reference in your patch assembly. More on this later.
+
+### Patchwork.Attributes (PWA)
 The `Patchwork.Attributes` assembly is meant to be referenced by your patch assembly, and is compiled with framework version 2.0 to improve compatibility. It contains the attributes that serve as patching instructions. It has no dependencies.
 
-The `Patchwork` assembly is the one that actually does the patching. 
+You can conveniently get this package from [NuGet: Patchwork.Attributes](https://www.nuget.org/packages/Patchwork.Attributes/) and reference it in your patch assembly.
 
-### Finding what to Patch
-Before you start patching, you need to find what you want to patch first. This involves decompiling the target assembly. See *Recommended Decompilers* below for more information. 
+### Patchwork.Engine
+This is the library that actually does the patching. It can be used separately from the GUI. However, you generally wouldn't want to do so unless you wanted to write a new front-end, some kind of script, or... had some other reason.
+
+Naturally, it's packaged with the launcher.
+
+## Getting Started
+First, get the latest PWL release from the releases section. 
+
+Unless someone else already wrote it, you'll need to write an `AppInfo.dll` file for the game you want to patch. See the section on the launcher for more information.
+
+Next, create a new project (preferably with a name ending with `.pw` for reasons explained later). 
+
+Reference the `Patchwork.Attributes` assembly from that project.
+
+Since you probably don't want to copy files around manually, you should take advantage of the `DontCopyFiles` option in the `Preferences` section of the `preferences.pw.xml` file. It lets you add files to your mod list without copying them to a mods folder, so you can just add the result of your build directly.
+
+That's... it. You're ready to go. Good luck out there. 
+
+By the way, patching using the launcher creates a dependency on `Patchwork.Attributes` in the target (patched) assembly.
+
+## Overview
+There are a few stages to writing a patch.
+
+### Finding What to Patch
+Before you start writing your patch assembly, you need to find what you want to patch. This involves decompiling the target assembly. See *Recommended Decompilers* below for more information. 
 
 Also, take note of the target framework version of the assembly, as for the most reliable results you'd want your patch to be built against the same framework version.
 
 ### Creating an Open Assembly
-Before you begin patching an assembly, you need to have an "open" version of it, in which all the members are public and unsealed. This allows the compiler to correctly resolve references to members that wouldn't normally be accessible in the assembly where you write your code, but would be accessible at the point of injection. 
+You also need to have an "open" version of the assembly you want to patch. "Open" here means that all of its members are public and non-sealed. 
 
-Currently, there isn't a way to fully automate the process of creating this assembly. Instead, you'll just have to use `CecilHelper.MakeOpenAssembly`. Save the result, and reference it in your patch assembly.
+To see why this is required, imagine you have a class like:
 
-### Writing the Patch Assembly
+	class Player {
+		private int _hitpoints;
+		
+		public void GetHit() {
+			_hitpoints--;
+		}
+	}
+	
+And you want to overwrite the `GetHit` method to perform `_hitpoints++` instead. 
+
+The problem is that `_hitpoints` can only be accessed from inside the class `Player`. But you have to write the code `_hitpoints++` in your own assembly. The framework will inject it into the correct spot, but your C# compiler doesn't know that and won't let you access the member.
+
+Changing all members to public allows you to access the member. However, it can cause problems too. You might make a mistake and illegally refer to a non-public member, for example.
+
+On the brighter side, the `PEVerify` tool (which executed automatically) will catch any accessibility issues and warn you about them.
+
+You create an open assembly using the command-line tool `OpenAssemblyCreator.exe`, also called OAC. Using it is straight-forward. 
+### Creating the Patch Assembly
 You patch an existing target assembly by writing a *patch assembly* (probably with the target assembly referenced), and load it as input to patch a "target" assembly. This assembly contains attributes that are used as patching instructions. 
 
 You need to specify the `PatchAssembly` attribute on any such patch assembly.
 
+#### Writing It
 Patch assemblies consist of patch types, which are new types or just sets of modifications to an existing type. Here is a simple example:
 
 	[ModifiesType] //means the class modifies another class
@@ -83,48 +127,10 @@ You can add any members to the type, and attach the right attributes to them, de
 
 Compiler-generated members are imported as new members by default, even if they don't have a patching attribute.
 
-### Patching
-Once you're done with all that, you create an instance of `Patchwork.AssemblyPatcher`. Each such instance represents a single "editing session" on a single assembly. You can patch it with one or more assemblies, and then write it to file.
-
-		//+ Creating patcher
-		var patcher = new AssemblyPatcher(originalDllPath,
-			ImplicitImportSetting.OnlyCompilerGenerated, Log);
-
-		//+ Patching assemblies
-		patcher.PatchAssembly(typeof (IEModType).Assembly.Location);
-		
-		//+ Writing to file
-		patcher.WriteTo(copyToPath);
-			
-Note that the `Cecil.AssemblyDefinition` of the assembly you're modifying is exposed, so you can also make your own modifications between patching, or write the assembly in your own way.
-
-In some cases, one of the operations can throw an exception. In that case, that `AssemblyPatcher` instance has been corrupted and shouldn't be used.
-
-### Example
-A very extensive example of modifying an assembly using Patchwork (and modding a game) is found in the [IEMod.pw](https://github.com/GregRos/IEMod.pw) project (link pending), which is a mod for Pillars of Eternity. 
-
-### Logging 
-`AssemblyPatcher` accepts a `Serilog.ILogger` argument. This is a log (from the open source library [Serilog](https://github.com/serilog/serilog)) to which the patcher will print important information, so you should have it visible while the patching takes place. For example, the log can tell you that patching a member has failed because a duplicate exists.
-
-[Here](https://github.com/serilog/serilog/wiki/Configuration-Basics) is a simple tutorial on what you need to do to configure this log. As this library evolves, you won't have to deal with configuring the log yourself.
-
-Only completely unexpected or obviously fatal errors throw an exception. 
-
-## Patchwork Launcher
-As of version 0.8.0, Patchwork includes a launcher that allows patching by the end-user. It's written for game modding.
-
-Each launcher executable is meant to work with one game. To work with a game, someone must write an `app.dll` assembly (as described below) and put it in the launcher directory. The launcher loads it on startup and uses it to get information about the game. The launcher should be distributed with this file.
-
-The launcher allows users to manage patches for the chosen game, as well as change the order in which they are applied. It keeps the original game files on disk and switches them with modded files when the user launches the game. It only patches the files when necessary. It stays in the background, and once the game is exited, the launcher switches to the original files once more. 
-
-Once it starts up, the launcher also checks the state of the files and fixes them if necessary, in case it was terminated unexpectedly.
-
-The launcher is supposed to work on Mono and is written in Windows Forms for that purpose, but it will take a while until it works correctly there.
-
-### Patch Format
+#### Format and Additional Info
 The recommended extension for patch assemblies is `pw.dll`.
 
-In order for a patch assembly to work with the launcher, it must define a class with the following requirements. Note that it creates a dependency on the `Patchwork.Attributes` assembly.
+In order for a patch assembly to work with the Patchwork launcher, it must define a class with the following requirements.
 
 1. It implements `Patchwork.Attributes.IPatchInfo`
 2. It is decorated with `Patchwork.Attributes.PatchInfoAttribute`.
@@ -132,15 +138,28 @@ In order for a patch assembly to work with the launcher, it must define a class 
 
 There must be only one such class in the assembly.
 
-This class is dynamically instantiated by the launcher and is used to provide information about the patch and aid in patching. That is, unlike the rest of the code in the assembly, the code is actually executed by the framework.
-
 The class should not contain any references to any types not found in the GAC or in `Patchwork.Attributes`.
 
 It is instantiated in a separate AppDomain from the rest of the application, and this AppDomain is unloaded if the user removes it from the patch list.
 
 The `PatchInfo` is needed to tell the launcher what file to patch. The class can find the file based on the operating system and other information.
 
-### app.dll
+### Patching
+The patch is mostly viewed as data by the patchwork launcher. To patch another assembly with your patch assembly, you must load the `pw.dll` file into the launcher and then start the game.
+
+That's it.
+
+
+## Patchwork Launcher
+Each launcher executable is meant to work with one game. To work with a game, someone must write an `AppInfo.dll` assembly (as described below) and put it in the launcher directory. The launcher loads it on startup and uses it to get information about the game. The launcher should be distributed with this file.
+
+The launcher allows users to manage patches for the chosen game, as well as change the order in which they are applied. It keeps the original game files on disk and switches them with modded files when the user launches the game. It only patches the files when necessary. It stays in the background, and once the game is exited, the launcher switches to the original files once more. 
+
+Once it starts up, the launcher also checks the state of the files and fixes them if necessary, in case it was terminated unexpectedly.
+
+The launcher works on Mono and is written in Windows Forms for that purpose.
+
+### AppInfo.dll
 This file is required for the launcher to work correctly with a game. It's an assembly (the name doesn't matter) containing a type that:
 
 1. Inherits from `Patchwork.Attributes.AppInfoFactory`.
@@ -153,8 +172,15 @@ There must be only one such class in the assembly.
 
 This class is instantiated during runtime, in the same AppDomain as the original application. The launcher can't start if the file is invalid or not found.
 
+If this file is not found, an error message is generated and the launcher doesn't work properly.
+
 ## Available Attributes
 These attributes are located in the `Patchwork.Attributes` namespace. Note that this isn't necessarily a full list.
+
+### Note about attribute constructors
+Attributes that require types as parameters invariably have an `object` parameter instead of a `Type` parameter.
+
+This is a necessary workaround. You still use `typeof(T)` to specify the type.
 
 ### PatchingAssembly
 You *must* add this attribute to your assembly (using `[assembly: PatchingAssembly]`) for it to be recognized as an assembly that contains patching types.
@@ -258,7 +284,7 @@ For instance constructors, use the name `ctor` and for static ones use `cctor`.
 
 
 
-## Modifying Specific Elements
+## Specific Issues
 
 ### About Overloading
 When you put an attribute on a code element, the framework will usually use that element's name (or an alternative name you supply) and, in the case of methods and properties, their parameters, to find what to modify.
@@ -318,15 +344,9 @@ These are regular methods with different actual names. The names are `[INTERFACE
 The dots are actually part of the name of the method, just like the dot in `.ctor` is. IL doesn't follow C# naming rules.
 
 ## Patching History
-You can enable embedding history into patched assemblies by setting `EmbedHistory = true` in the `AssemblyPatcher`.
+The launcher embeds various attributes in the target assembly that let you see what Patchwork did to it. These are called history attributes. The following are embedded.
 
-This causes Patchwork to attach history attributes to things it patches in the target assembly, and also to attach the patching attributes, such as `ModifiesMember`, (except for `PatchAssembly` and a few others) to the members they modified. This makes it possible to examine an assembly and determine what operations were performed on it.
-
-Embedding history attributes causes a dependency on `Patchwork.Attributes`.
-
-Patching history is used by the launcher.
-
-The following are the patching history attributes:
+Also, the patching attributes you use also get embedded, except for `PatchAssembly`.
 
 ### PatchingHistoryAttribute
 Abstract parent of all history attributes.
@@ -345,7 +365,7 @@ In this section I'll list the limitations of the library, in terms of the code t
 
 ### Assemblies
 1. Multi-module assemblies won't work properly (either as patches or patch targets). Note that few IDEs (if any) can naturally produce such assemblies, though they can be the result of tools such as ILMerge.
-2. Inter-dependencies between multiple patch assemblies will most likely work, but they haven't been sufficiently tested.
+2. Inter-dependencies between multiple patch assemblies haven't been tested.
 
 ### Members
 2. You can't add new constructors or finalizers to existing types.
@@ -355,7 +375,6 @@ In this section I'll list the limitations of the library, in terms of the code t
 ### Language Features
 1. `unsafe` context features, like pointers and pinned variables, probably won't work.
 2. Various exotic and undocumented (in C#) constructs cannot be used, such as `__arglist`.
-
 
 ### Other .NET Languages
 This library is for transforming IL, not transforming source code, so it doesn't actually care what language you write in. As long as you put attributes on things that are recognizable in the IL as properties, methods, and classes, it will probably work correctly.
@@ -375,5 +394,5 @@ I've tried a number of decompilers.
 
 ## Dependencies
 
-1. [Mono.Cecil](http://www.mono-project.com/docs/tools+libraries/libraries/Mono.Cecil/). The source code for Cecil is included in this repository, mostly because it's much easier to debug with it in full view.
+1. [Mono.Cecil](http://www.mono-project.com/docs/tools+libraries/libraries/Mono.Cecil/), without which none of this would have been possible.
 2. [Serilog](http://serilog.net/), used for logging.

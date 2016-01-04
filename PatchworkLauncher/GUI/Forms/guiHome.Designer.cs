@@ -38,6 +38,7 @@
 			this.guiGameIcon = new System.Windows.Forms.PictureBox();
 			this.guiChangeFolder = new System.Windows.Forms.Button();
 			this.guiTestRun = new System.Windows.Forms.Button();
+			this.linkLabel1 = new System.Windows.Forms.LinkLabel();
 			((System.ComponentModel.ISupportInitialize)(this.guiGameIcon)).BeginInit();
 			this.SuspendLayout();
 			// 
@@ -127,7 +128,7 @@
 			this.guiPwVersion.BackColor = System.Drawing.Color.Transparent;
 			this.guiPwVersion.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.guiPwVersion.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-			this.guiPwVersion.Location = new System.Drawing.Point(204, 243);
+			this.guiPwVersion.Location = new System.Drawing.Point(201, 245);
 			this.guiPwVersion.Name = "guiPwVersion";
 			this.guiPwVersion.RightToLeft = System.Windows.Forms.RightToLeft.No;
 			this.guiPwVersion.Size = new System.Drawing.Size(35, 18);
@@ -142,12 +143,12 @@
 			this.label2.BackColor = System.Drawing.Color.Transparent;
 			this.label2.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.label2.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-			this.label2.Location = new System.Drawing.Point(18, 243);
+			this.label2.Location = new System.Drawing.Point(118, 244);
 			this.label2.Name = "label2";
 			this.label2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-			this.label2.Size = new System.Drawing.Size(180, 18);
+			this.label2.Size = new System.Drawing.Size(80, 18);
 			this.label2.TabIndex = 7;
-			this.label2.Text = "Patchwork Version:";
+			this.label2.Text = "Version:";
 			this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 			this.label2.Click += new System.EventHandler(this.label2_Click);
 			// 
@@ -195,6 +196,18 @@
 			this.guiTestRun.UseVisualStyleBackColor = false;
 			this.guiTestRun.Click += new System.EventHandler(this.guiTestRun_Click);
 			// 
+			// linkLabel1
+			// 
+			this.linkLabel1.AutoSize = true;
+			this.linkLabel1.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold);
+			this.linkLabel1.Location = new System.Drawing.Point(18, 243);
+			this.linkLabel1.Name = "linkLabel1";
+			this.linkLabel1.Size = new System.Drawing.Size(103, 18);
+			this.linkLabel1.TabIndex = 11;
+			this.linkLabel1.TabStop = true;
+			this.linkLabel1.Text = "Patchwork";
+			this.linkLabel1.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel1_LinkClicked);
+			// 
 			// guiHome
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 14F);
@@ -202,6 +215,7 @@
 			this.BackColor = System.Drawing.Color.Linen;
 			this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
 			this.ClientSize = new System.Drawing.Size(567, 270);
+			this.Controls.Add(this.linkLabel1);
 			this.Controls.Add(this.guiTestRun);
 			this.Controls.Add(this.guiChangeFolder);
 			this.Controls.Add(this.guiGameIcon);
@@ -237,6 +251,7 @@
 		private System.Windows.Forms.PictureBox guiGameIcon;
 		private System.Windows.Forms.Button guiChangeFolder;
 		private System.Windows.Forms.Button guiTestRun;
+		private System.Windows.Forms.LinkLabel linkLabel1;
 	}
 }
 

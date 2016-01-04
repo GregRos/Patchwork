@@ -16,8 +16,6 @@ namespace PatchworkLauncher {
 			get;
 			set;
 		}
-
-	
 	}
 
 	public class PatchInstructionSequence {

@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using Mono.Cecil;
 using Patchwork;
 using Patchwork.Attributes;
@@ -18,6 +19,7 @@ namespace PatchworkLauncher {
 			set;
 		}
 
+		[XmlAttribute]
 		public bool IsEnabled {
 			get;
 			set;

@@ -26,34 +26,7 @@ namespace Patchwork.Utility {
 	///     Helper methods (mainly extension methods) for working with Cecil and .NET reflection classes. Some are publically visible.
 	/// </summary>
 	public static class CecilHelper {
-		/// <summary>
-		///     Makes an assembly 'open', whic7h means that everything is public and nothing is sealed. Ideal for writing a patching
-		///     assembly.
-		/// </summary>
-		/// <param name="assembly">The assembly.</param>
-		/// <param name="modifyEvents">if set to <c>true</c> [modify events].</param>
-		public static void MakeOpenAssembly(AssemblyDefinition assembly, bool modifyEvents) {
-			var allTypes = assembly.MainModule.GetAllTypes();
-			allTypes = allTypes.ToList();
-			foreach (var type in allTypes) {
-				foreach (var field in type.Fields) {
-					field.SetAccessibility(Accessibility.Public);
-					field.IsInitOnly = false;
-				}
-				foreach (var method in type.Methods) {
-					method.SetAccessibility(Accessibility.Public);
-				}
-				if (modifyEvents) {
-					foreach (var vent in type.Events) {
-						if (type.Fields.Any(x => x.Name == vent.Name) || type.Properties.Any(x => x.Name == vent.Name)) {
-							vent.Name += "Event";
-						}
-					}
-				}
-				type.IsSealed = false;
-				type.SetAccessibility(Accessibility.Public);
-			}
-		}
+
 
 		public static AssemblyDefinition Clone(this AssemblyDefinition definition) {
 			return AssemblyDefinition.ReadAssembly(new MemoryStream(definition.SerializeAssembly()));
@@ -111,7 +84,7 @@ namespace Patchwork.Utility {
 		/// </summary>
 		/// <param name="method">The method.</param>
 		/// <param name="newAccessibility">The new accessibility.</param>
-		internal static void SetAccessibility(this IMemberDefinition method, Accessibility newAccessibility) {
+		public static void SetAccessibility(this IMemberDefinition method, Accessibility newAccessibility) {
 			SetAccessibilityDynamic(method, newAccessibility);
 		}
 

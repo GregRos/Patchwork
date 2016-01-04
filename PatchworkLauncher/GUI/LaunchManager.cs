@@ -32,6 +32,10 @@ namespace PatchworkLauncher {
 
 		private NotifyIcon _icon;
 
+		public XmlPreferences Preferences {
+			get;
+		}
+
 		private readonly OpenFileDialog _openModDialog = new OpenFileDialog {
 			Filter = "Patchwork Mod Files (*.pw.dll)|*.pw.dll|DLL files (*.dll)|*.dll|All files (*.*)|*.*",
 			CheckFileExists = true,
@@ -47,12 +51,13 @@ namespace PatchworkLauncher {
 
 		//these path specifications seem to be the most compatible between operating systems
 		private static readonly string _pathHistoryXml = Path.Combine(".", "history.pw.xml");
-		private static readonly string _pathSettings = Path.Combine(".", "instructions.pw.xml");
-		private static readonly string _pathGameInfoAssembly = Path.Combine(".", "app.dll");
+		private static readonly string _pathSettings = Path.Combine(".", "settings.pw.xml");
+		private static readonly string _pathGameInfoAssembly = Path.Combine(".", "AppInfo.dll");
 		private static readonly string _pathLogFile = Path.Combine(".", "log.txt");
+		private static readonly string _pathPrefsFile = Path.Combine(".", "preferences.pw.xml");
 		private static readonly XmlSerializer _historySerializer = new XmlSerializer(typeof (XmlHistory));
-		private static readonly XmlSerializer _instructionSerializer = new XmlSerializer(typeof (XmlSettings));
-
+		private static readonly XmlSerializer _settingsSerializer = new XmlSerializer(typeof (XmlSettings));
+		private static readonly XmlSerializer _prefsSerializer = new XmlSerializer(typeof(XmlPreferences));
 		private DialogResult Command_Display_Warning(string text) {
 			return MessageBox.Show(text, "Warning!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 		}
@@ -66,8 +71,9 @@ namespace PatchworkLauncher {
 			/// <returns></returns>
 			public override AppInfo CreateInfo(DirectoryInfo folderInfo) {
 				return new AppInfo() {
-					AppName = "No app.dll file found",
-					AppVersion = "?",
+					AppName = $"No {_pathGameInfoAssembly} file found",
+					IconLocation = null,
+					AppVersion = null,
 					BaseDirectory = folderInfo,
 					Executable = null,
 					IgnorePEVerifyErrors = null
@@ -76,7 +82,7 @@ namespace PatchworkLauncher {
 		}
 
 		private Image TryOpenIcon(FileInfo iconFile) {
-			if (!iconFile.Exists) {
+			if (iconFile?.Exists != true) {
 				return null;
 			}
 			Image iconImg = null;
@@ -101,7 +107,6 @@ namespace PatchworkLauncher {
 		public LaunchManager() {
 			//the following is needed on linux... the current directory must be the Mono executable, which is bad.
 			Environment.CurrentDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
-			//TODO: Refactor this into a constructor?
 			try {
 				FormIcon = Icon.FromHandle(Resources.IconSmall.GetHicon());
 				if (File.Exists(_pathLogFile)) {
@@ -130,11 +135,19 @@ namespace PatchworkLauncher {
 				}
 
 				try {
-					settings = _instructionSerializer.Deserialize(_pathSettings, new XmlSettings());
+					settings = _settingsSerializer.Deserialize(_pathSettings, new XmlSettings());
 				}
 				catch (Exception ex) {
 					Command_Display_Error("Read settings file", _pathSettings, ex, "Patch list and other settings will be reset.");
 				}
+				XmlPreferences prefs = new XmlPreferences();
+				try {
+					prefs = _prefsSerializer.Deserialize(_pathPrefsFile, new XmlPreferences());
+				}
+				catch (Exception ex) {
+					Command_Display_Error("Read preferences file", _pathPrefsFile, ex, "Special preferences will be reset");
+				}
+				Preferences = prefs;
 				string folderDialogReason = null;
 				if (settings.BaseFolder == null) {
 					folderDialogReason = "(no game folder has been specified)";
@@ -304,7 +317,7 @@ namespace PatchworkLauncher {
 			}
 			finally {
 				State.Value = LaunchManagerState.Idle;
-				if (DebugOptions.Default.OpenLogAfterPatch) {
+				if (Preferences.OpenLogAfterPatch) {
 					Process.Start(_pathLogFile);
 				}
 			}
@@ -331,10 +344,6 @@ namespace PatchworkLauncher {
 		}
 
 		public void Command_Launch() {
-			if (DebugOptions.Default.DontRunProgram) {
-				State.Value = LaunchManagerState.Idle;
-				return;
-			}
 			var process = new Process {
 				StartInfo = {
 					FileName = AppInfo.Executable.FullName,
@@ -379,7 +388,7 @@ namespace PatchworkLauncher {
 				var absoluteFolder = PathHelper.GetAbsolutePath(folder);
 				var modsPath = PathHelper.GetAbsolutePath(_modFolder);
 
-				if (!DebugOptions.Default.DontCopyFiles
+				if (!Preferences.DontCopyFiles
 					&& !modsPath.Equals(absoluteFolder, StringComparison.InvariantCultureIgnoreCase)) {
 					targetPath = Path.Combine(_modFolder, fileName);
 					File.Copy(path, targetPath, true);
@@ -409,12 +418,6 @@ namespace PatchworkLauncher {
 			}
 		}
 
-		public void Command_Restore() {
-
-			_home.Visible = true;
-			_icon.Visible = false;
-		}
-
 		public guiHome Command_Start() {
 			_home.ShowOrFocus();
 			return _home;
@@ -422,9 +425,11 @@ namespace PatchworkLauncher {
 
 		public void Command_ExitApplication() {
 			_icon?.Dispose();
-			var xmlInstructions = XmlSettings.FromInstructionSeq(Instructions);
-			xmlInstructions.BaseFolder = BaseFolder;
-			_instructionSerializer?.Serialize(xmlInstructions, _pathSettings);
+			var xmlSettings = XmlSettings.FromInstructionSeq(Instructions);
+			
+			xmlSettings.BaseFolder = BaseFolder;
+			_settingsSerializer?.Serialize(xmlSettings, _pathSettings);
+			_prefsSerializer?.Serialize(Preferences, _pathPrefsFile);
 			if (Application.MessageLoop) {
 				Application.Exit();
 			} else {
@@ -433,7 +438,6 @@ namespace PatchworkLauncher {
 		}
 
 		public async void Command_TestRun() {
-			DebugOptions.Default.OpenLogAfterPatch = true;
 			var history = await Command_Patch();
 			PatchingHelper.RestorePatchedFiles(AppInfo, history.Files);
 		}
@@ -576,7 +580,7 @@ namespace PatchworkLauncher {
 				fileProgress.TaskText.Value = "Applying Patch";
 
 				if (!PatchingHelper.DoesFileMatchPatchList(backupModified, targetFile, patchGroup.Instructions)
-					|| DebugOptions.Default.AlwaysPatch) {
+					|| Preferences.AlwaysPatch) {
 					if (File.Exists(localAssemblyName)) {
 						try {
 							var localAssembly = AssemblyCache.Default.ReadAssembly(localAssemblyName);

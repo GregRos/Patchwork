@@ -6,8 +6,9 @@ using Patchwork.Attributes;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PatchworkLauncher")]
-[assembly: AssemblyDescription("The launcher for the Patchwork assembly modification framework.")]
+[assembly: AssemblyTitle("OpenAssemblyCreator")]
+[assembly: AssemblyDescription("An application for creating open assemblies, for use with Patchwork.")]
+[assembly: AssemblyProduct("OpenAssemblyCreator")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
@@ -15,7 +16,7 @@ using Patchwork.Attributes;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("6c30ded5-0078-48ac-91bb-a0a05a1fc899")]
+[assembly: Guid("27f54c03-0235-41ea-b8ff-4667b7381da3")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -27,3 +28,5 @@ using Patchwork.Attributes;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion(PatchworkInfo.Version)]
+[assembly: AssemblyFileVersion(PatchworkInfo.Version)]

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -68,6 +69,10 @@ namespace PatchworkLauncher {
 		private void guiTestRun_Click(object sender, EventArgs e)
 		{
 			Manager.Command_TestRun();
+		}
+
+		private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
+			Process.Start(PatchworkInfo.PatchworkSite);
 		}
 	}
 }

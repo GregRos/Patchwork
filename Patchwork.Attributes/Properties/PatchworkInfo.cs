@@ -6,19 +6,17 @@ namespace Patchwork.Attributes {
 	/// <summary>
 	/// Provides version information for Patchwork and its related assemblies.
 	/// </summary>
-	[EditorBrowsable(EditorBrowsableState.Advanced)]
 	public static class PatchworkInfo {
 		/// <summary>
 		/// Patchwork version string.
 		/// </summary>
-		public const string Version = "0.8.5";
+		public const string Version = "0.9.0";
 
-		public const string PatchworkDescription =
-			@"This is the patching engine of the Patchwork framework. 
+		public const string Author = "Gregory Rosenbaum";
 
-Its method of distribution is currently being rethought while a new version is tested.";
+		public const string Copyright = "Copyright ©  2016";
 
-		public const string PatchworkAttributesDescription =
-			@"This library contains the patching attributes for the Patchwork assembly modification framework. You must reference this library from your patch assembly.";
+		public const string PatchworkSite = "https://github.com/GregRos/Patchwork";
+
 	}
 }
