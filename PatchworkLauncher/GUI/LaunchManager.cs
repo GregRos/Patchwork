@@ -12,6 +12,7 @@ using Patchwork;
 using Patchwork.Attributes;
 using Patchwork.Utility;
 using Patchwork.Utility.Binding;
+using PatchworkLauncher.Properties;
 using Serilog;
 using Serilog.Events;
 
@@ -74,11 +75,35 @@ namespace PatchworkLauncher {
 			}
 		}
 
+		private Image TryOpenIcon(FileInfo iconFile) {
+			if (!iconFile.Exists) {
+				return null;
+			}
+			Image iconImg = null;
+			try {
+				iconImg = Image.FromFile(iconFile.FullName);
+			}
+			catch {
+				//must not've been an image file. It's not crucial.
+			}
+			if (iconImg == null) {
+				var icon = Icon.ExtractAssociatedIcon(iconFile.FullName);
+				iconImg = icon?.ToBitmap();
+			}
+			return iconImg;
+		}
+
+		public Icon FormIcon {
+			get;
+			private set;
+		}
+
 		public LaunchManager() {
 			//the following is needed on linux... the current directory must be the Mono executable, which is bad.
 			Environment.CurrentDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
 			//TODO: Refactor this into a constructor?
 			try {
+				FormIcon = Icon.FromHandle(Resources.IconSmall.GetHicon());
 				if (File.Exists(_pathLogFile)) {
 					File.Delete(_pathLogFile);
 				}
@@ -123,11 +148,13 @@ namespace PatchworkLauncher {
 				} else {
 					BaseFolder = settings.BaseFolder;
 				}
-				
-				_home = new guiHome(this);
+				_home = new guiHome(this) {
+					Icon = FormIcon
+				};
 				AppInfo = gameInfoFactory.CreateInfo(new DirectoryInfo(BaseFolder));
-				var icon = AppInfo.Executable == null ? _home.Icon : Icon.ExtractAssociatedIcon(AppInfo.Executable.FullName) ?? _home.Icon;
-				ProgramIcon = icon.ToBitmap();
+				AppInfo.AppVersion = AppInfo.AppVersion ?? "version??";
+				var icon = TryOpenIcon(AppInfo.IconLocation) ?? _home.Icon.ToBitmap();
+				ProgramIcon = icon;
 				Instructions = new DisposingBindingList<PatchInstruction>();
 				var instructions = new List<XmlInstruction>();
 				foreach (var xmlPatch in settings.Instructions) {
@@ -152,7 +179,7 @@ namespace PatchworkLauncher {
 				
 				_home.Closed += (sender, args) => Command_ExitApplication();
 				_icon = new NotifyIcon {
-					Icon = _home.Icon,
+					Icon = FormIcon,
 					Visible = false,
 					Text = "Patchwork Launcher",
 					ContextMenu = new ContextMenu {
@@ -161,6 +188,7 @@ namespace PatchworkLauncher {
 						}
 					}
 				};
+				File.Delete(_pathHistoryXml);
 			}
 			catch (Exception ex) {
 				Command_Display_Error("Launch the application", ex: ex, message: "The application will now exit.");
@@ -251,7 +279,9 @@ namespace PatchworkLauncher {
 			};
 			try {
 				var progObj = new ProgressObject();
-				using (var logForm = new LogForm(progObj)) {
+				using (var logForm = new LogForm(progObj) {
+					Icon = _home.Icon
+				}) {
 					logForm.Show();
 					try {
 						var patches = GroupPatches(Instructions).ToList();
@@ -332,7 +362,7 @@ namespace PatchworkLauncher {
 			State.Value = process.Start() ? LaunchManagerState.GameRunning : LaunchManagerState.Idle;
 		}
 
-		public Bitmap ProgramIcon {
+		public Image ProgramIcon {
 			get;
 			private set;
 		}

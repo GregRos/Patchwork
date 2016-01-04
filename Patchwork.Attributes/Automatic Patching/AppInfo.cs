@@ -52,6 +52,11 @@ namespace Patchwork.Attributes {
 			get;
 			set;
 		}
+
+		public FileInfo IconLocation {
+			get;
+			set;
+		} 
 	}
 
 }
