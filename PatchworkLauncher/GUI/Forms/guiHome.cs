@@ -74,5 +74,10 @@ namespace PatchworkLauncher {
 		private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
 			Process.Start(PatchworkInfo.PatchworkSite);
 		}
+
+		private void guiGameName_Click(object sender, EventArgs e)
+		{
+
+		}
 	}
 }

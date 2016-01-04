@@ -43,7 +43,7 @@ namespace Patchwork.Attributes {
 		public long[] IgnorePEVerifyErrors {
 			get;
 			set;
-		}
+		} = new long[0];
 
 		/// <summary>
 		/// The base or primary folder of the application.

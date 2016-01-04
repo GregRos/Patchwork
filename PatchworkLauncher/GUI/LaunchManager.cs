@@ -62,25 +62,6 @@ namespace PatchworkLauncher {
 			return MessageBox.Show(text, "Warning!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 		}
 
-		private class DefaultGameInfoFactory : AppInfoFactory  {
-
-			/// <summary>
-			/// Constructs a new instance of <see cref="AppInfo"/>.
-			/// </summary>
-			/// <param name="folderInfo">The primary folder of the application from which other information is deduced.</param>
-			/// <returns></returns>
-			public override AppInfo CreateInfo(DirectoryInfo folderInfo) {
-				return new AppInfo() {
-					AppName = $"No {_pathGameInfoAssembly} file found",
-					IconLocation = null,
-					AppVersion = null,
-					BaseDirectory = folderInfo,
-					Executable = null,
-					IgnorePEVerifyErrors = null
-				};
-			}
-		}
-
 		private Image TryOpenIcon(FileInfo iconFile) {
 			if (iconFile?.Exists != true) {
 				return null;
@@ -116,11 +97,7 @@ namespace PatchworkLauncher {
 					new LoggerConfiguration().WriteTo.File(_pathLogFile, LogEventLevel.Debug).MinimumLevel.Debug().CreateLogger();
 				AppInfoFactory gameInfoFactory;
 
-				if (!File.Exists(_pathGameInfoAssembly)) {
-					gameInfoFactory = new DefaultGameInfoFactory();
-				} else {
-					gameInfoFactory = PatchingHelper.LoadAppInfoFactory(_pathGameInfoAssembly);
-				}
+				gameInfoFactory = !File.Exists(_pathGameInfoAssembly) ? null : PatchingHelper.LoadAppInfoFactory(_pathGameInfoAssembly);
 				
 
 				var settings = new XmlSettings();
@@ -164,7 +141,10 @@ namespace PatchworkLauncher {
 				_home = new guiHome(this) {
 					Icon = FormIcon
 				};
-				AppInfo = gameInfoFactory.CreateInfo(new DirectoryInfo(BaseFolder));
+				var defaultAppInfo = new AppInfo() {
+					AppName = "No AppInfo.dll",
+				};
+				AppInfo = gameInfoFactory?.CreateInfo(new DirectoryInfo(BaseFolder)) ?? defaultAppInfo;
 				AppInfo.AppVersion = AppInfo.AppVersion ?? "version??";
 				var icon = TryOpenIcon(AppInfo.IconLocation) ?? _home.Icon.ToBitmap();
 				ProgramIcon = icon;
