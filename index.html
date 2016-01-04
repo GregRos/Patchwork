@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Patchwork by GregRos</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Patchwork</h1>
+        <h2>A library for modifying .NET assemblies.</h2>
+        <a href="https://github.com/GregRos/Patchwork" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="patchwork" class="anchor" href="#patchwork" aria-hidden="true"><span class="octicon octicon-link"></span></a>Patchwork</h1>
+
+<hr>
+
+<p><strong>License:</strong> <a href="http://opensource.org/licenses/MIT">MIT License</a> </p>
+
+<h2>
+<a id="latest-version-09" class="anchor" href="#latest-version-09" aria-hidden="true"><span class="octicon octicon-link"></span></a><a href="https://github.com/GregRos/Patchwork/releases/latest"><strong>Latest Version:</strong> 0.9</a>
+</h2>
+
+<p><strong>Patchwork</strong> is a framework for integrating your own code into existing .NET assemblies ("patching" them). It allows you to edit, create, or replace things such as types, properties, and methods in a simple, straight-forward, and declarative way, using attributes.</p>
+
+<p>The framework lets you basically rewrite entire programs, such as games, according to your whims (as long as they're written in a .NET language of course). Little in the code is beyond your control, and you can write it all using the same tools as the original developers. </p>
+
+<p>You write code in C# or another language, and that code is injected into the target assembly according to your patching declarations. It is minimally transformed, fixing references to such things as types and methods, so that it remains valid at the point of injection.</p>
+
+<p>The framework was written with game modding in mind, but can be used for any purpose.</p>
+
+<p>The framework is mostly documented, including the non-public members.</p>
+
+<h2>
+<a id="moddable-games" class="anchor" href="#moddable-games" aria-hidden="true"><span class="octicon octicon-link"></span></a>Moddable Games</h2>
+
+<p>Like I said above, the library was written with game modding in mind. In general, you can mod two kinds of games with it: i</p>
+
+<h3>
+<a id="netxna" class="anchor" href="#netxna" aria-hidden="true"><span class="octicon octicon-link"></span></a>.NET/XNA</h3>
+
+<p>Games that run on .NET/XNA. You can mod pretty much anything in this case. However, there aren't many popular XNA titles.</p>
+
+<h3>
+<a id="unitynet" class="anchor" href="#unitynet" aria-hidden="true"><span class="octicon octicon-link"></span></a>Unity/.NET</h3>
+
+<p>Games that run on Unity and use .NET for their game logic (mainly C#, but some also use other languages). </p>
+
+<p>Luckily, the majority of popular Unity titles do primarily use .NET.</p>
+
+<p>Modding in this case is somewhat more limited, as you can only mod the game logic in the scripts, but from experience, you still have vastly more power than typical official modding tools would give you.</p>
+
+<h2>
+<a id="components" class="anchor" href="#components" aria-hidden="true"><span class="octicon octicon-link"></span></a>Components</h2>
+
+<p>The framework consists of several separate components. </p>
+
+<h3>
+<a id="patchworklauncher-pwl" class="anchor" href="#patchworklauncher-pwl" aria-hidden="true"><span class="octicon octicon-link"></span></a>PatchworkLauncher (PWL)</h3>
+
+<p>This is the end-user patching GUI. Users use this program to apply your modifications to their games or applications. It is most convenient to download it from the <a href="https://github.com/GregRos/Patchwork/releases">Releases</a> section.</p>
+
+<p>You also use this program to test your patch assembly for yourself. </p>
+
+<h4>
+<a id="openassemblycreator-oac" class="anchor" href="#openassemblycreator-oac" aria-hidden="true"><span class="octicon octicon-link"></span></a>OpenAssemblyCreator (OAC)</h4>
+
+<p>This is a command-line tool packaged with PWL. It allows you to create an open assembly to reference in your patch assembly. More on this later.</p>
+
+<h3>
+<a id="patchworkattributes-pwa" class="anchor" href="#patchworkattributes-pwa" aria-hidden="true"><span class="octicon octicon-link"></span></a>Patchwork.Attributes (PWA)</h3>
+
+<p>The <code>Patchwork.Attributes</code> assembly is meant to be referenced by your patch assembly, and is compiled with framework version 2.0 to improve compatibility. It contains the attributes that serve as patching instructions. It has no dependencies.</p>
+
+<p>You can conveniently get this package from <a href="https://www.nuget.org/packages/Patchwork.Attributes/">NuGet: Patchwork.Attributes</a> and reference it in your patch assembly.</p>
+
+<h3>
+<a id="patchworkengine" class="anchor" href="#patchworkengine" aria-hidden="true"><span class="octicon octicon-link"></span></a>Patchwork.Engine</h3>
+
+<p>This is the library that actually does the patching. It can be used separately from the GUI. However, you generally wouldn't want to do so unless you wanted to write a new front-end, some kind of script, or... had some other reason.</p>
+
+<p>Naturally, it's packaged with the launcher.</p>
+
+<h2>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h2>
+
+<p>First, get the latest PWL release from the releases section. </p>
+
+<p>Unless someone else already wrote it, you'll need to write an <code>AppInfo.dll</code> file for the game you want to patch. See the section on the launcher for more information.</p>
+
+<p>Next, create a new project (preferably with a name ending with <code>.pw</code> for reasons explained later). </p>
+
+<p>Reference the <code>Patchwork.Attributes</code> assembly from that project.</p>
+
+<p>Since you probably don't want to copy files around manually, you should take advantage of the <code>DontCopyFiles</code> option in the <code>Preferences</code> section of the <code>preferences.pw.xml</code> file. It lets you add files to your mod list without copying them to a mods folder, so you can just add the result of your build directly.</p>
+
+<p>That's... it. You're ready to go. Good luck out there. </p>
+
+<p>By the way, patching using the launcher creates a dependency on <code>Patchwork.Attributes</code> in the target (patched) assembly.</p>
+
+<h2>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview</h2>
+
+<p>There are a few stages to writing a patch.</p>
+
+<h3>
+<a id="finding-what-to-patch" class="anchor" href="#finding-what-to-patch" aria-hidden="true"><span class="octicon octicon-link"></span></a>Finding What to Patch</h3>
+
+<p>Before you start writing your patch assembly, you need to find what you want to patch. This involves decompiling the target assembly. See <em>Recommended Decompilers</em> below for more information. </p>
+
+<p>Also, take note of the target framework version of the assembly, as for the most reliable results you'd want your patch to be built against the same framework version.</p>
+
+<h3>
+<a id="creating-an-open-assembly" class="anchor" href="#creating-an-open-assembly" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating an Open Assembly</h3>
+
+<p>You also need to have an "open" version of the assembly you want to patch. "Open" here means that all of its members are public and non-sealed. </p>
+
+<p>To see why this is required, imagine you have a class like:</p>
+
+<pre><code>class Player {
+    private int _hitpoints;
+
+    public void GetHit() {
+        _hitpoints--;
+    }
+}
+</code></pre>
+
+<p>And you want to overwrite the <code>GetHit</code> method to perform <code>_hitpoints++</code> instead. </p>
+
+<p>The problem is that <code>_hitpoints</code> can only be accessed from inside the class <code>Player</code>. But you have to write the code <code>_hitpoints++</code> in your own assembly. The framework will inject it into the correct spot, but your C# compiler doesn't know that and won't let you access the member.</p>
+
+<p>Changing all members to public allows you to access the member. However, it can cause problems too. You might make a mistake and illegally refer to a non-public member, for example.</p>
+
+<p>On the brighter side, the <code>PEVerify</code> tool (which executed automatically) will catch any accessibility issues and warn you about them.</p>
+
+<p>You create an open assembly using the command-line tool <code>OpenAssemblyCreator.exe</code>, also called OAC. Using it is straight-forward. </p>
+
+<h3>
+<a id="creating-the-patch-assembly" class="anchor" href="#creating-the-patch-assembly" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating the Patch Assembly</h3>
+
+<p>You patch an existing target assembly by writing a <em>patch assembly</em> (probably with the target assembly referenced), and load it as input to patch a "target" assembly. This assembly contains attributes that are used as patching instructions. </p>
+
+<p>You need to specify the <code>PatchAssembly</code> attribute on any such patch assembly.</p>
+
+<h4>
+<a id="writing-it" class="anchor" href="#writing-it" aria-hidden="true"><span class="octicon octicon-link"></span></a>Writing It</h4>
+
+<p>Patch assemblies consist of patch types, which are new types or just sets of modifications to an existing type. Here is a simple example:</p>
+
+<pre><code>[ModifiesType] //means the class modifies another class
+class AttackMod : Attack {
+    //note that by default it modifies its parent class, if any, 
+    //so this class modifies Attack.
+
+    [NewMember] //this means a new method will be injected into the type
+    public Hit() {
+        //whatever you want to do
+    }
+
+    [ModifiesMember("ExistingMethod")]
+    public void ExistingMethodRevised() {
+        //your instructions will replace those of ExistingMethod,
+        //as defined in the modified type
+    }
+}
+
+[NewType]
+public class MyNewType {
+    //No need to specify attributes here.
+    private readonly string _myField;
+
+    public int MyMethod(int x) { ... }
+}
+</code></pre>
+
+<p>You can add any members to the type, and attach the right attributes to them, depending on whether you want them to modify existing members or create new ones. (If you create a new type, there are no existing members to modify, of course).</p>
+
+<p>Compiler-generated members are imported as new members by default, even if they don't have a patching attribute.</p>
+
+<h4>
+<a id="format-and-additional-info" class="anchor" href="#format-and-additional-info" aria-hidden="true"><span class="octicon octicon-link"></span></a>Format and Additional Info</h4>
+
+<p>The recommended extension for patch assemblies is <code>pw.dll</code>.</p>
+
+<p>In order for a patch assembly to work with the Patchwork launcher, it must define a class with the following requirements.</p>
+
+<ol>
+<li>It implements <code>Patchwork.Attributes.IPatchInfo</code>
+</li>
+<li>It is decorated with <code>Patchwork.Attributes.PatchInfoAttribute</code>.</li>
+<li>It has a default constructor.</li>
+</ol>
+
+<p>There must be only one such class in the assembly.</p>
+
+<p>The class should not contain any references to any types not found in the GAC or in <code>Patchwork.Attributes</code>.</p>
+
+<p>It is instantiated in a separate AppDomain from the rest of the application, and this AppDomain is unloaded if the user removes it from the patch list.</p>
+
+<p>The <code>PatchInfo</code> is needed to tell the launcher what file to patch. The class can find the file based on the operating system and other information.</p>
+
+<h3>
+<a id="patching" class="anchor" href="#patching" aria-hidden="true"><span class="octicon octicon-link"></span></a>Patching</h3>
+
+<p>The patch is mostly viewed as data by the patchwork launcher. To patch another assembly with your patch assembly, you must load the <code>pw.dll</code> file into the launcher and then start the game.</p>
+
+<p>That's it.</p>
+
+<h2>
+<a id="patchwork-launcher" class="anchor" href="#patchwork-launcher" aria-hidden="true"><span class="octicon octicon-link"></span></a>Patchwork Launcher</h2>
+
+<p>Each launcher executable is meant to work with one game. To work with a game, someone must write an <code>AppInfo.dll</code> assembly (as described below) and put it in the launcher directory. The launcher loads it on startup and uses it to get information about the game. The launcher should be distributed with this file.</p>
+
+<p>The launcher allows users to manage patches for the chosen game, as well as change the order in which they are applied. It keeps the original game files on disk and switches them with modded files when the user launches the game. It only patches the files when necessary. It stays in the background, and once the game is exited, the launcher switches to the original files once more. </p>
+
+<p>Once it starts up, the launcher also checks the state of the files and fixes them if necessary, in case it was terminated unexpectedly.</p>
+
+<p>The launcher works on Mono and is written in Windows Forms for that purpose.</p>
+
+<h3>
+<a id="appinfodll" class="anchor" href="#appinfodll" aria-hidden="true"><span class="octicon octicon-link"></span></a>AppInfo.dll</h3>
+
+<p>This file is required for the launcher to work correctly with a game. It's an assembly (the name doesn't matter) containing a type that:</p>
+
+<ol>
+<li>Inherits from <code>Patchwork.Attributes.AppInfoFactory</code>.</li>
+<li>Is decorated with <code>Patchwork.Attributes.AppInfoFactoryAttribute</code>.</li>
+<li>Has a default constructor.</li>
+</ol>
+
+<p>This type has a <code>CreateInfo</code> method that returns an <code>Pathcwork.Attributes.AppInfo</code> object which provides information about the game.</p>
+
+<p>There must be only one such class in the assembly.</p>
+
+<p>This class is instantiated during runtime, in the same AppDomain as the original application. The launcher can't start if the file is invalid or not found.</p>
+
+<p>If this file is not found, an error message is generated and the launcher doesn't work properly.</p>
+
+<h2>
+<a id="available-attributes" class="anchor" href="#available-attributes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Available Attributes</h2>
+
+<p>These attributes are located in the <code>Patchwork.Attributes</code> namespace. Note that this isn't necessarily a full list.</p>
+
+<h3>
+<a id="note-about-attribute-constructors" class="anchor" href="#note-about-attribute-constructors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Note about attribute constructors</h3>
+
+<p>Attributes that require types as parameters invariably have an <code>object</code> parameter instead of a <code>Type</code> parameter.</p>
+
+<p>This is a necessary workaround. You still use <code>typeof(T)</code> to specify the type.</p>
+
+<h3>
+<a id="patchingassembly" class="anchor" href="#patchingassembly" aria-hidden="true"><span class="octicon octicon-link"></span></a>PatchingAssembly</h3>
+
+<p>You <em>must</em> add this attribute to your assembly (using <code>[assembly: PatchingAssembly]</code>) for it to be recognized as an assembly that contains patching types.</p>
+
+<h3>
+<a id="modifiestypename" class="anchor" href="#modifiestypename" aria-hidden="true"><span class="octicon octicon-link"></span></a>ModifiesType(name)</h3>
+
+<p>Says that your type modifies another type in the game. Allows you to use <code>ModifiesMember</code> within that type.</p>
+
+<p>You can specify the full name of the type you want to modify, or let PW infer it.</p>
+
+<h3>
+<a id="replacestypename" class="anchor" href="#replacestypename" aria-hidden="true"><span class="octicon octicon-link"></span></a>ReplacesType(name)</h3>
+
+<p>Alternative version of the above attribute. Removes all the members of the type, overwriting it with your own members. Currently implemented only on enums. <code>ModifiesMember</code> attributes are invalid, since they have no meaning.</p>
+
+<h3>
+<a id="modifiesmembernamescope" class="anchor" href="#modifiesmembernamescope" aria-hidden="true"><span class="octicon octicon-link"></span></a>ModifiesMember(name,scope)</h3>
+
+<p>Modifies the member, such as its accessibility, body, and maybe other things. scope controls the scope of the modification.</p>
+
+<h3>
+<a id="modifiesaccessibilityname" class="anchor" href="#modifiesaccessibilityname" aria-hidden="true"><span class="octicon octicon-link"></span></a>ModifiesAccessibility(name)</h3>
+
+<p>Restricted form of the last attribute. Modifies just the accessibility to be identical to your member. </p>
+
+<p>Provided for convenience.</p>
+
+<h3>
+<a id="newmemberaltname" class="anchor" href="#newmemberaltname" aria-hidden="true"><span class="octicon octicon-link"></span></a>NewMember(altName)</h3>
+
+<p>Introduce this as a new member to the patched type. If you specify <code>altName</code>, the member will be introduced under this name instead.</p>
+
+<p>If the member collides with an existing member, its name will be suffixed with <code>_$pw$_RANDOM</code>, e.g. <code>_$pw$_dfRff</code>.  A warning will be emitted.</p>
+
+<h3>
+<a id="duplicatesbodymethodname-declaringtype" class="anchor" href="#duplicatesbodymethodname-declaringtype" aria-hidden="true"><span class="octicon octicon-link"></span></a>DuplicatesBody(methodName, declaringType)</h3>
+
+<p>Put this on a method marked with NewMember or ModifiesMember to insert the body of another method into it. Optionally, you can provide the type that declares the method; otherwise, it defaults to the type being modified.
+You can use it to call original members in the modified type, as it takes the body from the original assembly.</p>
+
+<h3>
+<a id="newtypealtname-altnamespace" class="anchor" href="#newtypealtname-altnamespace" aria-hidden="true"><span class="octicon octicon-link"></span></a>NewType(altName, altNamespace)</h3>
+
+<p>Put this attribute on a type to denote it is a new type that will be introduced into the assembly.</p>
+
+<p>The name of the type will normally be the same as it is in your assembly, including namespaces and so forth. However, <code>altName</code> and <code>altNamespace</code> allow you to specify an alternative name/namespace.</p>
+
+<p>In case of a collision, the type name will be suffixed with <code>_$pw$_RANDOM</code>, e.g. <code>_$pw$_dffERr</code>. A warning will be emitted.</p>
+
+<p>You can create any kind of type you like, whether interface, struct, or class. You can have inheritance, generic type parameters, put constraints on those parameters, etc. Anything goes.</p>
+
+<p>You don't need to use creation attributes on any of your type's members, except for other types. They will be considered to have the <code>NewMember</code> attribute. </p>
+
+<p>You can put <code>ModifiesType</code> on a nested type inside a <code>NewType</code>, but not <code>ModifiesMember</code>. </p>
+
+<h3>
+<a id="removethismember" class="anchor" href="#removethismember" aria-hidden="true"><span class="octicon octicon-link"></span></a>RemoveThisMember</h3>
+
+<p>Removes a member of the same name from the modified type. Added for the sake of completeness.</p>
+
+<p>After using it, it's wise to mark the member using the <code>[Obsolete]</code> attribute so you don't invoke it by accident.</p>
+
+<p>PW will not check if this action causes an error, but errors may still come up in the patching process later on.</p>
+
+<p>It is not possible to remove types.</p>
+
+<h3>
+<a id="disablepatching" class="anchor" href="#disablepatching" aria-hidden="true"><span class="octicon octicon-link"></span></a>DisablePatching</h3>
+
+<p>Disables the patching of this element and all child elements, including nested types. </p>
+
+<p>Modifications will not be performed, and new types will not be created.</p>
+
+<h3>
+<a id="memberaliasmembername-declaringtype-aliascallmode" class="anchor" href="#memberaliasmembername-declaringtype-aliascallmode" aria-hidden="true"><span class="octicon octicon-link"></span></a>MemberAlias(memberName, declaringType, aliasCallMode)</h3>
+
+<p>This attribute lets you create an alias for another member. When Patchwork encounters a reference to the alias member in your code, it will replace that reference with the aliased member.</p>
+
+<p>It is useful for making explicit calls to things such as base class constructors. If <code>aliasCallMode == AliasCallMode.NonVirtual</code>, a call to the member is translated to a non-virtual call, bypassing any overrides. This will allow you to inject <code>base.OverriddenMethod()</code> sorts of calls into the methods you modify.</p>
+
+<h3>
+<a id="patchworkdebugregistermembername-declaringtype" class="anchor" href="#patchworkdebugregistermembername-declaringtype" aria-hidden="true"><span class="octicon octicon-link"></span></a>PatchworkDebugRegister(memberName, declaringType)</h3>
+
+<p>This is a special attribute for debugging purposes.  You can specify a static string member that will be used as a debug register for the current method. It will be updated with information about which line number is going to be executed next. It lets you find the line number at which an exception was thrown (or something else happened), when the exception does not contain this information. </p>
+
+<p>For example, the register can contain the following after an exception is thrown and is caught in the same method:</p>
+
+<pre><code>10 ⇒ 11 ⇒ 45 ⇒ 46 ⇒ 47 ⇒ 251 ⇒ 252
+</code></pre>
+
+<p>If the catch clause was at line 251, then line 47 is the one that threw the exception.</p>
+
+<p>This is a hack, but it can be quite useful.</p>
+
+<h3>
+<a id="togglefieldattributesfieldattributes" class="anchor" href="#togglefieldattributesfieldattributes" aria-hidden="true"><span class="octicon octicon-link"></span></a>ToggleFieldAttributes(fieldAttributes)</h3>
+
+<p>This custom attribute toggles (XORs) the intrinsic deceleration attributes of the patched field with the input attributes. It must be used with an action attribute, such as <code>ModifiesMember</code>.</p>
+
+<p>This attribute allows you to change accessibility, as well as more arcane things. Using it incautiously can cause runtime errors.</p>
+
+<h3>
+<a id="togglemethodattributesmethodattributes" class="anchor" href="#togglemethodattributesmethodattributes" aria-hidden="true"><span class="octicon octicon-link"></span></a>ToggleMethodAttributes(methodAttributes)</h3>
+
+<p>This custom attribute toggles (XORs) the intrinsic deceleration attributes of the patched method with the input attributes. It must be used with an action attribute, such as <code>ModifiesMember</code>.</p>
+
+<p>This attribute allows you to change accessibility, add/remove the <code>sealed</code> qualifier, and perform other, more arcane tasks. Using it incautiously can cause runtime errors.</p>
+
+<h2>
+<a id="naming-conventions" class="anchor" href="#naming-conventions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Naming Conventions</h2>
+
+<p>It is best practice to follow certain naming conventions when writing your patch assembly.</p>
+
+<p>You should prefix each code element according to the action the framework is expected to perform on it. That way, you will be able to tell what sort of member it is just by glancing at the name, and your code will be more readable to others.</p>
+
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Form</th>
+<th>Related Attribute</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modification of <code>Name</code> type/member from the original assembly</td>
+<td><code>mod_Name</code></td>
+<td>
+<code>ModifiesType</code>, <code>ModifiesMember</code>
+</td>
+</tr>
+<tr>
+<td>Duplicate of <code>Name</code> in the modified type</td>
+<td><code>orig_Name</code></td>
+<td><code>DuplicatesBody</code></td>
+</tr>
+<tr>
+<td>Duplicate of <code>Name</code> in type <code>Type</code> in the original assembly</td>
+<td><code>orig_Type_Name</code></td>
+<td><code>DuplicatesBody</code></td>
+</tr>
+<tr>
+<td>Alias of <code>Name</code> in type <code>Type</code>
+</td>
+<td><code>alias_Type_Name</code></td>
+<td><code>MemberAlias</code></td>
+</tr>
+<tr>
+<td>New type or member</td>
+<td>(none)</td>
+<td>
+<code>NewMember</code>, <code>NewType</code>
+</td>
+</tr>
+</tbody>
+</table>
+
+<p>For instance constructors, use the name <code>ctor</code> and for static ones use <code>cctor</code>. </p>
+
+<p>(none) means that you should not prefix the name with anything.</p>
+
+<h2>
+<a id="specific-issues" class="anchor" href="#specific-issues" aria-hidden="true"><span class="octicon octicon-link"></span></a>Specific Issues</h2>
+
+<h3>
+<a id="about-overloading" class="anchor" href="#about-overloading" aria-hidden="true"><span class="octicon octicon-link"></span></a>About Overloading</h3>
+
+<p>When you put an attribute on a code element, the framework will usually use that element's name (or an alternative name you supply) and, in the case of methods and properties, their parameters, to find what to modify.</p>
+
+<p>To modify one of several overloaded methods, you just need to duplicate that method's parameter types exactly.</p>
+
+<p>Note that return types of existing methods cannot be modified.</p>
+
+<h3>
+<a id="modifyingcreating-properties" class="anchor" href="#modifyingcreating-properties" aria-hidden="true"><span class="octicon octicon-link"></span></a>Modifying/Creating Properties</h3>
+
+<p>Note that to modify a property's <code>get</code> and <code>set</code> accessors, you need to put <code>ModifiesMember</code> <em>on the accessor you want to modify</em>, not on the property deceleration. The accessors are actually methods, and it's those the framework modifies.</p>
+
+<p>However, you can choose to put <code>NewMember</code> on the property, in which case the accessors will be created automatically.</p>
+
+<p>This also applies to the property's accessibility. In the IL, only get/set methods have accessibility, so if you want to modify it you have to put the attribute on the accessor, possibly on both.</p>
+
+<p>You might need to use the explicit name of the property accessor to modify it (if your property is named differently). Accessor names are normally <code>get_{Property}</code> and <code>set_{Property}</code>.</p>
+
+<p>Pretty much <em>the only</em> time you'd want to use <code>ModifiesMember</code> attribute on a property itself is when you want to create a brand new accessor for the property. In this case, the property data must be modified. You'll still put the <code>NewMember</code> attribute on the new accessor.  </p>
+
+<h3>
+<a id="modifying-constructors" class="anchor" href="#modifying-constructors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Modifying Constructors</h3>
+
+<p>You can't create constructors for existing types, but you can modify existing ones. Constructors are just methods called <code>.ctor</code>. You just need to duplicate their signature in a normal method, and change the modified member name in the attribute. Every object has a default <code>.ctor</code>.</p>
+
+<p>Static constructors are called <code>.cctor</code>. Not all types have static constructors.</p>
+
+<p>Note that constructors also contain the type's initializers, so you may need to copy those or the class might not work correctly. </p>
+
+<p>Instance constructors normally contain explicit calls to a base class constructor (e.g. <code>base::.ctor()</code>). It is best practice to add this call. This can be achieved by using the <code>MemberAlias</code> attribute. For example:</p>
+
+<pre><code>[MemberAlias(".ctor", typeof(object))]
+private void object_ctor() {
+    //this is an alias for object::.ctor()
+}
+
+[ModifiesMember(".ctor")]
+public void CtorNew() {
+    object_ctor();
+    IEModOptions.LoadFromPrefs();
+}
+</code></pre>
+
+<p>Static constructors do not contain such a call.</p>
+
+<h3>
+<a id="nested-types" class="anchor" href="#nested-types" aria-hidden="true"><span class="octicon octicon-link"></span></a>Nested Types</h3>
+
+<p>You can have your nested types modify other types, or you can modify other nested types, without regard to the nesting level. The location of your nested type doesn't matter, and using <code>ModifiesType</code> behaves the same way. </p>
+
+<p>To modify a type by name (rather than having PW infer it), you have to give the <em>full name</em> of the type, without regard to where the attribute appears.</p>
+
+<p>In the IL and in Mono.Cecil, as well as in this framework, you use <code>/</code> to indicate nesting. E.g. <code>Namespace.ContainerClass/Nested/NestedNested</code>.</p>
+
+<p>You can also have a new nested type inside a modification to an existing type. In this case, the nested type will be moved to the modified type.</p>
+
+<h3>
+<a id="modifying-explicitly-implemented-methods" class="anchor" href="#modifying-explicitly-implemented-methods" aria-hidden="true"><span class="octicon octicon-link"></span></a>Modifying Explicitly Implemented Methods</h3>
+
+<p>These are regular methods with different actual names. The names are <code>[INTERFACE_FULL_NAME].Method</code>. For example, if <code>IEnumerable&lt;T&gt;.GetEnumerator()</code> were explicitly implemented, you'd set the member name to:</p>
+
+<pre><code>    System.Collections.Generic.IEnumerable&lt;T&gt;.GetEnumerator
+</code></pre>
+
+<p>The dots are actually part of the name of the method, just like the dot in <code>.ctor</code> is. IL doesn't follow C# naming rules.</p>
+
+<h2>
+<a id="patching-history" class="anchor" href="#patching-history" aria-hidden="true"><span class="octicon octicon-link"></span></a>Patching History</h2>
+
+<p>The launcher embeds various attributes in the target assembly that let you see what Patchwork did to it. These are called history attributes. The following are embedded.</p>
+
+<p>Also, the patching attributes you use also get embedded, except for <code>PatchAssembly</code>.</p>
+
+<h3>
+<a id="patchinghistoryattribute" class="anchor" href="#patchinghistoryattribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>PatchingHistoryAttribute</h3>
+
+<p>Abstract parent of all history attributes.</p>
+
+<h3>
+<a id="patchedbyassemblyattribute" class="anchor" href="#patchedbyassemblyattribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>PatchedByAssemblyAttribute</h3>
+
+<p>Contains information about the patch assembly, the original assembly (before patching was performed), and the Patchwork assembly that performed patching.</p>
+
+<h3>
+<a id="patchedbymemberattribute" class="anchor" href="#patchedbymemberattribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>PatchedByMemberAttribute</h3>
+
+<p>Indicates the member in the patch assembly that contained the patching instruction to patch this member.</p>
+
+<h3>
+<a id="patchedbytypeattribute" class="anchor" href="#patchedbytypeattribute" aria-hidden="true"><span class="octicon octicon-link"></span></a>PatchedByTypeAttribute</h3>
+
+<p>Indicates the type in the patch assembly that contained the patching instruction to patch this type.</p>
+
+<h2>
+<a id="limitations" class="anchor" href="#limitations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Limitations</h2>
+
+<p>In this section I'll list the limitations of the library, in terms of the code that it can deal with at this stage, and what it <em>can't</em> allow you to do. This section will be updated as more features get worked in.</p>
+
+<h3>
+<a id="assemblies" class="anchor" href="#assemblies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Assemblies</h3>
+
+<ol>
+<li>Multi-module assemblies won't work properly (either as patches or patch targets). Note that few IDEs (if any) can naturally produce such assemblies, though they can be the result of tools such as ILMerge.</li>
+<li>Inter-dependencies between multiple patch assemblies haven't been tested.</li>
+</ol>
+
+<h3>
+<a id="members" class="anchor" href="#members" aria-hidden="true"><span class="octicon octicon-link"></span></a>Members</h3>
+
+<ol>
+<li>You can't add new constructors or finalizers to existing types.</li>
+<li>Existing declarations can only be modified in limited ways. For example, you can't un-seal a sealed class, change type parameters and their constraints, etc. New members can still be sealed or unsealed, etc, as you prefer. </li>
+<li>Field initializers don't work in modifying types, except for const fields. This is unlikely to be fixed anytime soon, as it requires pretty tricky IL injection.</li>
+</ol>
+
+<h3>
+<a id="language-features" class="anchor" href="#language-features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Language Features</h3>
+
+<ol>
+<li>
+<code>unsafe</code> context features, like pointers and pinned variables, probably won't work.</li>
+<li>Various exotic and undocumented (in C#) constructs cannot be used, such as <code>__arglist</code>.</li>
+</ol>
+
+<h3>
+<a id="other-net-languages" class="anchor" href="#other-net-languages" aria-hidden="true"><span class="octicon octicon-link"></span></a>Other .NET Languages</h3>
+
+<p>This library is for transforming IL, not transforming source code, so it doesn't actually care what language you write in. As long as you put attributes on things that are recognizable in the IL as properties, methods, and classes, it will probably work correctly.</p>
+
+<p>That said, you could experience more problems if you write in languages other than C#, simply because they can be compiled to very different IL, and the different input could reveal flaws I never encountered during testing. </p>
+
+<p>However, don't take this as me discouraging you from using other languages. </p>
+
+<h2>
+<a id="recommended-decompilers" class="anchor" href="#recommended-decompilers" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recommended Decompilers</h2>
+
+<p>I've tried a number of decompilers. </p>
+
+<ol>
+<li>
+<strong><a href="http://www.telerik.com/download/justdecompile">Telerik JustDecompile</a></strong>: Probably the best overall decompiler I've tested. It has great search functions, can produce IL as well as C#, good decompilation ability, and has a great interface. Decompilation isn't perfect, as it can't decompile such things as iterators. Tends to handle errors fairly decently.</li>
+<li>
+<a href="http://ilspy.net/"><strong>ILSpy:</strong></a> This one generates the best source code <em>by far</em> from the decompilers I've tested. It can decompile iterators, lambdas, you name it. Unfortunately, it has no search function that deserves the name and handles errors very badly, even when set to IL. The interface is also inconvenient.</li>
+<li>
+<a href="https://www.jetbrains.com/decompiler"><strong>dotPeek</strong></a>: It has a good interface and decent search, with the very helpful ability of finding related (e.g. derived) types, but isn't very good at decompiling compiler-generated code. It can't even handle things like auto-properties.</li>
+</ol>
+
+<h2>
+<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h2>
+
+<ol>
+<li>
+<a href="http://www.mono-project.com/docs/tools+libraries/libraries/Mono.Cecil/">Mono.Cecil</a>, without which none of this would have been possible.</li>
+<li>
+<a href="http://serilog.net/">Serilog</a>, used for logging.</li>
+</ol>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/GregRos/Patchwork/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/GregRos/Patchwork/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/GregRos/Patchwork"></a> is maintained by <a href="https://github.com/GregRos">GregRos</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
