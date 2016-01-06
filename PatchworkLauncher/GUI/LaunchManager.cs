@@ -55,11 +55,31 @@ namespace PatchworkLauncher {
 		private static readonly string _pathGameInfoAssembly = Path.Combine(".", "AppInfo.dll");
 		private static readonly string _pathLogFile = Path.Combine(".", "log.txt");
 		private static readonly string _pathPrefsFile = Path.Combine(".", "preferences.pw.xml");
+		private static readonly string _pathReadme = Path.Combine(".", "readme.txt");
 		private static readonly XmlSerializer _historySerializer = new XmlSerializer(typeof (XmlHistory));
 		private static readonly XmlSerializer _settingsSerializer = new XmlSerializer(typeof (XmlSettings));
 		private static readonly XmlSerializer _prefsSerializer = new XmlSerializer(typeof(XmlPreferences));
 		private DialogResult Command_Display_Warning(string text) {
 			return MessageBox.Show(text, "Warning!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+		}
+
+		public void Command_Open_Readme() {
+
+			Exception lastEx = null;
+			Process proc = null;
+			try {
+				proc = Process.Start(_pathReadme);
+			}
+			catch (Exception ex) {
+				lastEx = ex;
+			}
+			if (proc == null) {
+				string msg = null;
+				if (lastEx == null) {
+					msg = "You probably don't have a default program for opening txt files.";
+				}
+				Command_Display_Error("Open readme",_pathReadme,lastEx,msg);
+			}
 		}
 
 		private Image TryOpenIcon(FileInfo iconFile) {
@@ -85,6 +105,8 @@ namespace PatchworkLauncher {
 			private set;
 		}
 
+
+
 		public LaunchManager() {
 			//the following is needed on linux... the current directory must be the Mono executable, which is bad.
 			Environment.CurrentDirectory = Path.GetDirectoryName (Assembly.GetExecutingAssembly ().Location);
@@ -93,8 +115,16 @@ namespace PatchworkLauncher {
 				if (File.Exists(_pathLogFile)) {
 					File.Delete(_pathLogFile);
 				}
+				XmlPreferences prefs = new XmlPreferences();
+				try {
+					prefs = _prefsSerializer.Deserialize(_pathPrefsFile, new XmlPreferences());
+				}
+				catch (Exception ex) {
+					Command_Display_Error("Read preferences file", _pathPrefsFile, ex, "Special preferences will be reset");
+				}
+				Preferences = prefs;
 				Logger =
-					new LoggerConfiguration().WriteTo.File(_pathLogFile, LogEventLevel.Debug).MinimumLevel.Debug().CreateLogger();
+					new LoggerConfiguration().WriteTo.File(_pathLogFile, LogEventLevel.Verbose).MinimumLevel.Is(Preferences.MinimumEventLevel).CreateLogger();
 				AppInfoFactory gameInfoFactory;
 
 				gameInfoFactory = !File.Exists(_pathGameInfoAssembly) ? null : PatchingHelper.LoadAppInfoFactory(_pathGameInfoAssembly);
@@ -117,14 +147,7 @@ namespace PatchworkLauncher {
 				catch (Exception ex) {
 					Command_Display_Error("Read settings file", _pathSettings, ex, "Patch list and other settings will be reset.");
 				}
-				XmlPreferences prefs = new XmlPreferences();
-				try {
-					prefs = _prefsSerializer.Deserialize(_pathPrefsFile, new XmlPreferences());
-				}
-				catch (Exception ex) {
-					Command_Display_Error("Read preferences file", _pathPrefsFile, ex, "Special preferences will be reset");
-				}
-				Preferences = prefs;
+				
 				string folderDialogReason = null;
 				if (settings.BaseFolder == null) {
 					folderDialogReason = "(no game folder has been specified)";

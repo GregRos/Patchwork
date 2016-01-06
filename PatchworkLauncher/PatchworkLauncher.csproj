@@ -73,9 +73,7 @@
       <HintPath>..\..\packages\Serilog.1.5.9\lib\net45\Serilog.FullNetFx.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System">
-      <Private>False</Private>
-    </Reference>
+    <Reference Include="System" />
     <Reference Include="System.Core">
       <Private>False</Private>
     </Reference>
@@ -103,6 +101,7 @@
     <Compile Include="Patching\PatchInstructionSequence.cs" />
     <Compile Include="Patching\Serialization\XmlFileHistory.cs" />
     <Compile Include="Patching\Serialization\XmlInstruction.cs" />
+    <Compile Include="Patching\Serialization\XmlPreferences.cs" />
     <Compile Include="Patching\Serialization\XmlSettings.cs" />
     <Compile Include="Patching\Serialization\XmlPatchHistory.cs" />
     <Compile Include="Patching\Serialization\XmlHistory.cs" />
@@ -204,6 +203,9 @@
     <Content Include="IconSmall.ico" />
     <Content Include="preferences.pw.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Readme.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

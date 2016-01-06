@@ -79,5 +79,10 @@ namespace PatchworkLauncher {
 		{
 
 		}
+
+		private void button1_Click(object sender, EventArgs e)
+		{
+			Manager.Command_Open_Readme();
+		}
 	}
 }

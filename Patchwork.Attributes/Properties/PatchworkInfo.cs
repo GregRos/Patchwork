@@ -16,7 +16,7 @@ namespace Patchwork.Attributes {
 
 		public const string Copyright = "Copyright ©  2016";
 
-		public const string PatchworkSite = "https://github.com/GregRos/Patchwork";
+		public const string PatchworkSite = "http://gregros.github.io/Patchwork/";
 
 	}
 }

@@ -39,6 +39,7 @@
 			this.guiChangeFolder = new System.Windows.Forms.Button();
 			this.guiTestRun = new System.Windows.Forms.Button();
 			this.linkLabel1 = new System.Windows.Forms.LinkLabel();
+			this.button1 = new System.Windows.Forms.Button();
 			((System.ComponentModel.ISupportInitialize)(this.guiGameIcon)).BeginInit();
 			this.SuspendLayout();
 			// 
@@ -47,7 +48,7 @@
 			this.guiGameName.AutoSize = true;
 			this.guiGameName.BackColor = System.Drawing.Color.Transparent;
 			this.guiGameName.Font = new System.Drawing.Font("Georgia", 27.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.guiGameName.Location = new System.Drawing.Point(64, 6);
+			this.guiGameName.Location = new System.Drawing.Point(64, 18);
 			this.guiGameName.Name = "guiGameName";
 			this.guiGameName.Size = new System.Drawing.Size(309, 43);
 			this.guiGameName.TabIndex = 0;
@@ -61,7 +62,7 @@
 			this.guiGameVersion.BackColor = System.Drawing.Color.Transparent;
 			this.guiGameVersion.Font = new System.Drawing.Font("Verdana", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.guiGameVersion.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-			this.guiGameVersion.Location = new System.Drawing.Point(533, 27);
+			this.guiGameVersion.Location = new System.Drawing.Point(532, 43);
 			this.guiGameVersion.Name = "guiGameVersion";
 			this.guiGameVersion.RightToLeft = System.Windows.Forms.RightToLeft.No;
 			this.guiGameVersion.Size = new System.Drawing.Size(70, 18);
@@ -156,7 +157,7 @@
 			// guiGameIcon
 			// 
 			this.guiGameIcon.InitialImage = null;
-			this.guiGameIcon.Location = new System.Drawing.Point(21, 12);
+			this.guiGameIcon.Location = new System.Drawing.Point(21, 25);
 			this.guiGameIcon.Name = "guiGameIcon";
 			this.guiGameIcon.Size = new System.Drawing.Size(37, 33);
 			this.guiGameIcon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
@@ -210,6 +211,23 @@
 			this.linkLabel1.Text = "Patchwork";
 			this.linkLabel1.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel1_LinkClicked);
 			// 
+			// button1
+			// 
+			this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.button1.BackColor = System.Drawing.SystemColors.Control;
+			this.button1.FlatAppearance.BorderColor = System.Drawing.Color.Black;
+			this.button1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Azure;
+			this.button1.FlatAppearance.MouseOverBackColor = System.Drawing.Color.AliceBlue;
+			this.button1.Font = new System.Drawing.Font("Georgia", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.button1.Location = new System.Drawing.Point(612, 3);
+			this.button1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+			this.button1.Name = "button1";
+			this.button1.Size = new System.Drawing.Size(23, 35);
+			this.button1.TabIndex = 12;
+			this.button1.Text = "?";
+			this.button1.UseVisualStyleBackColor = false;
+			this.button1.Click += new System.EventHandler(this.button1_Click);
+			// 
 			// guiHome
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 14F);
@@ -217,6 +235,7 @@
 			this.BackColor = System.Drawing.Color.Linen;
 			this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
 			this.ClientSize = new System.Drawing.Size(639, 281);
+			this.Controls.Add(this.button1);
 			this.Controls.Add(this.linkLabel1);
 			this.Controls.Add(this.guiTestRun);
 			this.Controls.Add(this.guiChangeFolder);
@@ -254,6 +273,7 @@
 		private System.Windows.Forms.Button guiChangeFolder;
 		private System.Windows.Forms.Button guiTestRun;
 		private System.Windows.Forms.LinkLabel linkLabel1;
+		private System.Windows.Forms.Button button1;
 	}
 }
 

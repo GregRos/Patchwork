@@ -1,8 +1,39 @@
 # Patchwork
-**License:** [MIT License](http://opensource.org/licenses/MIT) 
+<span style="font-size:18">[MIT License](http://opensource.org/licenses/MIT) |  [**Latest Version: 0.9.0**]((https://github.com/GregRos/Patchwork/releases/latest)</span>
+----
 
-**Latest Version:** 0.9
+## User's Guide
+Patchwork is a program that allows you to mod certain games using mod files made by others.
 
+You will need to download Patchwork from a mod site or a similar source, because the version that can be downloaded from this site is only suitable for developers.
+
+### Requirements
+Patchwork is a Mono/.NET application and so needs the .NET Framework or Mono to run.
+
+* **Windows:** [.NET Framework 4.5+](https://www.microsoft.com/en-us/download/details.aspx?id=30653) 
+* **Linux and Mac:** [Mono 4.2.1.102+](http://www.mono-project.com/download/)
+
+### Instructions
+
+Using the program is straight-forward:
+
+1. Extract it into an **empty** folder.
+
+2. Launch the program (`PatchworkLauncher.exe`)
+   
+   **Note:** On Linux, you may need to open the program using  `mono` explicitly (see instructions on running Mono applications in your distribution).
+
+3. Specify your game folder in the dialog box or type it in the textbox.
+
+   **Note:** The dialog box will not display hidden files or folders.
+
+4. Go to the *Active Mods* menu and add the mod file(s) (usually ending with `.pw.dll`) to the list of mods, checking those you want enabled.
+ 
+   **Note:** Mod files so chosen will normally be copied to the `Mods` folder.
+
+5. Use *Launch with Mods* and *Launch without Mods* to start the game.
+
+## Developer's Guide
 **Patchwork** is a framework for integrating your own code into existing .NET assemblies ("patching" them). It allows you to edit, create, or replace things such as types, properties, and methods in a simple, straight-forward, and declarative way, using attributes.
 
 The framework lets you basically rewrite entire programs, such as games, according to your whims (as long as they're written in a .NET language of course). Little in the code is beyond your control, and you can write it all using the same tools as the original developers. 
@@ -13,40 +44,40 @@ The framework was written with game modding in mind, but can be used for any pur
 
 The framework is mostly documented, including the non-public members.
 
-## Moddable Games
+### Moddable Games
 Like I said above, the library was written with game modding in mind. In general, you can mod two kinds of games with it: i
-### .NET/XNA
+#### .NET/XNA
 Games that run on .NET/XNA. You can mod pretty much anything in this case. However, there aren't many popular XNA titles.
 
-### Unity/.NET
+#### Unity/.NET
 Games that run on Unity and use .NET for their game logic (mainly C#, but some also use other languages). 
 
 Luckily, the majority of popular Unity titles do primarily use .NET.
 
 Modding in this case is somewhat more limited, as you can only mod the game logic in the scripts, but from experience, you still have vastly more power than typical official modding tools would give you.
 
-## Components 
+### Components 
 The framework consists of several separate components. 
 
-### PatchworkLauncher (PWL)
+#### PatchworkLauncher (PWL)
 This is the end-user patching GUI. Users use this program to apply your modifications to their games or applications. It is most convenient to download it from the [Releases](https://github.com/GregRos/Patchwork/releases) section.
 
 You also use this program to test your patch assembly for yourself. 
 
-#### OpenAssemblyCreator (OAC)
+##### OpenAssemblyCreator (OAC)
 This is a command-line tool packaged with PWL. It allows you to create an open assembly to reference in your patch assembly. More on this later.
 
-### Patchwork.Attributes (PWA)
+#### Patchwork.Attributes (PWA)
 The `Patchwork.Attributes` assembly is meant to be referenced by your patch assembly, and is compiled with framework version 2.0 to improve compatibility. It contains the attributes that serve as patching instructions. It has no dependencies.
 
 You can conveniently get this package from [NuGet: Patchwork.Attributes](https://www.nuget.org/packages/Patchwork.Attributes/) and reference it in your patch assembly.
 
-### Patchwork.Engine
+#### Patchwork.Engine
 This is the library that actually does the patching. It can be used separately from the GUI. However, you generally wouldn't want to do so unless you wanted to write a new front-end, some kind of script, or... had some other reason.
 
 Naturally, it's packaged with the launcher.
 
-## Getting Started
+### Getting Started
 First, get the latest PWL release from the releases section. 
 
 Unless someone else already wrote it, you'll need to write an `AppInfo.dll` file for the game you want to patch. See the section on the launcher for more information.
@@ -61,15 +92,15 @@ That's... it. You're ready to go. Good luck out there.
 
 By the way, patching using the launcher creates a dependency on `Patchwork.Attributes` in the target (patched) assembly.
 
-## Overview
+### Overview
 There are a few stages to writing a patch.
 
-### Finding What to Patch
+#### Finding What to Patch
 Before you start writing your patch assembly, you need to find what you want to patch. This involves decompiling the target assembly. See *Recommended Decompilers* below for more information. 
 
 Also, take note of the target framework version of the assembly, as for the most reliable results you'd want your patch to be built against the same framework version.
 
-### Creating an Open Assembly
+#### Creating an Open Assembly
 You also need to have an "open" version of the assembly you want to patch. "Open" here means that all of its members are public and non-sealed. 
 
 To see why this is required, imagine you have a class like:
@@ -91,12 +122,12 @@ Changing all members to public allows you to access the member. However, it can 
 On the brighter side, the `PEVerify` tool (which executed automatically) will catch any accessibility issues and warn you about them.
 
 You create an open assembly using the command-line tool `OpenAssemblyCreator.exe`, also called OAC. Using it is straight-forward. 
-### Creating the Patch Assembly
+#### Creating the Patch Assembly
 You patch an existing target assembly by writing a *patch assembly* (probably with the target assembly referenced), and load it as input to patch a "target" assembly. This assembly contains attributes that are used as patching instructions. 
 
 You need to specify the `PatchAssembly` attribute on any such patch assembly.
 
-#### Writing It
+##### Writing It
 Patch assemblies consist of patch types, which are new types or just sets of modifications to an existing type. Here is a simple example:
 
 	[ModifiesType] //means the class modifies another class
@@ -127,7 +158,7 @@ You can add any members to the type, and attach the right attributes to them, de
 
 Compiler-generated members are imported as new members by default, even if they don't have a patching attribute.
 
-#### Format and Additional Info
+##### Format and Additional Info
 The recommended extension for patch assemblies is `pw.dll`.
 
 In order for a patch assembly to work with the Patchwork launcher, it must define a class with the following requirements.
@@ -144,13 +175,13 @@ It is instantiated in a separate AppDomain from the rest of the application, and
 
 The `PatchInfo` is needed to tell the launcher what file to patch. The class can find the file based on the operating system and other information.
 
-### Patching
+#### Patching
 The patch is mostly viewed as data by the patchwork launcher. To patch another assembly with your patch assembly, you must load the `pw.dll` file into the launcher and then start the game.
 
 That's it.
 
 
-## Patchwork Launcher
+### Patchwork Launcher
 Each launcher executable is meant to work with one game. To work with a game, someone must write an `AppInfo.dll` assembly (as described below) and put it in the launcher directory. The launcher loads it on startup and uses it to get information about the game. The launcher should be distributed with this file.
 
 The launcher allows users to manage patches for the chosen game, as well as change the order in which they are applied. It keeps the original game files on disk and switches them with modded files when the user launches the game. It only patches the files when necessary. It stays in the background, and once the game is exited, the launcher switches to the original files once more. 
@@ -159,7 +190,7 @@ Once it starts up, the launcher also checks the state of the files and fixes the
 
 The launcher works on Mono and is written in Windows Forms for that purpose.
 
-### AppInfo.dll
+#### AppInfo.dll
 This file is required for the launcher to work correctly with a game. It's an assembly (the name doesn't matter) containing a type that:
 
 1. Inherits from `Patchwork.Attributes.AppInfoFactory`.
@@ -174,43 +205,43 @@ This class is instantiated during runtime, in the same AppDomain as the original
 
 If this file is not found, an error message is generated and the launcher doesn't work properly.
 
-## Available Attributes
+### Available Attributes
 These attributes are located in the `Patchwork.Attributes` namespace. Note that this isn't necessarily a full list.
 
-### Note about attribute constructors
+#### Note about attribute constructors
 Attributes that require types as parameters invariably have an `object` parameter instead of a `Type` parameter.
 
 This is a necessary workaround. You still use `typeof(T)` to specify the type.
 
-### PatchingAssembly
+#### PatchingAssembly
 You *must* add this attribute to your assembly (using `[assembly: PatchingAssembly]`) for it to be recognized as an assembly that contains patching types.
 
-### ModifiesType(name)
+#### ModifiesType(name)
 Says that your type modifies another type in the game. Allows you to use `ModifiesMember` within that type.
 
 You can specify the full name of the type you want to modify, or let PW infer it.
 
-### ReplacesType(name)
+#### ReplacesType(name)
 Alternative version of the above attribute. Removes all the members of the type, overwriting it with your own members. Currently implemented only on enums. `ModifiesMember` attributes are invalid, since they have no meaning.
 
-### ModifiesMember(name,scope)
+#### ModifiesMember(name,scope)
 Modifies the member, such as its accessibility, body, and maybe other things. scope controls the scope of the modification.
 
-### ModifiesAccessibility(name)
+#### ModifiesAccessibility(name)
 Restricted form of the last attribute. Modifies just the accessibility to be identical to your member. 
 
 Provided for convenience.
 
-### NewMember(altName)
+#### NewMember(altName)
 Introduce this as a new member to the patched type. If you specify `altName`, the member will be introduced under this name instead.
 
 If the member collides with an existing member, its name will be suffixed with `_$pw$_RANDOM`, e.g. `_$pw$_dfRff`.  A warning will be emitted.
 
-### DuplicatesBody(methodName, declaringType)
+#### DuplicatesBody(methodName, declaringType)
 Put this on a method marked with NewMember or ModifiesMember to insert the body of another method into it. Optionally, you can provide the type that declares the method; otherwise, it defaults to the type being modified.
 You can use it to call original members in the modified type, as it takes the body from the original assembly.
 
-### NewType(altName, altNamespace)
+#### NewType(altName, altNamespace)
 Put this attribute on a type to denote it is a new type that will be introduced into the assembly.
 
 The name of the type will normally be the same as it is in your assembly, including namespaces and so forth. However, `altName` and `altNamespace` allow you to specify an alternative name/namespace.
@@ -224,7 +255,7 @@ You don't need to use creation attributes on any of your type's members, except 
 You can put `ModifiesType` on a nested type inside a `NewType`, but not `ModifiesMember`. 
 
 
-### RemoveThisMember
+#### RemoveThisMember
 
 Removes a member of the same name from the modified type. Added for the sake of completeness.
 
@@ -234,17 +265,17 @@ PW will not check if this action causes an error, but errors may still come up i
 
 It is not possible to remove types.
 
-### DisablePatching
+#### DisablePatching
 Disables the patching of this element and all child elements, including nested types. 
 
 Modifications will not be performed, and new types will not be created.
 
-### MemberAlias(memberName, declaringType, aliasCallMode)
+#### MemberAlias(memberName, declaringType, aliasCallMode)
 This attribute lets you create an alias for another member. When Patchwork encounters a reference to the alias member in your code, it will replace that reference with the aliased member.
 
 It is useful for making explicit calls to things such as base class constructors. If `aliasCallMode == AliasCallMode.NonVirtual`, a call to the member is translated to a non-virtual call, bypassing any overrides. This will allow you to inject `base.OverriddenMethod()` sorts of calls into the methods you modify.
 
-### PatchworkDebugRegister(memberName, declaringType)
+#### PatchworkDebugRegister(memberName, declaringType)
 This is a special attribute for debugging purposes.  You can specify a static string member that will be used as a debug register for the current method. It will be updated with information about which line number is going to be executed next. It lets you find the line number at which an exception was thrown (or something else happened), when the exception does not contain this information. 
 
 For example, the register can contain the following after an exception is thrown and is caught in the same method:
@@ -255,17 +286,17 @@ If the catch clause was at line 251, then line 47 is the one that threw the exce
 
 This is a hack, but it can be quite useful.
 
-### ToggleFieldAttributes(fieldAttributes)
+#### ToggleFieldAttributes(fieldAttributes)
 This custom attribute toggles (XORs) the intrinsic deceleration attributes of the patched field with the input attributes. It must be used with an action attribute, such as `ModifiesMember`.
 
 This attribute allows you to change accessibility, as well as more arcane things. Using it incautiously can cause runtime errors.
 
-### ToggleMethodAttributes(methodAttributes)
+#### ToggleMethodAttributes(methodAttributes)
 This custom attribute toggles (XORs) the intrinsic deceleration attributes of the patched method with the input attributes. It must be used with an action attribute, such as `ModifiesMember`.
 
 This attribute allows you to change accessibility, add/remove the `sealed` qualifier, and perform other, more arcane tasks. Using it incautiously can cause runtime errors.
 
-## Naming Conventions
+### Naming Conventions
 It is best practice to follow certain naming conventions when writing your patch assembly.
 
 You should prefix each code element according to the action the framework is expected to perform on it. That way, you will be able to tell what sort of member it is just by glancing at the name, and your code will be more readable to others.
@@ -284,16 +315,16 @@ For instance constructors, use the name `ctor` and for static ones use `cctor`.
 
 
 
-## Specific Issues
+### Specific Issues
 
-### About Overloading
+#### About Overloading
 When you put an attribute on a code element, the framework will usually use that element's name (or an alternative name you supply) and, in the case of methods and properties, their parameters, to find what to modify.
 
 To modify one of several overloaded methods, you just need to duplicate that method's parameter types exactly.
 
 Note that return types of existing methods cannot be modified.
 
-### Modifying/Creating Properties
+#### Modifying/Creating Properties
 Note that to modify a property's `get` and `set` accessors, you need to put `ModifiesMember` *on the accessor you want to modify*, not on the property deceleration. The accessors are actually methods, and it's those the framework modifies.
 
 However, you can choose to put `NewMember` on the property, in which case the accessors will be created automatically.
@@ -304,7 +335,7 @@ You might need to use the explicit name of the property accessor to modify it (i
 
 Pretty much *the only* time you'd want to use `ModifiesMember` attribute on a property itself is when you want to create a brand new accessor for the property. In this case, the property data must be modified. You'll still put the `NewMember` attribute on the new accessor.  
 
-### Modifying Constructors
+#### Modifying Constructors
 You can't create constructors for existing types, but you can modify existing ones. Constructors are just methods called `.ctor`. You just need to duplicate their signature in a normal method, and change the modified member name in the attribute. Every object has a default `.ctor`.
 
 Static constructors are called `.cctor`. Not all types have static constructors.
@@ -326,7 +357,7 @@ Instance constructors normally contain explicit calls to a base class constructo
 
 Static constructors do not contain such a call.
 
-### Nested Types
+#### Nested Types
 
 You can have your nested types modify other types, or you can modify other nested types, without regard to the nesting level. The location of your nested type doesn't matter, and using `ModifiesType` behaves the same way. 
 
@@ -336,47 +367,47 @@ In the IL and in Mono.Cecil, as well as in this framework, you use `/` to indica
 
 You can also have a new nested type inside a modification to an existing type. In this case, the nested type will be moved to the modified type.
 
-### Modifying Explicitly Implemented Methods
+#### Modifying Explicitly Implemented Methods
 These are regular methods with different actual names. The names are `[INTERFACE_FULL_NAME].Method`. For example, if `IEnumerable<T>.GetEnumerator()` were explicitly implemented, you'd set the member name to:
 
 		System.Collections.Generic.IEnumerable<T>.GetEnumerator
 
 The dots are actually part of the name of the method, just like the dot in `.ctor` is. IL doesn't follow C# naming rules.
 
-## Patching History
+### Patching History
 The launcher embeds various attributes in the target assembly that let you see what Patchwork did to it. These are called history attributes. The following are embedded.
 
 Also, the patching attributes you use also get embedded, except for `PatchAssembly`.
 
-### PatchingHistoryAttribute
+#### PatchingHistoryAttribute
 Abstract parent of all history attributes.
 
-### PatchedByAssemblyAttribute
+#### PatchedByAssemblyAttribute
 Contains information about the patch assembly, the original assembly (before patching was performed), and the Patchwork assembly that performed patching.
 
-### PatchedByMemberAttribute
+#### PatchedByMemberAttribute
 Indicates the member in the patch assembly that contained the patching instruction to patch this member.
 
-### PatchedByTypeAttribute
+#### PatchedByTypeAttribute
 Indicates the type in the patch assembly that contained the patching instruction to patch this type.
 
-## Limitations
+### Limitations
 In this section I'll list the limitations of the library, in terms of the code that it can deal with at this stage, and what it *can't* allow you to do. This section will be updated as more features get worked in.
 
-### Assemblies
+#### Assemblies
 1. Multi-module assemblies won't work properly (either as patches or patch targets). Note that few IDEs (if any) can naturally produce such assemblies, though they can be the result of tools such as ILMerge.
 2. Inter-dependencies between multiple patch assemblies haven't been tested.
 
-### Members
+#### Members
 2. You can't add new constructors or finalizers to existing types.
 3. Existing declarations can only be modified in limited ways. For example, you can't un-seal a sealed class, change type parameters and their constraints, etc. New members can still be sealed or unsealed, etc, as you prefer. 
 3. Field initializers don't work in modifying types, except for const fields. This is unlikely to be fixed anytime soon, as it requires pretty tricky IL injection.
 
-### Language Features
+#### Language Features
 1. `unsafe` context features, like pointers and pinned variables, probably won't work.
 2. Various exotic and undocumented (in C#) constructs cannot be used, such as `__arglist`.
 
-### Other .NET Languages
+#### Other .NET Languages
 This library is for transforming IL, not transforming source code, so it doesn't actually care what language you write in. As long as you put attributes on things that are recognizable in the IL as properties, methods, and classes, it will probably work correctly.
 
 That said, you could experience more problems if you write in languages other than C#, simply because they can be compiled to very different IL, and the different input could reveal flaws I never encountered during testing. 
@@ -385,14 +416,14 @@ However, don't take this as me discouraging you from using other languages.
 
 
 
-## Recommended Decompilers
+### Recommended Decompilers
 I've tried a number of decompilers. 
 
 1. **[Telerik JustDecompile](http://www.telerik.com/download/justdecompile)**: Probably the best overall decompiler I've tested. It has great search functions, can produce IL as well as C#, good decompilation ability, and has a great interface. Decompilation isn't perfect, as it can't decompile such things as iterators. Tends to handle errors fairly decently.
 2. [**ILSpy:**](http://ilspy.net/) This one generates the best source code *by far* from the decompilers I've tested. It can decompile iterators, lambdas, you name it. Unfortunately, it has no search function that deserves the name and handles errors very badly, even when set to IL. The interface is also inconvenient.
 3. [**dotPeek**](https://www.jetbrains.com/decompiler): It has a good interface and decent search, with the very helpful ability of finding related (e.g. derived) types, but isn't very good at decompiling compiler-generated code. It can't even handle things like auto-properties.
 
-## Dependencies
+### Dependencies
 
 1. [Mono.Cecil](http://www.mono-project.com/docs/tools+libraries/libraries/Mono.Cecil/), without which none of this would have been possible.
 2. [Serilog](http://serilog.net/), used for logging.
