@@ -69,6 +69,12 @@ namespace PatchworkLauncher {
 			Process proc = null;
 			try {
 				proc = Process.Start(_pathReadme);
+				if (proc == null) {
+					proc = Process.Start("gedit", $"\"{_pathReadme}\"");
+				}
+				if (proc == null) {
+					proc = Process.Start("kate", $"\"{_pathReadme}\"");
+				}
 			}
 			catch (Exception ex) {
 				lastEx = ex;
