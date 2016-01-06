@@ -1,5 +1,6 @@
 ## User's Guide
 Patchwork is a program that allows you to mod certain games using mod files made by others.
+Repository: https://github.com/GregRos/Patchwork
 
 ### Requirements
 Patchwork is a Mono/.NET application and so needs the .NET Framework or Mono to run.

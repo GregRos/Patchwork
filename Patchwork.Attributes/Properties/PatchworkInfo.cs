@@ -10,7 +10,7 @@ namespace Patchwork.Attributes {
 		/// <summary>
 		/// Patchwork version string.
 		/// </summary>
-		public const string Version = "0.9.0";
+		public const string Version = "0.9.1";
 
 		public const string Author = "Gregory Rosenbaum";
 
