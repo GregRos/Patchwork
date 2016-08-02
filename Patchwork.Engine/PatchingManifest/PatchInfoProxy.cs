@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using Patchwork.Attributes;
+using Patchwork.Attributes.AutoPatching;
 using Patchwork.Utility;
 
 namespace Patchwork {

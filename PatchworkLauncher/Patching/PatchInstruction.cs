@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Patchwork;
 using Patchwork.Attributes;
+using Patchwork.Attributes.AutoPatching;
 using Patchwork.Utility;
 
 namespace PatchworkLauncher {

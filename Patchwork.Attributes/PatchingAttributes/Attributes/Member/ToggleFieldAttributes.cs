@@ -16,7 +16,7 @@ namespace Patchwork.Attributes {
 		}
 
 		/// <summary>
-		/// 
+		/// Constructs a new instance.
 		/// </summary>
 		/// <param name="attributes">The attributes to toggle. Defaults to 0 (no attributes).</param>
 		public ToggleFieldAttributes(FieldAttributes attributes = 0) {

@@ -1,7 +1,6 @@
-using System;
 using System.IO;
 
-namespace Patchwork.Attributes {
+namespace Patchwork.Attributes.AutoPatching {
 	/// <summary>
 	/// Represents information about a patch and the manner in which patching should be performed. An inheriting class must have a default constructor and be decorated with <see cref="PatchInfoAttribute"/>.
 	/// </summary>

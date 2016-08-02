@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 using Patchwork.Attributes;
+using Patchwork.Attributes.History;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 
 namespace Patchwork.Utility {

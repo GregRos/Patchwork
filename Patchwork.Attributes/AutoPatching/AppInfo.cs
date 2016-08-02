@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
-namespace Patchwork.Attributes {
+namespace Patchwork.Attributes.AutoPatching {
 
 	/// <summary>
 	/// A simple class that contains information about an application. Should be constructed through the <see cref="AppInfoFactory"/> 

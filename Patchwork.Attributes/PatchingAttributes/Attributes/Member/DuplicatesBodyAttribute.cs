@@ -2,7 +2,7 @@
 
 namespace Patchwork.Attributes {
 	/// <summary>
-	///     Inserts the body of another method into this method (as it appears in the application assembly). The target must still be decorated with a <see cref="MemberActionAttribute"/>
+	///     Inserts the body of another method into this target method (as it appears in the application assembly). The target member must still be decorated with a <see cref="MemberActionAttribute"/>
 	/// </summary>
 	/// <remarks>
 	///     Note that this attribute can be used to call the original versions of modified methods,

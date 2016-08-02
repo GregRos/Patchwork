@@ -2,6 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 using Patchwork.Attributes;
+using Patchwork.Attributes.AutoPatching;
 using Patchwork.Utility;
 
 namespace Patchwork {

@@ -64,7 +64,6 @@ namespace Patchwork.Tests.Patch
 			var types = module.FindTypes((typ, o) => typ.Name.Contains("EntryPoint"), null);
 			var foundType = types.Single();
 			var method = foundType.GetMethod("StandardTests");
-			Process.Start(@"C:\Users\lifeg_000\AppData\Local\Microsoft\VisualStudio\12.0\Extensions\bicaz2ty.1dn\ILSpy.exe", string.Format("\"{0}\"", newTarget));
 			try
 			{
 				var ret = method.Invoke(null, null);

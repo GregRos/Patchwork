@@ -10,7 +10,7 @@ namespace Patchwork.Attributes {
 		///     Initializes a new instance of the <see cref="ModifiesTypeAttribute" /> class.
 		/// </summary>
 		/// <param name="fullTypeName">
-		///     Optionally, the full name of the type to be modified. <c>base</c> means the base type is used instead. <c>null</c> means a type
+		///     Optionally, the full name of the type to be modified. <c>"base"</c> means the base type is used instead. <c>null</c> means a type
 		///     with the same full name (in the target assembly) is modified.
 		///     For nested classes, use the syntax <c>Namespace.Container/Nested/...</c>
 		/// </param>

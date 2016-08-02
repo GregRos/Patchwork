@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 using Patchwork.Attributes;
+using Patchwork.Attributes.AutoPatching;
 
 namespace Patchwork {
 	/// <summary>

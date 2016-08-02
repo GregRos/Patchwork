@@ -1,4 +1,4 @@
-namespace Patchwork.Attributes {
+namespace Patchwork.Attributes.History {
 
 	public class PatchApplicationMetadata {
 		public string PatchAssemblyMetadata {

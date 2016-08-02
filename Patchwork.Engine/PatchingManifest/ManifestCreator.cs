@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Mono.Cecil;
 using Patchwork.Attributes;
+using Patchwork.Attributes.AutoPatching;
 using Patchwork.Collections;
 using Patchwork.Utility;
 using Serilog;

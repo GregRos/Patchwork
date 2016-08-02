@@ -386,6 +386,7 @@ namespace Patchwork {
 				//+ADD PATCHING HISTORY TO ASSEMBLY
 				o.TaskText.Value = "Updating History";
 				if (EmbedHistory) {
+
 					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchAssembly, _assemblyHistoryIndex++, OriginalAssemblyMetadata);	
 				}
 				o.Current.Value++;

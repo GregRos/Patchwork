@@ -4,7 +4,7 @@ namespace Patchwork.Attributes
 {
 
 	/// <summary>
-	/// This attribute turns a membery you declare into an alias of another member. When a reference to this member is encountered in your code, it is replaced by a refernece to the aliased member.
+	/// This attribute turns a member you declare into an alias of another member. When a reference to this member is encountered in your code, it is replaced by a refernece to the aliased member.
 	/// </summary>
 	[AttributeUsage(AttrT.Method | AttrT.Field | AttrT.Constructor, Inherited = false)]
 	public class MemberAliasAttribute : MemberActionAttribute {

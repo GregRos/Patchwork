@@ -6,6 +6,8 @@ using System.Linq;
 using System.Reflection;
 using Patchwork;
 using Patchwork.Attributes;
+using Patchwork.Attributes.AutoPatching;
+using Patchwork.Attributes.History;
 using Patchwork.Utility;
 using Serilog;
 

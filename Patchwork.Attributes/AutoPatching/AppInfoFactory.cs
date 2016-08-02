@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace Patchwork.Attributes {
+namespace Patchwork.Attributes.AutoPatching {
 	/// <summary>
 	/// A factory for constructing instances of the <see cref="AppInfo"/> class. The inheriting class must have a default constructor and must be decorated with <see cref="AppInfoFactoryAttribute"/>.
 	/// </summary>
