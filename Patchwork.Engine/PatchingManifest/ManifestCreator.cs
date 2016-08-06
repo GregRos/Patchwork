@@ -1,29 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Xml;
 using Mono.Cecil;
-using Patchwork.Attributes;
-using Patchwork.Attributes.AutoPatching;
-using Patchwork.Collections;
-using Patchwork.Utility;
+using Patchwork.AutoPatching;
+using Patchwork.Engine.Utility;
 using Serilog;
 
-namespace Patchwork {
+namespace Patchwork.Engine {
 
+	/// <summary>
+	/// An object that can scan a patch assembly and constructs patching manifests, which are collections of patching instructions 
+	/// </summary>
 	public class ManifestCreator {
+		/// <summary>
+		/// Constructs a new manifest creator with the given settings.
+		/// </summary>
+		/// <param name="log">A log.</param>
+		/// <param name="implicitImports">How to treat code elements that exist in a patch assembly but aren't decorated with a patching attribute.</param>
 		public ManifestCreator(ILogger log = null, ImplicitImportSetting implicitImports = ImplicitImportSetting.OnlyCompilerGenerated) {
 			ImplicitImports = implicitImports;
 			Log = log ?? Serilog.Log.Logger;
 		}
-
+		
+		/// <summary>
+		/// The log used by this manifest creator.
+		/// </summary>
 		public ILogger Log {
 			get;
 		}
@@ -56,7 +59,7 @@ namespace Patchwork {
 			var allMethods = new HashSet<MethodDefinition>(methodActions.SelectMany(x => x).Select(x => x.YourMember));
 			foreach (var method in newMethods) {
 				if (allMethods.Contains(method)) continue;
-				methodActions.GetGroup(typeof (NewMemberAttribute)).Values.Add(new MemberAction<MethodDefinition>() {
+				methodActions.GetGroupExplicitly(typeof (NewMemberAttribute)).Values.Add(new MemberAction<MethodDefinition>() {
 					YourMember = method,
 					ActionAttribute = new NewMemberAttribute(true),
 					TypeAction = rootMemberAction.TypeAction,
@@ -89,7 +92,11 @@ namespace Patchwork {
 		private void LogCreatingManifest() {
 			Log.Information("Creating the patching manifest.");
 		}
-
+		/// <summary>
+		/// Reads the specified assembly definition and creates a manifest.
+		/// </summary>
+		/// <param name="patchAssemblyLocation">The location of the patch assembly to read.</param>
+		/// <returns></returns>
 		public PatchingManifest CreateManifest(string patchAssemblyLocation) {
 			AssemblyDefinition read;
 			try {
@@ -102,6 +109,11 @@ namespace Patchwork {
 
 		}
 
+		/// <summary>
+		/// Reads the specified assembly definition and creates a manifest.
+		/// </summary>
+		/// <param name="yourAssembly">The patch assembly to read.</param>
+		/// <returns></returns>
 		public PatchingManifest CreateManifest(AssemblyDefinition yourAssembly) {
 			var multicast = yourAssembly.GetCustomAttributes<DisablePatchingByNameAttribute>();
 			var filter = CreateMemberFilter(multicast);

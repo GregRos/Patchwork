@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Patchwork.Attributes.History {
+namespace Patchwork.History {
 
 	/// <summary>
 	/// Indicates that this assembly has been patched by another assembly and specifies metadata about the original assembly, the patch assembly, and the Patchwork engine assembly. Added automatically during patching.
@@ -46,6 +46,10 @@ namespace Patchwork.Attributes.History {
 			get;
 		}
 
+		/// <summary>
+		/// Converts the info in this attribute into a <see cref="PatchApplicationMetadata"/> instance.
+		/// </summary>
+		/// <returns></returns>
 		public PatchApplicationMetadata ToPatchApplicationMetadata() {
 			return new PatchApplicationMetadata() {
 				OriginalAssemblyMetadata = OriginalAssemblyMetadata,

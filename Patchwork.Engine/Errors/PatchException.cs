@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Runtime.Serialization;
+#pragma warning disable 1591
 
-namespace Patchwork {
+namespace Patchwork.Engine {
 	/// <summary>
 	/// Base class for all Patchwork-specific exceptions the library throws.
 	/// </summary>

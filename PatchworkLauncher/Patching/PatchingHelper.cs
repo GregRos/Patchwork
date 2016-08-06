@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Patchwork;
-using Patchwork.Attributes;
-using Patchwork.Attributes.AutoPatching;
-using Patchwork.Attributes.History;
+using Patchwork.AutoPatching;
+using Patchwork.Engine.Utility;
+using Patchwork.History;
 using Patchwork.Utility;
 using Serilog;
 

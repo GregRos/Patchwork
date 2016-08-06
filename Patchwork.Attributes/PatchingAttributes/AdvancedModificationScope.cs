@@ -1,4 +1,4 @@
-namespace Patchwork.Attributes {
+namespace Patchwork {
 	/// <summary>
 	/// Contains secret modification scopes for internal use. They're not part of the ModificationScope enum so that they won't confuse anyone.
 	/// </summary>

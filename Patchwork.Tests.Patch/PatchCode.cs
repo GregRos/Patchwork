@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Patchwork.Attributes;
 using Patchwork.Tests.Target;
 
 namespace Patchwork.Tests.Patch

@@ -1,9 +1,22 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Patchwork.Utility.Binding
 {
-	public class CastList<T> : IList<T> {
+	public static class B {
+
+		public static IList<T> CastList<T>(this IList objList) {
+			return new CastList<T>(objList);
+		}
+
+		public static IList<TOut> ProjectList<TIn, TOut>(this IList<TIn> list, Func<TOut, TIn> projection) {
+			return new ProjectedList<TIn,TOut>(list, projection);
+		}
+
+	}
+
+	internal class CastList<T> : IList<T> {
 		public CastList(IList inner) {
 			Inner = inner;
 		}

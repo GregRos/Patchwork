@@ -1,7 +1,7 @@
-﻿namespace Patchwork.Attributes
+﻿namespace Patchwork
 {
 	/// <summary>
-	/// Namespace for patching attributes, used as patching instructions by the Patchwork engine.
+	/// Patching attributes used to mark patching types and members to tell the Patchwork engine what to do with them.
 	/// </summary>
 	class NamespaceDoc
 	{

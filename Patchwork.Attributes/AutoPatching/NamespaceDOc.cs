@@ -1,4 +1,4 @@
-﻿namespace Patchwork.Attributes.AutoPatching
+﻿namespace Patchwork.AutoPatching
 {
 	/// <summary>
 	/// Namespace containing types used for automatic patching.

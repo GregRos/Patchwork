@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Mono.Cecil.Cil;
-using Patchwork.Attributes;
+using Patchwork;
 using Patchwork.Utility.Binding;
 using PatchworkLauncher.Properties;
 

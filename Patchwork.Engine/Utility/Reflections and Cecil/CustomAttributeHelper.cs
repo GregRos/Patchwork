@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
-using Patchwork.Attributes;
-using Patchwork.Attributes.History;
+using Patchwork.History;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 	/// <summary>
 	/// Helper and extension methods for working with attributes, including instantiating attribute instances from their Cecil metadata.
 	/// </summary>
@@ -70,7 +69,14 @@ namespace Patchwork.Utility {
 			return provider.GetCustomAttributes<T>().FirstOrDefault();
 		}
 
-		internal static void AddCustomAttribute(this ICustomAttributeProvider provider, ModuleDefinition module,
+		/// <summary>
+		/// Adds a proper, loaded custom attribute to a Cecil custom attribute provider.
+		/// </summary>
+		/// <param name="provider">The Cecil custom attribute provider to which the attribute is to be attached.</param>
+		/// <param name="module">The module in the context of which types and constructors will be imported.</param>
+		/// <param name="attribType">The proper type of the attribute to add.</param>
+		/// <param name="constructorArgs">The arguments to the attribute constructor. These attributes will be used to resolve the constructor in question.</param>
+		public static void AddCustomAttribute(this ICustomAttributeProvider provider, ModuleDefinition module,
 			Type attribType,
 			params object[] constructorArgs) {
 			var ctor =

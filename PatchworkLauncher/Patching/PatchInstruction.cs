@@ -5,8 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Patchwork;
-using Patchwork.Attributes;
-using Patchwork.Attributes.AutoPatching;
+using Patchwork.AutoPatching;
+using Patchwork.Engine;
 using Patchwork.Utility;
 
 namespace PatchworkLauncher {

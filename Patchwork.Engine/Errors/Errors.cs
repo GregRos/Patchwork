@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Linq;
 using Mono.Cecil;
-using Patchwork.Attributes;
-using Patchwork.Attributes.AutoPatching;
-using Patchwork.Utility;
+using Patchwork.AutoPatching;
+using Patchwork.Engine.Utility;
 
-namespace Patchwork {
+namespace Patchwork.Engine {
 
 
 	internal static class Errors {
@@ -29,7 +28,7 @@ namespace Patchwork {
 
 		public static PatchDeclerationException Multiple_action_attributes(MemberReference yourMember, object[] attributes) {
 
-			return new PatchDeclerationException($"The member {yourMember.UserFriendlyName()} has more than one action attribute: {attributes.Select(x => x.GetType().Name)}");
+			return new PatchDeclerationException($"The member {yourMember.UserFriendlyName()} has more than one action attribute: {attributes.Select(x => x.GetType().Name).Join(", ")}");
 			
 		}
 
@@ -58,8 +57,8 @@ namespace Patchwork {
 					$"The attribute on the {kind} called '{memberRef.FullName}' refers to '{identifier}', but that member doesn't exist in this context (possibly overload resolution failure).");
 		}
 
-		internal static PatchImportException Feature_not_supported(string format, params object[] args) {
-			return new PatchImportException("Encountered a feature that isn't supported. Details: " + string.Format(format, args));
+		internal static PatchImportException Feature_not_supported(string details) {
+			return new PatchImportException("Encountered a feature that isn't supported. Details: " + details);
 		}
 
 		internal static PatchImportException Could_not_resolve_reference(string kind, MemberReference yourMemberReference) {

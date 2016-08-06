@@ -1,4 +1,4 @@
-namespace Patchwork.Attributes {
+namespace Patchwork {
 	/// <summary>
 	/// Parent class of all patching attributes that are applied to modules and assemblies.
 	/// </summary>

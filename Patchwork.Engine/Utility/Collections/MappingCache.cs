@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Mono.Cecil;
 
-namespace Patchwork.Collections {
+namespace Patchwork.Engine.Utility {
 	internal class MemberCache {
 		public IDictionary<MethodDefinition, MemberAction<MethodDefinition>> Methods {
 			get;

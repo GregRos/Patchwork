@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Patchwork.Attributes.AutoPatching {
+namespace Patchwork.AutoPatching {
 	/// <summary>
 	/// You must decorate your <see cref="IPatchInfo"/>-implementing class with this attribute.
 	/// </summary>

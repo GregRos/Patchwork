@@ -1,10 +1,9 @@
 using System;
 using System.Runtime.CompilerServices;
 using Mono.Cecil;
-using Patchwork.Attributes;
 
-namespace Patchwork.Utility {
-	public static class PatchedMemberHelper {
+namespace Patchwork.Engine.Utility {
+	internal static class PatchedMemberHelper {
 		public static string GetPatchedMemberName(this IMemberDefinition yourMember) {
 			return yourMember.GetCustomAttribute<ModifiesMemberAttribute>()?.MemberName ?? yourMember.Name;
 		}

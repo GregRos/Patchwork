@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using Patchwork.Engine.Utility;
 
 namespace Patchwork.Utility.Binding {
 	internal class ListBindable<T> : BindableBase<IList<T>> {

@@ -1,21 +1,11 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using Patchwork.Collections;
-using Patchwork.Utility.Binding;
 
-namespace Patchwork.Utility {
 
-	public static class SeqHelper {
-		public static IList<T> CastList<T>(this IList objList) {
-			return new CastList<T>(objList);
-		}
+namespace Patchwork.Engine.Utility {
 
-		public static IList<TOut> ProjectList<TIn, TOut>(this IList<TIn> list, Func<TOut, TIn> projection) {
-			return new ProjectedList<TIn,TOut>(list, projection);
-		}
+	internal static class SeqHelper {
 
 		public static KeyValuePair<TKey, TValue>? FindValue<TKey, TValue>(this IDictionary<TKey, TValue> dict, TValue v) {
 
@@ -80,5 +70,6 @@ namespace Patchwork.Utility {
 			lookup.AddRange(groupings);
 			return lookup;
 		}
+
 	}
 }

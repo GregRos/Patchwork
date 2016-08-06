@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Mono.Cecil;
 using Patchwork;
-using Patchwork.Attributes;
 
 namespace PatchworkLauncher {
 	public class XmlInstruction {

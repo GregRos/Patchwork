@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 	/// <summary>
 	///     Commonly used combinations of the BindingFlags enum.
 	/// </summary>

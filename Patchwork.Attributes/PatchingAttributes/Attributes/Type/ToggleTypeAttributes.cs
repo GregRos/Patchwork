@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Patchwork.Attributes {
+namespace Patchwork {
 	/// <summary>
 	/// This toggles (or XORs) all the specified decleration attributes in the type. Lets you add/remove things like 'sealed'.
 	/// You must still use a <see cref="TypeActionAttribute"/>.

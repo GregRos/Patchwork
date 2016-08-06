@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 	internal static class Asserts {
 		[DebuggerStepThrough]
 		public static void BreakOn(this bool condition) {

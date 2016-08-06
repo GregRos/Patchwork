@@ -4,9 +4,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Mono.Cecil;
-using Mono.Cecil.Rocks;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 	/// <summary>
 	/// Methods for resolving members within types and modules using their name and/or signature.
 	/// </summary>
@@ -37,49 +36,76 @@ namespace Patchwork.Utility {
 		/// </summary>
 		/// <param name="typeDef">The type definition.</param>
 		/// <param name="name">The name.</param>
-		/// <param name="types"></param>
+		/// <param name="signature"></param>
 		/// <returns></returns>
-		public static IEnumerable<PropertyDefinition> GetProperties(this TypeDefinition typeDef, string name, IEnumerable<TypeReference> types) {
-			var typesList = types.ToList();
+		public static IEnumerable<PropertyDefinition> GetProperties(this TypeDefinition typeDef, string name, IEnumerable<TypeReference> signature) {
+			var typesList = signature.ToList();
 			var props = 
 				from prop in typeDef.Properties
 				where prop.Name == name
 					&& prop.Parameters.Count == typesList.Count()
-					&& prop.Parameters.Select(x => x.ParameterType).Zip<TypeReference, TypeReference, bool>(typesList, IsOverloadEquiv).All(x => x)
+					&& prop.Parameters.Select(x => x.ParameterType).Zip<TypeReference, TypeReference, bool>(typesList, IsOverloadMatch).All(x => x)
 				select prop;
 
 			return props;
 		}
 
-		public static PropertyDefinition GetPropertyLike(this TypeDefinition typeDef, PropertyDefinition likeWhat, string altName = null) {
+		/// <summary>
+		/// Returns a property similar to another one.
+		/// </summary>
+		/// <param name="containingDef"></param>
+		/// <param name="likeWhat"></param>
+		/// <param name="altName"></param>
+		/// <returns></returns>
+		public static PropertyDefinition GetPropertyLike(this TypeDefinition containingDef, PropertyDefinition likeWhat, string altName = null) {
 			return
-				typeDef.GetProperties(altName ?? likeWhat.Name, likeWhat.Parameters.Select(x => x.ParameterType)).SingleOrDefault();
+				containingDef.GetProperties(altName ?? likeWhat.Name, likeWhat.Parameters.Select(x => x.ParameterType)).SingleOrDefault();
 		}
 
 		/// <summary>
-		///     Gets the property.
+		///    Returns a property on the type with the given name and signature.
 		/// </summary>
 		/// <param name="typeDef">The type definition.</param>
 		/// <param name="name">The name.</param>
-		/// <param name="types"></param>
+		/// <param name="signature">A sequence of type references taken to be the parameters of an indexer property.</param>
 		/// <returns></returns>
-		public static PropertyDefinition GetProperty(this TypeDefinition typeDef, string name, IEnumerable<TypeReference> types) {
-			return typeDef.GetProperties(name, types).SingleOrDefault();
+		public static PropertyDefinition GetProperty(this TypeDefinition typeDef, string name, IEnumerable<TypeReference> signature) {
+			return typeDef.GetProperties(name, signature).SingleOrDefault();
 		}
 
-		public static MethodReference GetMethod<T>(this ModuleDefinition module, Expression<Func<T>> expr) {
+		/// <summary>
+		/// Imports the method referenced in an expression in the context of <paramref name="module"/>.
+		/// </summary>
+		/// <typeparam name="T">The return type of the method.</typeparam>
+		/// <param name="module">The module into which to import the method as a reference.</param>
+		/// <param name="expr">A method invocation expression meant to be supplied in lambda form, e.g. <c>() => 1.ToString()</c>. Otherwise, throws an exception.</param>
+		/// <returns></returns>
+		public static MethodReference GetMethodLike<T>(this ModuleDefinition module, Expression<Func<T>> expr) {
 			return module.Import(ExprHelper.GetMethod(expr));
 		}
 
-		public static MethodReference GetMethod(this ModuleDefinition module, Expression<Action> expr) {
+		/// <summary>
+		/// Imports the method referenced in an expression in the context of <paramref name="module"/>.
+		/// </summary>
+		/// <param name="module">The module on which to find the method.</param>
+		/// <param name="expr">A method invocation expression meant to be supplied in lambda form. Otherwise, throws an exception.</param>
+		/// <returns></returns>
+		public static MethodReference GetMethodLike(this ModuleDefinition module, Expression<Action> expr) {
 			return module.Import(ExprHelper.GetMethod(expr));
 		}
 
-		internal static MethodDefinition GetMethodLike(this TypeDefinition type, MethodReference methodRef,
+		/// <summary>
+		/// Returns a method on the type similar to the specified method.
+		/// </summary>
+		/// <param name="containingType">The type on which to resolve the method.</param>
+		/// <param name="similarMethod">A reference to the similar method.</param>
+		/// <param name="altName">Optionally, find a method similar to <paramref name="similarMethod"/>, but with this name instead.</param>
+		/// <returns></returns>
+		public static MethodDefinition GetMethodLike(this TypeDefinition containingType, MethodReference similarMethod,
 			string altName = null) {
 			return
-				type.GetMethods(altName ?? methodRef.Name, methodRef.Parameters.Select(x => x.ParameterType),
-					methodRef.GenericParameters.Count, methodRef.ReturnType)
+				containingType.GetMethods(altName ?? similarMethod.Name, similarMethod.Parameters.Select(x => x.ParameterType),
+					similarMethod.GenericParameters.Count, similarMethod.ReturnType)
 					.SingleOrDefault();
 		}
 
@@ -88,25 +114,25 @@ namespace Patchwork.Utility {
 		/// </summary>
 		/// <param name="type"></param>
 		/// <param name="methodName"></param>
-		/// <param name="similarParams"></param>
+		/// <param name="parameters"></param>
 		/// <param name="genericArity"></param>
 		/// <param name="returnType"></param>
 		/// <returns></returns>
-		internal static IEnumerable<MethodDefinition> GetMethods(this TypeDefinition type, string methodName,
-			IEnumerable<TypeReference> similarParams, int genericArity, TypeReference returnType) {
+		public static IEnumerable<MethodDefinition> GetMethods(this TypeDefinition type, string methodName,
+			IEnumerable<TypeReference> parameters, int genericArity, TypeReference returnType) {
 			var sameName =
 				from method in type.Methods
 				where method.Name == methodName
 				select method;
 
-			similarParams = similarParams.ToList();
+			parameters = parameters.ToList();
 			var ignoreReturnType = !methodName.EqualsAny("op_Implicit", "op_Explicit");
 			var sameSig =
 				from method in sameName
-				where method.Parameters.Count == similarParams.Count()
-				where similarParams == null
-					|| method.Parameters.Select(x => x.ParameterType).Zip<TypeReference, TypeReference, bool>(similarParams, IsOverloadEquiv).All(x => x)
-				where ignoreReturnType || returnType == null || method.ReturnType.IsOverloadEquiv(returnType)
+				where method.Parameters.Count == parameters.Count()
+				where parameters == null
+					|| method.Parameters.Select(x => x.ParameterType).Zip<TypeReference, TypeReference, bool>(parameters, IsOverloadMatch).All(x => x)
+				where ignoreReturnType || returnType == null || method.ReturnType.IsOverloadMatch(returnType)
 				where method.GenericParameters.Count == genericArity
 				select method;
 
@@ -119,7 +145,7 @@ namespace Patchwork.Utility {
 		/// <param name="a">Type a.</param>
 		/// <param name="b">Type b.</param>
 		/// <returns></returns>
-		internal static bool IsOverloadEquiv(this TypeReference a, TypeReference b) {
+		public static bool IsOverloadMatch(this TypeReference a, TypeReference b) {
 			if (a.IsGenericParameter || b.IsGenericParameter) {
 				//there are two kinds of generic parameters, Var and MVar (class/method).
 				//they are different. otherwise, all gen params are the same.
@@ -131,7 +157,13 @@ namespace Patchwork.Utility {
 			return a.FullName == b.FullName; // [a.MetadataType == b.MetadataType] this was deleted because apparently the types can match even though the MT is different.
 		}
 
-		internal static bool IsOfType(this TypeDefinition typeDef, string parentType) {
+		/// <summary>
+		/// Returns true if the type definition has a parent type with the full name of <paramref name="parentType"/>.
+		/// </summary>
+		/// <param name="typeDef">The type definition.</param>
+		/// <param name="parentType">The full name of the parent type.</param>
+		/// <returns></returns>
+		public static bool IsOfType(this TypeDefinition typeDef, string parentType) {
 			var isActualType = typeDef.FullName == parentType;
 			var hasInterface = typeDef.Interfaces.Any(intf => intf.FullName == parentType);
 			var parentIsType = typeDef.BaseType?.Resolve().IsOfType(parentType) == true;
@@ -158,6 +190,11 @@ namespace Patchwork.Utility {
 			return ret[0];
 		}
 
+		/// <summary>
+		/// Returns true if the type reference is a generic type parameter (either of a type or of a method)
+		/// </summary>
+		/// <param name="typeRef"></param>
+		/// <returns></returns>
 		public static bool IsVarOrMVar(this TypeReference typeRef) {
 			return typeRef.MetadataType == MetadataType.MVar || typeRef.MetadataType == MetadataType.Var;
 

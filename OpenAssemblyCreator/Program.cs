@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
-using Patchwork.Attributes;
+using Patchwork;
 
 namespace OpenAssemblyCreator {
 	class Program {

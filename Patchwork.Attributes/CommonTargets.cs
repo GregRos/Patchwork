@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using AttrT = System.AttributeTargets;
-namespace Patchwork.Attributes {
+﻿using AttrT = System.AttributeTargets;
+namespace Patchwork {
 	/// <summary>
 	/// Common attribute targets.
 	/// </summary>

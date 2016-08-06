@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Patchwork.Engine.Utility;
 
 namespace Patchwork.Utility.Binding {
 	public class AggregateMode : NotificationMode {

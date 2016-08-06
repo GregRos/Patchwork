@@ -1,11 +1,16 @@
 using System.Linq;
 using Mono.Cecil;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 	/// <summary>
 	/// Extension and helper methods for resolving user-friendly names of various code elements.
 	/// </summary>
 	public static class DisplayNameHelper {
+		/// <summary>
+		/// Returns the common name used for the member definition of the specified type.
+		/// </summary>
+		/// <typeparam name="T">The type of the member definition, e.g. <see cref="FieldDefinition"/>, <see cref="MethodDefinition"/>, etc. </typeparam>
+		/// <returns></returns>
 		public static string CommonNameForMemberDef<T>()
 			where T : IMemberDefinition {
 			var t = typeof (T);

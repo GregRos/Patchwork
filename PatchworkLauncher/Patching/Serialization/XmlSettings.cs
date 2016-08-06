@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Xml.Serialization;
 using Patchwork;
-using Patchwork.Attributes;
 using Patchwork.Utility;
 
 namespace PatchworkLauncher {

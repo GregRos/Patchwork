@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 
-namespace Patchwork.Attributes {
+namespace Patchwork {
 
 	/// <summary>
 	/// This toggles (or XORs) all the specified decleration attributes in the field. Lets you add/remove things like 'readonly'.
@@ -11,6 +9,9 @@ namespace Patchwork.Attributes {
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Field)]
 	public class ToggleFieldAttributes : PatchingAttribute {
+		/// <summary>
+		/// The attributes to toggle. Defaults to 0 (no attributes).
+		/// </summary>
 		public FieldAttributes Attributes {
 			get;
 		}

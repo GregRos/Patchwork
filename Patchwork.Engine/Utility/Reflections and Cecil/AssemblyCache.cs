@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 
-	public class ExpandedAssemblyResolver : DefaultAssemblyResolver {
+	internal class ExpandedAssemblyResolver : DefaultAssemblyResolver {
 		public new void RegisterAssembly(AssemblyDefinition assemblyDef) {
 			base.RegisterAssembly(assemblyDef);
 		}
@@ -16,6 +16,9 @@ namespace Patchwork.Utility {
 	/// </summary>
 	public class AssemblyCache {
 
+		/// <summary>
+		/// Gets the default AssemblyCache.
+		/// </summary>
 		public static readonly AssemblyCache Default = new AssemblyCache();
 
 		
@@ -66,6 +69,12 @@ namespace Patchwork.Utility {
 
 		}
 
+		/// <summary>
+		/// Reads the assembly from the given path, or else loads it from cache.
+		/// </summary>
+		/// <param name="path">The patch to read the assembly from.</param>
+		/// <param name="readSymbols">Whether or not to read symbols.</param>
+		/// <returns></returns>
 		public AssemblyDefinition ReadAssembly(string path, bool readSymbols = false) {
 			var fileInfo = new FileInfo(path);
 			fileInfo.Refresh();
@@ -99,7 +108,10 @@ namespace Patchwork.Utility {
 			return read;
 		}
 
-		public void Clear() {
+		/// <summary>
+		/// Clears the assembly cache.
+		/// </summary>
+		public void ClearCache() {
 			_cache.Clear();
 		}
 	}

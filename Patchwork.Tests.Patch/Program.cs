@@ -7,6 +7,8 @@ using Patchwork.Tests.Target;
 using Serilog;
 using Serilog.Events;
 using Patchwork;
+using Patchwork.Engine;
+
 namespace Patchwork.Tests.Patch
 {
 	class Program

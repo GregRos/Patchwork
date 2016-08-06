@@ -1,6 +1,6 @@
 using System;
 
-namespace Patchwork.Attributes.History {
+namespace Patchwork.History {
 	/// <summary>
 	/// Indicates that this member has been patched by another member in a patching assembly.
 	/// </summary>

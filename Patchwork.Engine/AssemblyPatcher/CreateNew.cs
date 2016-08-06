@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
-using Patchwork.Attributes;
-using Patchwork.Utility;
+using Patchwork.Engine.Utility;
 
-namespace Patchwork
+namespace Patchwork.Engine
 {
 	public partial class AssemblyPatcher
 	{

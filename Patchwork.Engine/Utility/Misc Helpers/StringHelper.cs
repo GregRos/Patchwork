@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using static System.Math;
-namespace Patchwork.Utility
+
+namespace Patchwork.Engine.Utility
 {
-	public static class StringHelper {
+	internal static class StringHelper {
 
 		public static string Replicate(this string str, int count) {
 			return count == 0 ? "" : Enumerable.Repeat(str, count).Aggregate(String.Concat);
@@ -16,7 +16,7 @@ namespace Patchwork.Utility
 
 		public static string FindLongestCommonSubstring(string a, string b, bool caseInsensitive = false) {
 			var commonString = "";
-			for (int i = 0; i < Min(a.Length, b.Length); i++) {
+			for (int i = 0; i < Math.Min(a.Length, b.Length); i++) {
 				var comparisonMode =caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 				if (!String.Equals(a[i].ToString(), b[i].ToString(), comparisonMode)) {
 					return commonString;

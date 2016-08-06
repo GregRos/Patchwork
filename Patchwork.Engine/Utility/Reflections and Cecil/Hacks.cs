@@ -7,11 +7,11 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 	/// <summary>
 	/// Contains extension methods that are regarded as hacks circumventing some of Cecil's limitations. Strong points of failure should the version change.
 	/// </summary>
-	public static class Hacks {
+	internal static class Hacks {
 		private static IDictionary<BaseAssemblyResolver, IList<AssemblyResolveEventHandler>> _resolveDictionary =
 			new Dictionary<BaseAssemblyResolver, IList<AssemblyResolveEventHandler>>();
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Patchwork.Attributes.AutoPatching {
+namespace Patchwork.AutoPatching {
 
 	/// <summary>
 	/// A simple class that contains information about an application. Should be constructed through the <see cref="AppInfoFactory"/> 
@@ -48,6 +48,9 @@ namespace Patchwork.Attributes.AutoPatching {
 			set;
 		}
 
+		/// <summary>
+		/// Returns the location of a file from which the icon can be retrieved. Different kinds of files are supported, including executables.
+		/// </summary>
 		public FileInfo IconLocation {
 			get;
 			set;

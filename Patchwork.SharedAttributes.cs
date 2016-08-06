@@ -1,5 +1,5 @@
 using System.Reflection;
-using Patchwork.Attributes;
+using Patchwork;
 
 [assembly: AssemblyCompany(PatchworkInfo.Author)]
 [assembly: AssemblyProduct("Patchwork")]

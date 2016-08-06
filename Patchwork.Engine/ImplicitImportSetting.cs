@@ -1,4 +1,4 @@
-namespace Patchwork {
+namespace Patchwork.Engine {
 	/// <summary>
 	///     Changes how members without explicit patch attributes are treated.
 	/// </summary>

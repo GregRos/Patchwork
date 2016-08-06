@@ -1,12 +1,11 @@
 using System;
 using System.IO;
 using System.Reflection;
-using Patchwork.Attributes;
-using Patchwork.Attributes.AutoPatching;
-using Patchwork.Utility;
+using Patchwork.AutoPatching;
+using Patchwork.Engine.Utility;
 
-namespace Patchwork {
-	public class PatchInfoProxy : MarshalByRefObject, IPatchInfo, IDisposable {
+namespace Patchwork.Engine {
+	internal class PatchInfoProxy : MarshalByRefObject, IPatchInfo, IDisposable {
 		public bool IsDisposed {
 			get;
 			private set;

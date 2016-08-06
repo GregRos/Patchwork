@@ -1,5 +1,6 @@
 using System;
-namespace Patchwork.Attributes {
+
+namespace Patchwork {
 	/// <summary>
 	/// An enum consisting of all the valid code elements that can be decorated with patching attributes.
 	/// </summary>
@@ -13,7 +14,13 @@ namespace Patchwork.Attributes {
 		/// Includes indexers.
 		/// </summary>
 		Property = 1 << 1,
+		/// <summary>
+		/// Includes fields.
+		/// </summary>
 		Field = 1 << 2,
+		/// <summary>
+		/// Includes events.
+		/// </summary>
 		Event = 1 << 3,
 		/// <summary>
 		/// Method, Property, Field, or Event

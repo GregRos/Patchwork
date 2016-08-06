@@ -1,15 +1,21 @@
 ﻿using System;
 
-namespace Patchwork.Attributes {
+namespace Patchwork {
 	/// <summary>
 	/// Indicates that this type is a new type that must be injected into the assembly.
 	/// </summary>
 	[AttributeUsage(CommonTargets.Types, Inherited = false)]
 	public class NewTypeAttribute : TypeActionAttribute {
+		/// <summary>
+		/// The short name under which the type is introduced. If <c>null</c>, the name is unchanged. Dots should not be used here.
+		/// </summary>
 		public string NewTypeName {
 			get;
 		}
 
+		/// <summary>
+		/// The namespace under which the type will be introduced. May contain dots. If <c>null</c>, the type is unchanged.
+		/// </summary>
 		public string NewNamespace {
 			get;
 		}
@@ -34,7 +40,9 @@ namespace Patchwork.Attributes {
 			NewTypeName = newTypeName;
 			NewNamespace = newNamespace;
 		}
-
+		/// <summary>
+		/// Whether or not this attribute signifies an implicitly new member.
+		/// </summary>
 		public bool IsImplicit { get; private set; }
 
 	}

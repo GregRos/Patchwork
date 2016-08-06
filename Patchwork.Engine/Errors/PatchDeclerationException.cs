@@ -1,9 +1,9 @@
 using System;
 using System.Runtime.Serialization;
-using Patchwork.Attributes;
-using Patchwork.Attributes.AutoPatching;
+using Patchwork.AutoPatching;
+#pragma warning disable 1591
 
-namespace Patchwork {
+namespace Patchwork.Engine {
 	/// <summary>
 	/// One of the declerations in the patching assembly is invalid in the context of the target assembly.
 	/// </summary>

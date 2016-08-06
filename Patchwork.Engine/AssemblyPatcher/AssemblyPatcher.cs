@@ -1,18 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Patchwork.Attributes;
-using Patchwork.Collections;
-using Patchwork.Utility;
+using Patchwork.Engine.Utility;
 using Serilog;
+#pragma warning disable 618
 
-namespace Patchwork {
+namespace Patchwork.Engine {
+
+	/// <summary>
+	/// Used to monitor the progress of the patching engine.
+	/// </summary>
+	public interface IProgressMonitor {
+		/// <summary>
+		/// The name of the current task executing.
+		/// </summary>
+		string TaskTitle { get;set; }
+
+		/// <summary>
+		/// The name of the current subtask being performed.
+		/// </summary>
+		string TaskText { get;set; }
+
+		/// <summary>
+		/// The progress in the current task.
+		/// </summary>
+		int Current { get; set; }
+
+		/// <summary>
+		/// The number of progress to be done.
+		/// </summary>
+		int Total { get;set; }
+	}
+
 
 	/// <summary>
 	///     A class that patches a specific assembly (a target assembly) with your assemblies.
@@ -28,7 +47,11 @@ namespace Patchwork {
 			Log = log ?? Serilog.Log.Logger;
 			Log.Information("Created patcher for assembly: {0:l}", targetAssembly.Name);
 		}
-
+		/// <summary>
+		/// Constructs a new assembly patcher patching the assembly in the given path.
+		/// </summary>
+		/// <param name="targetAssemblyPath">The path to the given assembly.</param>
+		/// <param name="log">A log.</param>
 		public AssemblyPatcher(string targetAssemblyPath,
 			ILogger log = null)
 			: this(AssemblyCache.Default.ReadAssembly(targetAssemblyPath), log) {
@@ -88,9 +111,8 @@ namespace Patchwork {
 		/// <param name="path"></param>
 		/// <param name="o"></param>
 		/// <param name="readSymbols"></param>
-		public void PatchAssembly(string path, ProgressObject o = null,  bool readSymbols = true) {
-			o = new ProgressObject();
-			readSymbols = readSymbols && File.Exists(Path.ChangeExtension(path, "pdb")) || File.Exists(path + ".mdb");
+		public void PatchAssembly(string path, IProgressMonitor o,  bool readSymbols = true) {
+			readSymbols = readSymbols && (File.Exists(Path.ChangeExtension(path, "pdb")) || File.Exists(path + ".mdb"));
 			var yourAssembly = AssemblyCache.Default.ReadAssembly(path, readSymbols);
 			var creator = new ManifestCreator();
 			var manifest = creator.CreateManifest(yourAssembly);
@@ -264,7 +286,7 @@ namespace Patchwork {
 		/// </summary>
 		/// <param name="manifest">The PatchingManifest. Note that the instance will be populated with additional information (such as newly created types) during execution.</param>
 		/// <param name="o"></param>
-		public void PatchManifest(PatchingManifest manifest, ProgressObject o) {
+		public void PatchManifest(PatchingManifest manifest, IProgressMonitor o) {
 			/*	The point of this method is to introduce all the patched elements in the correct order.
 			
 			Standard order of business for order between modify/remove/update:
@@ -272,11 +294,10 @@ namespace Patchwork {
 			2. Create new Xs
 			3. Update existing Xs (+ those we just created)
 			 */
-			o = o ?? new ProgressObject();
 			manifest.Specialize(TargetAssembly);
-			o.TaskTitle.Value = $"{manifest.PatchAssembly.Name.Name}";
-			o.Current.Value = 0;
-			o.Total.Value = 11;
+			o.TaskTitle = $"{manifest.PatchAssembly.Name.Name}";
+			o.Current = 0;
+			o.Total = 11;
 			AssemblyDefinition targetAssemblyBackup = null;
 			if (UseBackup) {
 				targetAssemblyBackup = TargetAssembly.Clone();
@@ -289,16 +310,16 @@ namespace Patchwork {
 				//But don't set anything that references other things, like BaseType, interfaces, custom attributes, etc.
 				//Type parameters *are* added at this stage, but no constraints are specified.
 				//DEPENDENCIES: None
-				o.TaskText.Value = "Introducing Types";
+				o.TaskText = "Introducing Types";
 				IntroduceTypes(manifest.TypeActions);
-				o.Current.Value++;
+				o.Current++;
 				
 				//+REMOVE EXISTING METHODS
 				//Remove any methods that need removing.
 				//DEPENDENCIES: Probably none
-				o.TaskText.Value = "Removing Methods";
+				o.TaskText = "Removing Methods";
 				RemoveMethods(manifest.MethodActions);
-				o.Current.Value++;
+				o.Current++;
 
 				//+INTRODUCE NEW METHOD AND METHOD TYPE DEFINITIONS
 				//Declare all the new methods and their type parameters, but do not set nything that references other types,
@@ -307,9 +328,9 @@ namespace Patchwork {
 				//This is performed now because types can reference attribute constructors that don't exist until we create them,
 				//Don't set custom attributes in this stage.
 				//DEPENDENCIES: Type definitions (when introduced to new types)
-				o.TaskText.Value = "Introducing Methods";
+				o.TaskText = "Introducing Methods";
 				IntroduceMethods(manifest.MethodActions);
-				o.Current.Value++;
+				o.Current++;
 
 				//+UPDATE METHOD DECLERATIONS
 				//Update method declerations with parameters and return types
@@ -317,14 +338,14 @@ namespace Patchwork {
 				//Don't set custom attributes in this stage though it's possible to do so.
 				//This is to avoid code duplication.
 				//DEPENDENCIES: Type definitions, method definitions
-				o.TaskText.Value = "Updating Type Declerations";
+				o.TaskText = "Updating Type Declerations";
 				UpdateMethodDeclerations(manifest.MethodActions);
-				o.Current.Value++;
+				o.Current++;
 
 				//+IMPORT ASSEMBLY/MODULE CUSTOM ATTRIBUTES
 				//Add any custom attributes for things that aren't part of the method/type hierarchy, such as assemblies.
 				//DEPENDENCIES: Method definitions, type definitions. (for attribute types and attribute constructors)
-				o.TaskText.Value = "Importing Assembly/Module Attributes";
+				o.TaskText = "Importing Assembly/Module Attributes";
 				var patchingAssembly = manifest.PatchAssembly;
 
 				//for assmebly:
@@ -334,43 +355,43 @@ namespace Patchwork {
 				//for module:
 				CopyCustomAttributesByImportAttribute(TargetAssembly.MainModule, patchingAssembly.MainModule,
 					patchingAssembly.MainModule.GetCustomAttribute<ImportCustomAttributesAttribute>());
-				o.Current.Value++;
+				o.Current++;
 
 				//+UPDATE TYPE DEFINITIONS
 				//Set the type information we didn't set in (1), according to the same order, including custom attributes.
 				//When/if modifying type inheritance is allowed, this process will occur at this stage.
 				//DEPENDENCIES: Type definitions (obviously), method definitions (for attribute constructors)
-				o.TaskText.Value = "Updating Type Definitions";
+				o.TaskText = "Updating Type Definitions";
 				UpdateTypes(manifest.TypeActions);
-				o.Current.Value++;
+				o.Current++;
 
 				//+FIELDS
 				//remove/define/modify fields. This is where most enum processing happens. Custom attributes are set at this stage.
 				//DEPENDENCIES: Type definitions, method definitions (for attribute constructors)
-				o.TaskText.Value = "Processing Fields";
+				o.TaskText = "Processing Fields";
 				ClearReplacedTypes(manifest.TypeActions);
 				RemoveFields(manifest.FieldActions);
 				IntroduceFields(manifest.FieldActions);
 				UpdateFields(manifest.FieldActions);
-				o.Current.Value++;
+				o.Current++;
 
 				//+PROPERTIES
 				//Remove/define/modify properties. This doesn't change anything about methods. Custom attributes are set at this stage.
 				//DEPENDENCIES: Type definitions, method definitions (attribute constructors, getter/setters)
-				o.TaskText.Value = "Processing Properties";
+				o.TaskText = "Processing Properties";
 				RemoveProperties(manifest.PropertyActions);
 				IntroduceProperties(manifest.PropertyActions);
 				UpdateProperties(manifest.PropertyActions);
-				o.Current.Value++;
+				o.Current++;
 
 				//+EVENTS
 				//Remove/define/modify events. This doesn't change anything about methods. Custom attributes are set at this stage.
 				//DEPENENCIES: Type definitions, method definitions (attribute constructors, add/remove/invoke handlers)
-				o.TaskText.Value = "Introducing Events";
+				o.TaskText = "Introducing Events";
 				RemoveEvents(manifest.EventActions);
 				IntroduceEvents(manifest.EventActions);
 				UpdateEvents(manifest.EventActions);
-				o.Current.Value++;
+				o.Current++;
 
 				//+FINALIZE METHODS, GENERATE METHOD BODIES
 				//Fill/modify the bodies of all remaining methods, and also modify accessibility/attributes of existing ones.
@@ -379,17 +400,17 @@ namespace Patchwork {
 				//Custom attributes are set at this stage.
 				//Also, explicit overrides (what in C# is explicit interface implementation) are specified here.
 				//DEPENDENCIES: Type definitions, method definitions, method signature elements, field definitions
-				o.TaskText.Value = "Updating Method Bodies";
+				o.TaskText = "Updating Method Bodies";
 				UpdateMethods(manifest.MethodActions);
-				o.Current.Value++;
+				o.Current++;
 
 				//+ADD PATCHING HISTORY TO ASSEMBLY
-				o.TaskText.Value = "Updating History";
+				o.TaskText = "Updating History";
 				if (EmbedHistory) {
 
 					TargetAssembly.AddPatchedByAssemblyAttribute(manifest.PatchAssembly, _assemblyHistoryIndex++, OriginalAssemblyMetadata);	
 				}
-				o.Current.Value++;
+				o.Current++;
 			}
 			catch {
 				if (UseBackup) {
@@ -411,6 +432,10 @@ namespace Patchwork {
 			return PeVerifyRunner.RunPeVerify(TargetAssembly, input);
 		}
 
+		/// <summary>
+		/// Writes the patched result to file.
+		/// </summary>
+		/// <param name="path">The path into which the assembly will be written to.</param>
 		public void WriteTo(string path) {
 			
 			Log.Information("Writing assembly {@OrigName:l} [{@OrigPath:l}] to location {@DestPath:l}",

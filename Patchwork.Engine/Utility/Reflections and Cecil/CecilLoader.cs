@@ -6,7 +6,7 @@ using System.Reflection;
 using Mono.Cecil;
 using Serilog;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 	/// <summary>
 	/// Helper and extension methods for loading code elements from their Cecil metadata.
 	/// </summary>

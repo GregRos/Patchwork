@@ -1,17 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using Patchwork.Attributes;
-using Patchwork.Utility;
+using Patchwork.Engine.Utility;
 
-namespace Patchwork {
+namespace Patchwork.Engine {
 
 	public partial class AssemblyPatcher {
 
@@ -179,7 +173,7 @@ namespace Patchwork {
 				case MetadataType.FunctionPointer: //interop: naked function pointer
 				case MetadataType.TypedByReference: //interop: related to the varargs calling convention, __typeref
 				case MetadataType.Pointer: //interop: pointer
-					throw Errors.Feature_not_supported("MetadataType not supported: {0}", yourTypeRef.MetadataType);
+					throw Errors.Feature_not_supported($"MetadataType not supported: {yourTypeRef.MetadataType}");
 				default:
 					//this is the stopping condition for the recursion, which is dealing with a normal type.
 					if (!yourTypeDef.Module.Assembly.IsPatchingAssembly()) {
@@ -208,7 +202,7 @@ namespace Patchwork {
 		/// <returns></returns>
 		private MethodReference ManualImportMethod(MethodReference yourMethodRef) {
 			//the following is required due to a workaround. 
-			var newRef = yourMethodRef.IsGenericInstance ? yourMethodRef : yourMethodRef.MakeReference();
+			var newRef = yourMethodRef.IsGenericInstance ? yourMethodRef : yourMethodRef.CloneReference();
 
 			foreach (var param in newRef.Parameters) {
 				param.ParameterType = FixTypeReference(param.ParameterType);
@@ -275,7 +269,7 @@ namespace Patchwork {
 				} else {
 					targetBaseMethodDef = yourMethodRef;
 				}
-				var newMethodRef = targetBaseMethodDef.MakeReference();
+				var newMethodRef = targetBaseMethodDef.CloneReference();
 				newMethodRef.DeclaringType = targetType;
 				targetMethodRef = newMethodRef;
 				if (isntFixTypeCall) {
@@ -313,7 +307,7 @@ namespace Patchwork {
 				//we assume that types that aren't in a patching assembly will never reference types in a patching assembly
 				targetBaseFieldDef = yourFieldRef;
 			}
-			var newFieldRef = targetBaseFieldDef.MakeReference();
+			var newFieldRef = targetBaseFieldDef.CloneReference();
 			newFieldRef.DeclaringType = targetType;
 			newFieldRef.FieldType = FixTypeReference(newFieldRef.FieldType);
 			var targetFieldRef = TargetAssembly.MainModule.Import(newFieldRef);

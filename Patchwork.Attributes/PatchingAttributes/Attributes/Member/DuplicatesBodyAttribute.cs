@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Patchwork.Attributes {
+namespace Patchwork {
 	/// <summary>
 	///     Inserts the body of another method into this target method (as it appears in the application assembly). The target member must still be decorated with a <see cref="MemberActionAttribute"/>
 	/// </summary>
@@ -39,6 +39,9 @@ namespace Patchwork.Attributes {
 		/// </value>
 		public object SourceType { get; private set; }
 
+		/// <summary>
+		/// The name of the method to duplicate.
+		/// </summary>
 		public string MethodName { get; private set; }
 	}
 }

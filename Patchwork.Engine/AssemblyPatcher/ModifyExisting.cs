@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Patchwork.Attributes;
-using Patchwork.Utility;
+using Patchwork.Engine.Utility;
 using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 
-namespace Patchwork {
+namespace Patchwork.Engine {
 	public partial class AssemblyPatcher {
 		private MethodReference _concat;
 
@@ -215,7 +213,7 @@ namespace Patchwork {
 		}
 
 		private static Func<CustomAttribute, bool> AttrFilter(ModificationScope scope) {
-			Func<CustomAttribute, bool> onlyPwAttrs = x => x.AttributeType.Namespace == nameof(Patchwork.Attributes);
+			Func<CustomAttribute, bool> onlyPwAttrs = x => x.AttributeType.Namespace == nameof(Patchwork);
 			Func<CustomAttribute, bool> anyAttr = x => true;
 			return scope.HasFlag(ModificationScope.CustomAttributes) ? anyAttr : onlyPwAttrs;
 		}
@@ -261,7 +259,7 @@ namespace Patchwork {
 			var injectManual = yourMethod.GetCustomAttribute<PatchworkDebugRegisterAttribute>();
 			FieldReference debugFieldRef = null;
 
-			_concat = _concat ?? targetMethod.Module.GetMethod(() => String.Concat("", ""));
+			_concat = _concat ?? targetMethod.Module.GetMethodLike(() => String.Concat("", ""));
 			var instructionEquiv = new Dictionary<Instruction, Instruction>();
 			targetMethod.Body.InitLocals = yourMethod.Body.Variables.Count > 0;
 

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Patchwork.Attributes {
+namespace Patchwork {
 	/// <summary>
 	/// A meta-attribute, placed on other attributes. Specifies that this attribute should never be embedded into patched assemblies.
 	/// </summary>

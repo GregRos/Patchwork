@@ -1,7 +1,6 @@
 using System;
-using System.ComponentModel;
 
-namespace Patchwork.Attributes {
+namespace Patchwork {
 	/// <summary>
 	///     The scope of a member modification. Use this to modify only the body, accessibility, value, etc.
 	/// </summary>

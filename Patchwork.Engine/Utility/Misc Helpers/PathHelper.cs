@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 	/// <summary>
 	/// Utility methods for dealing with paths.
 	/// </summary>
-	public static class PathHelper {
+	internal static class PathHelper {
 		private static readonly string _executingAssemblyPath  = Assembly.GetExecutingAssembly().Location;
 		private static readonly bool _isWindows = Environment.OSVersion.VersionString.Contains("Windows");
 

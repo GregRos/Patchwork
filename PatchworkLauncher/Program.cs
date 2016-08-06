@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Mono.Cecil;
-using Patchwork.Attributes;
 using Patchwork.Utility;
 
 namespace PatchworkLauncher {

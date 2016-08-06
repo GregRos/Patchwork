@@ -9,8 +9,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using Patchwork;
-using Patchwork.Attributes;
-using Patchwork.Attributes.AutoPatching;
+using Patchwork.AutoPatching;
+using Patchwork.Engine;
+using Patchwork.Engine.Utility;
 using Patchwork.Utility;
 using Patchwork.Utility.Binding;
 using PatchworkLauncher.Properties;
@@ -613,7 +614,7 @@ namespace PatchworkLauncher {
 
 					foreach (var patch in patchGroup.Instructions) {
 						try {
-							patcher.PatchManifest(patch.Patch, patchProgress);
+							patcher.PatchManifest(patch.Patch, patchProgress.ToMonitor());
 						}
 						catch (PatchException ex) {
 							throw new PatchingProcessException(ex) {
@@ -638,7 +639,7 @@ namespace PatchworkLauncher {
 								AssemblyResolutionFolder = targetFolder,
 								IgnoreErrors = AppInfo.IgnorePEVerifyErrors.ToList()
 							});
-							logger.Information(peOutput.Raw);
+							logger.Information(peOutput.Output);
 						}
 						catch (Exception ex) {
 							logger.Error(ex, "Failed to run PEVerify on the assembly.");
@@ -668,7 +669,7 @@ namespace PatchworkLauncher {
 						Step = PatchProcessingStep.PerformingSwitch
 					};
 				}
-				AssemblyCache.Default.Clear();
+				AssemblyCache.Default.ClearCache();
 				po.Current.Value++;
 			}
 		}

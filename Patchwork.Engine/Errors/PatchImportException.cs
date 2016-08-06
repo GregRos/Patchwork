@@ -1,7 +1,8 @@
 using System;
 using System.Runtime.Serialization;
+#pragma warning disable 1591
 
-namespace Patchwork {
+namespace Patchwork.Engine {
 	/// <summary>
 	/// A reference to a member or other element could not be imported (corrected and injected into the target assembly).
 	/// </summary>

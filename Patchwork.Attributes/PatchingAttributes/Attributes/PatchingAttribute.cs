@@ -1,6 +1,6 @@
 using System;
 
-namespace Patchwork.Attributes {
+namespace Patchwork {
 
 	/// <summary>
 	///     Parent class of all attributes related to patching, with a handful of exceptions.

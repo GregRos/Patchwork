@@ -1,6 +1,6 @@
 using System;
 using AttrT = System.AttributeTargets;
-namespace Patchwork.Attributes {
+namespace Patchwork {
 	/// <summary>
 	///     Marks this member as being a modification of a member in the target assembly.
 	/// </summary>
@@ -19,6 +19,9 @@ namespace Patchwork.Attributes {
 			MemberName = memberName;
 		}
 
+		/// <summary>
+		/// Optionally, name of the member to be modified. If null, a member with the same name is used.
+		/// </summary>
 		public string MemberName { get; private set; }
 
 	}

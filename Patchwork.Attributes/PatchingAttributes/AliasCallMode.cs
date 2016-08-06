@@ -1,4 +1,4 @@
-namespace Patchwork.Attributes {
+namespace Patchwork {
 	/// <summary>
 	/// Changes how calls to this alias are translated in the target assembly.
 	/// </summary>

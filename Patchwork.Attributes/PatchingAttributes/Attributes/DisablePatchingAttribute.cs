@@ -1,5 +1,6 @@
 using System;
-namespace Patchwork.Attributes {
+
+namespace Patchwork {
 	/// <summary>
 	///     Disables patching this element and any child elements. Can be applied to anything that can be patched. Overrides
 	///     other attributes.

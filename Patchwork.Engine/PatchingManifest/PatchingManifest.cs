@@ -1,49 +1,67 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Mono.Cecil;
-using Patchwork.Attributes;
-using Patchwork.Collections;
-using Patchwork.Utility;
+using Patchwork.AutoPatching;
+using Patchwork.Engine.Utility;
 using Serilog;
 
-namespace Patchwork {
+namespace Patchwork.Engine {
+	/// <summary>
+	/// A patching manifest, which is a collection of patching instructions detected in a patch assembly, organized by kind.
+	/// </summary>
 	public class PatchingManifest : IDisposable {
 
+		/// <summary>
+		/// The patch assembly this manifest was generated from.
+		/// </summary>
 		public AssemblyDefinition PatchAssembly {
 			get;
 			internal set;
 		}
 
-		public PatchInfoProxy PatchInfo {
+		/// <summary>
+		/// The <see cref="IPatchInfo"/> object for the patch assembly.
+		/// </summary>
+		public IPatchInfo PatchInfo {
 			get;
 			internal set;
 		}
 
+		/// <summary>
+		/// A collection of actions to be performed on types, organized based on attribute type in a special lookup table.
+		/// </summary>
 		public SimpleTypeLookup<TypeAction> TypeActions {
 			get;
 			internal set;
 		} = new SimpleTypeLookup<TypeAction>();
 
+		/// <summary>
+		/// A collection of actions to be performed on fields, organized based on attribute type in a special lookup table.
+		/// </summary>
 		public SimpleTypeLookup<MemberAction<FieldDefinition>> FieldActions {
 			get;
 			internal set;
 		} = new SimpleTypeLookup<MemberAction<FieldDefinition>>();
 
+		/// <summary>
+		/// A collection of actions to be performed on methods, organized based on attribute type in a special lookup table.
+		/// </summary>
 		public SimpleTypeLookup<MemberAction<MethodDefinition>> MethodActions {
 			get;
 			internal set;
 		} = new SimpleTypeLookup<MemberAction<MethodDefinition>>();
-
+		/// <summary>
+		/// A collection of actions to be performed on properties, organized based on attribute type in a special lookup table.
+		/// </summary>
 		public SimpleTypeLookup<MemberAction<PropertyDefinition>> PropertyActions {
 			get;
 			internal set;
 		} = new SimpleTypeLookup<MemberAction<PropertyDefinition>>();
-
+		/// <summary>
+		/// A collection of actions to be performed on events, organized based on attribute type in a special lookup table.
+		/// </summary>
 		public SimpleTypeLookup<MemberAction<EventDefinition>> EventActions {
 			get;
 			internal set;
@@ -153,7 +171,7 @@ namespace Patchwork {
 		/// Disposes of the AppDomain hosting the PatchInfo instance. This needs to be called so the AppDomain can be unloaded.
 		/// </summary>
 		public void Dispose() {
-			PatchInfo?.Dispose();
+			(PatchInfo as IDisposable)?.Dispose();
 		}
 	}
 }

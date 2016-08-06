@@ -1,6 +1,6 @@
 ﻿using System;
 using AttrT = System.AttributeTargets;
-namespace Patchwork.Attributes
+namespace Patchwork
 {
 
 	/// <summary>
@@ -8,16 +8,26 @@ namespace Patchwork.Attributes
 	/// </summary>
 	[AttributeUsage(AttrT.Method | AttrT.Field | AttrT.Constructor, Inherited = false)]
 	public class MemberAliasAttribute : MemberActionAttribute {
+		/// <summary>
+		/// Optionally, the member to be aliased. 
+		/// If not specified, the name of the current member is used.
+		/// </summary>
 		public string AliasedMemberName {
 			get;
 			private set;
 		}
 
+		/// <summary>
+		/// The declaring type of the member. If not specified, the modified type is used.
+		/// </summary>
 		public object AliasedMemberDeclaringType {
 			get;
 			private set;
 		}
 
+		/// <summary>
+		/// Specifies whether calls to this alias should be translated in some special way.
+		/// </summary>
 		public AliasCallMode CallMode {
 			get;
 			private set;

@@ -1,24 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.Remoting.Channels;
 using Mono.Cecil;
-using Mono.Cecil.Rocks;
-using Mono.Cecil.Cil;
-using Patchwork.Attributes;
-using Patchwork.Utility.Binding;
-using Serilog;
-using FieldAttributes = Mono.Cecil.FieldAttributes;
-using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
-using MethodBody = Mono.Cecil.Cil.MethodBody;
 
-namespace Patchwork.Utility {
+namespace Patchwork.Engine.Utility {
 
 
 
@@ -27,11 +12,20 @@ namespace Patchwork.Utility {
 	/// </summary>
 	public static class CecilHelper {
 
-
+		/// <summary>
+		/// Returns a reloaded clone of the assembly by serializing it and loading it from memory.
+		/// </summary>
+		/// <param name="definition">The assembly definition.</param>
+		/// <returns></returns>
 		public static AssemblyDefinition Clone(this AssemblyDefinition definition) {
 			return AssemblyDefinition.ReadAssembly(new MemoryStream(definition.SerializeAssembly()));
 		}
 
+		/// <summary>
+		/// Serializes the assembly by writing it into a memory stream.
+		/// </summary>
+		/// <param name="definition">The assembly definition.</param>
+		/// <returns></returns>
 		public static byte[] SerializeAssembly(this AssemblyDefinition definition) {
 			var ms = new MemoryStream();
 			definition.Write(ms);
@@ -40,32 +34,32 @@ namespace Patchwork.Utility {
 		}
 
 		/// <summary>
-		///     Returns a MethodReference to the method. Note that the DeclaringType, ReturnType, etc, aren't fixed.
+		///     Creates another refernece to the same method.
 		/// </summary>
-		/// <param name="methodDef">The method definition.</param>
+		/// <param name="methodRef">The method reference.</param>
 		/// <returns></returns>
-		public static MethodReference MakeReference(this MethodReference methodDef) {
-			var refTo = new MethodReference(methodDef.Name, methodDef.ReturnType, methodDef.DeclaringType) {
-				CallingConvention = methodDef.CallingConvention,
-				HasThis = methodDef.HasThis, //important
-				ExplicitThis = methodDef.ExplicitThis //important,
+		public static MethodReference CloneReference(this MethodReference methodRef) {
+			var refTo = new MethodReference(methodRef.Name, methodRef.ReturnType, methodRef.DeclaringType) {
+				CallingConvention = methodRef.CallingConvention,
+				HasThis = methodRef.HasThis, //important
+				ExplicitThis = methodRef.ExplicitThis //important,
 			};
 			
-			foreach (var par in methodDef.Parameters) {
+			foreach (var par in methodRef.Parameters) {
 				refTo.Parameters.Add(new ParameterDefinition(par.ParameterType));
 			}
-			foreach (var gen in methodDef.GenericParameters) {
+			foreach (var gen in methodRef.GenericParameters) {
 				refTo.GenericParameters.Add(new GenericParameter(gen.Name, refTo));
 			}
 			return refTo;
 		}
 
 		/// <summary>
-		///     Returns a MethodReference to the method. Note that the DeclaringType, ReturnType, etc, aren't fixed.
+		///     Returns another reference to the same field.
 		/// </summary>
-		/// <param name="methodDef">The method definition.</param>
+		/// <param name="methodDef">The field reference.</param>
 		/// <returns></returns>
-		public static FieldReference MakeReference(this FieldReference methodDef) {
+		public static FieldReference CloneReference(this FieldReference methodDef) {
 			var refTo = new FieldReference(methodDef.Name, methodDef.FieldType, methodDef.DeclaringType);
 			return refTo;
 		}
@@ -188,19 +182,37 @@ namespace Patchwork.Utility {
 			}
 		}
 
-
+		/// <summary>
+		/// Contains the metadata string of the executing Patchwork.Engine assembly, as determined by the <see cref="GetAssemblyMetadataString(Mono.Cecil.AssemblyDefinition)"/> method.
+		/// </summary>
 		public static readonly string PatchworkMetadataString =
 			typeof (AssemblyPatcher).Assembly.GetAssemblyMetadataString();
 
+		/// <summary>
+		/// Returns a human-readable metadata string that describes the specified Cecil assembly definition.
+		/// </summary>
+		/// <param name="assembly">The assembly.</param>
+		/// <returns></returns>
 		public static string GetAssemblyMetadataString(this AssemblyDefinition assembly) {
 			return GetAssemblyMetadataString(assembly.FullName, assembly.MainModule.FullyQualifiedName);
 		}
 
+		/// <summary>
+		/// Returns a human-readable metadata string that describes the specified proper, loaded assembly.
+		/// </summary>
+		/// <param name="assembly"></param>
+		/// <returns></returns>
 		public static string GetAssemblyMetadataString(this Assembly assembly) {
 			return GetAssemblyMetadataString(assembly.FullName, assembly.Location);
 		}
 
-		public static string GetAssemblyMetadataString(string fullName, string path) {
+		/// <summary>
+		/// Returns the metadata string that describes the assembly in the specified location, expected to have the specified full name.
+		/// </summary>
+		/// <param name="fullName">The full name of the assembly expected. Mainly used </param>
+		/// <param name="path"></param>
+		/// <returns></returns>
+		private static string GetAssemblyMetadataString(string fullName, string path) {
 			if (!File.Exists(path)) {
 				return $"[FullName = '{fullName}']";
 			}
