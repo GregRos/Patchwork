@@ -46,7 +46,7 @@ namespace Patchwork.Utility {
 					return _inner.Total.Value;
 				}
 				set {
-					_inner.Current.Value = value;
+					_inner.Total.Value = value;
 				}
 			}
 		}
