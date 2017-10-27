@@ -1,5 +1,7 @@
 # Patchwork
-<span style="font-size:18">[MIT License](http://opensource.org/licenses/MIT) |  [**Latest Version: 0.9.1**]((https://github.com/GregRos/Patchwork/releases/latest)</span>
+
+<span style="font-size:18">[MIT License](http://opensource.org/licenses/MIT) |  [Latest Version: 0.9.1](https://github.com/GregRos/Patchwork/releases/latest)</span>
+
 ----
 
 ## User's Guide
