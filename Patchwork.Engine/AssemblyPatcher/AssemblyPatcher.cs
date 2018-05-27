@@ -206,10 +206,13 @@ namespace Patchwork.Engine {
 		}
 
 		private void UpdateMethods(SimpleTypeLookup<MemberAction<MethodDefinition>> methodActions) {
-			foreach (var methodAction in methodActions[typeof (ModifiesMemberAttribute), typeof (NewMemberAttribute)]) {
-				ModifyMethod(methodAction.TypeAction.TargetType,
-					methodAction.YourMember,
-					methodAction.ActionAttribute, methodAction.TargetMember);
+			//The reason to fill bodies of the new methods before modifying existing ones is to ensure that DuplicatesBody attribute
+			//works on unmodified version (see https://github.com/GregRos/Patchwork/issues/8 for details).
+			foreach (var methodAction in methodActions[typeof (NewMemberAttribute)]) {
+				ModifyMethod(methodAction.TypeAction.TargetType, methodAction.YourMember, methodAction.ActionAttribute, methodAction.TargetMember);
+			}
+			foreach (var methodAction in methodActions[typeof (ModifiesMemberAttribute)]) {
+				ModifyMethod(methodAction.TypeAction.TargetType, methodAction.YourMember, methodAction.ActionAttribute, methodAction.TargetMember);
 			}
 		}
 
