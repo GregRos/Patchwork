@@ -11,6 +11,14 @@ using Patchwork.Engine;
 
 namespace Patchwork.Tests.Patch
 {
+    class ProgressObj : IProgressMonitor
+    {
+        public string TaskTitle { get; set; }
+        public string TaskText { get; set; }
+        public int Current { get; set; }
+        public int Total { get; set; }
+    }
+
 	class Program
 	{
 		static ILogger Log { get; set; }
@@ -54,7 +62,7 @@ namespace Patchwork.Tests.Patch
 			var patchPath = typeof(Patchwork.Tests.Patch.TestClass).Assembly.Location;
 			var maker = new ManifestCreator();
 			var manifest = maker.CreateManifest(patchPath);
-			patcher.PatchManifest(manifest, null);
+			patcher.PatchManifest(manifest, new ProgressObj());
 
 	
 
