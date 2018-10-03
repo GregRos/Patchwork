@@ -36,6 +36,11 @@ Using the program is straight-forward:
 5. Use *Launch with Mods* and *Launch without Mods* to start the game.
 
 ## Developer's Guide
+
+If you have any ideas or new direction for this project, please contribute. Right now I've lost interest in it, but I really think it can be improved and I'll probably start working on it again.
+
+---
+
 **Patchwork** is a framework for integrating your own code into existing .NET assemblies ("patching" them). It allows you to edit, create, or replace things such as types, properties, and methods in a simple, straight-forward, and declarative way, using attributes.
 
 The framework lets you basically rewrite entire programs, such as games, according to your whims (as long as they're written in a .NET language of course). Little in the code is beyond your control, and you can write it all using the same tools as the original developers. 
