@@ -57,7 +57,7 @@ namespace Patchwork.Engine.Utility {
 			if (_enumDescriptions.ContainsKey(boxed)) {
 				return _enumDescriptions[boxed];
 			}
-			var statFields = typeof (T).GetFields(CommonBindingFlags.Everything & BindingFlags.Static);
+			var statFields = typeof (T).GetFields(CommonBindingFlags.Everything & ~BindingFlags.Instance);
 			var attrAndValues =
 				from field in statFields
 				let descAttr = field.GetCustomAttribute<DescriptionAttribute>()
