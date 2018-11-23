@@ -2,6 +2,8 @@
 
 <span style="font-size:18">[MIT License](http://opensource.org/licenses/MIT) |  [Latest Version: 0.9.1](https://github.com/GregRos/Patchwork/releases/latest)</span>
 
+[![Build status](https://ci.appveyor.com/api/projects/status/o8dg9qosrlcddo3l/branch/master?svg=true)](https://ci.appveyor.com/project/GregRos/patchwork/branch/master)
+
 ----
 
 ## User's Guide
@@ -30,7 +32,7 @@ Using the program is straight-forward:
    **Note:** The dialog box will not display hidden files or folders.
 
 4. Go to the *Active Mods* menu and add the mod file(s) (usually ending with `.pw.dll`) to the list of mods, checking those you want enabled.
- 
+
    **Note:** Mod files so chosen will normally be copied to the `Mods` folder.
 
 5. Use *Launch with Mods* and *Launch without Mods* to start the game.
@@ -119,7 +121,7 @@ To see why this is required, imagine you have a class like:
 			_hitpoints--;
 		}
 	}
-	
+
 And you want to overwrite the `GetHit` method to perform `_hitpoints++` instead. 
 
 The problem is that `_hitpoints` can only be accessed from inside the class `Player`. But you have to write the code `_hitpoints++` in your own assembly. The framework will inject it into the correct spot, but your C# compiler doesn't know that and won't let you access the member.
