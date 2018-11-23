@@ -191,3 +191,9 @@ FakesAssemblies/
 
 # Visual Studio 6 workspace options file
 *.opt
+/.idea/.idea.Patchwork/.idea/contentModel.xml
+/.idea/.idea.Patchwork/.idea/indexLayout.xml
+/.idea/.idea.Patchwork/.idea/modules.xml
+/.idea/.idea.Patchwork/.idea/vcs.xml
+/.idea/.idea.Patchwork/.idea/workspace.xml
+/.idea/.idea.Patchwork/riderModule.iml
