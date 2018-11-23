@@ -53,12 +53,5 @@
     <Compile Include="Mono.Cecil\SymDocumentWriter.cs" />
     <Compile Include="Mono.Cecil\SymWriter.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include=".nuget\NuGet.Config" />
-    <None Include=".nuget\NuGet.targets" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include=".nuget\NuGet.exe" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

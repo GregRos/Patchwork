@@ -159,12 +159,5 @@
     <Compile Include="Mono\Empty.cs" />
     <Compile Include="Mono\Funcs.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include=".nuget\NuGet.Config" />
-    <None Include=".nuget\NuGet.targets" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include=".nuget\NuGet.exe" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
