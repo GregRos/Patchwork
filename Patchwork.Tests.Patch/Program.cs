@@ -27,12 +27,6 @@ namespace Patchwork.Tests.Patch
 
 		private static void DoSetup()
 		{
-			//+ Logging-related
-			//log messages can get pretty big, so it's nice to have a lot of space to view them:
-			Console.WindowWidth = (int)(Console.LargestWindowWidth * 0.75);
-			Console.BufferWidth = 300; //for extra long messages
-			Console.WindowHeight = (int)(Console.LargestWindowHeight * 0.75);
-			Console.BufferHeight = 2000; //so everything is visible
 
 			LogFile = new StreamWriter(File.Open("log.txt", FileMode.Create));
 
