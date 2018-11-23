@@ -77,7 +77,6 @@ namespace Patchwork.Tests.Patch
 			{
 				throw ex.InnerException;
 			}
-			Console.ReadKey();
 		}
 
 		[STAThread]
